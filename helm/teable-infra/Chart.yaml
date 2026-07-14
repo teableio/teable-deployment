@@ -12,9 +12,9 @@ keywords:
   - app-runtime
   - kubernetes
 
-home: https://github.com/teableio/teable-infra
+home: https://github.com/teableio/teable-deployment
 sources:
-  - https://github.com/teableio/teable-infra
+  - https://github.com/teableio/teable-deployment
 
 maintainers:
   - name: Teable
