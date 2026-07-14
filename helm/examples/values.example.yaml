@@ -14,17 +14,23 @@
 #   - a default StorageClass (or set the storageClassName fields per component)
 
 # ── 1. Domain ────────────────────────────────────────────────────────────────
-# One root domain; every entry point derives from it:
+# One base domain -- typically a subdomain of your organization's domain, as in
+# the example below. Every entry point derives from it:
 #
 #   <baseDomain>            Teable (the product)
-#   infra.<baseDomain>      Infra console + API
-#   s3.<baseDomain>         object storage (file/asset URLs)
-#   git.<baseDomain>        app source repositories
+#   infra.<baseDomain>      Infra console + API (git and object storage ride it as paths)
 #   *.app.<baseDomain>      deployed apps
 #   *.sandbox.<baseDomain>  sandbox previews
 #
-# Create DNS records for all six entries (the two wildcards included) pointing
+# Create DNS records for all four entries (the two wildcards included) pointing
 # at your ingress controller's public IP before installing.
+#
+# None of the derived names are sacred: every hostname above is an explicit
+# value you can override (teable.host, infraService.ingress.host,
+# appRuntime.ingress.domain/wildcardDomain, the opensandbox-server gateway
+# host, minio.host, gitRegistry.ingress.host) -- including moving the two
+# wildcards to a separate registrable domain for stronger isolation of
+# untrusted content.
 global:
   baseDomain: teable.example.org
 
@@ -50,19 +56,17 @@ global:
 #                 name: cloudflare-api-token
 #                 key: api-token
 #
-# Using a different issuer name? Override certificate.issuerName in the six
-# certificate blocks (teable / minio / gitRegistry / appRuntime.ingress.tls /
+# Using a different issuer name? Override certificate.issuerName in the four
+# certificate blocks (teable / appRuntime.ingress.tls /
 # opensandbox-server server.ingress / server.gateway.ingress).
 #
 # Bringing your own certificates instead? Set certificate.enabled: false in
-# those same six blocks and create the TLS Secrets yourself in the
+# those same four blocks and create the TLS Secrets yourself in the
 # opensandbox-system namespace:
 #
 #   host                    Secret name
 #   <baseDomain>            teable-tls
-#   infra.<baseDomain>      infra.<baseDomain>-tls
-#   s3.<baseDomain>         minio-s3-tls
-#   git.<baseDomain>        git-registry-tls
+#   infra.<baseDomain>      infra.<baseDomain>-tls   (also serves /git and the storage paths)
 #   *.app.<baseDomain>      app-wildcard-tls
 #   *.sandbox.<baseDomain>  sandbox.<baseDomain>-tls
 

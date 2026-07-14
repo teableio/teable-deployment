@@ -31,10 +31,10 @@ browser.
 
 ### cloud
 
-First add DNS records for your domain in Cloudflare, all pointing at this
-machine's public IP (DNS only, no proxy):
-`<domain>`, `infra.`, `s3.`, `git.`, `*.app.`, `*.sandbox.`. Open ports
-22/80/443.
+First add four DNS records for your domain in Cloudflare, all pointing at this
+machine's public IP (DNS only, no proxy): `<domain>`, `infra.`, `*.app.`,
+`*.sandbox.` -- where `<domain>` is typically a subdomain of yours, e.g.
+`teable.example.com`. Open ports 22/80/443.
 
 ```bash
 cd docker/all-in-one
@@ -46,10 +46,11 @@ docker compose up -d            # first start issues certificates, about 1 minut
 ```
 
 Entry points: Teable at `https://<BASE_DOMAIN>`, console at
-`https://infra.<BASE_DOMAIN>`. The other subdomains (`s3.` / `git.` /
-`*.app.` / `*.sandbox.`) are used automatically — nothing to configure.
-To put Teable or the console on different domains, edit the "advanced"
-section at the end of `.env`; anything left blank is derived.
+`https://infra.<BASE_DOMAIN>` (git and object storage ride that host as
+paths). The wildcards (`*.app.` / `*.sandbox.`) are used automatically —
+nothing to configure. None of the names are sacred: Teable and the console
+can live on any domains via the "advanced" section at the end of `.env`;
+anything left blank is derived.
 
 ### Pin versions (optional)
 

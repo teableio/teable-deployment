@@ -16,16 +16,17 @@ Two planes working together:
   apps you build), object storage (attachments and build artifacts), and a
   preview gateway.
 
-Everything hangs off **one root domain**; every entry point is derived from it:
+Everything hangs off **one base domain** — typically a subdomain of yours,
+e.g. `teable.example.com`. Four DNS records cover the whole platform:
 
 ```
 <domain>              the Teable app
-infra.<domain>        Infra console + API (the app's single edge to the runtime)
-*.sandbox.<domain>    sandbox previews in the browser
+infra.<domain>        Infra console + API (git and object storage ride it as paths)
 *.app.<domain>        apps you built and deployed
-s3.<domain>           object storage (file and asset URLs)
-git.<domain>          app source repositories
+*.sandbox.<domain>    sandbox previews in the browser
 ```
+
+(Each name is only a default — every hostname can be overridden individually.)
 
 Both deployment paths below install the same platform; they differ only in
 where it runs.

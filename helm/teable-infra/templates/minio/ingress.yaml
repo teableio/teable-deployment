@@ -4,7 +4,7 @@
 {{- $minio := .Values.minio }}
 {{- $serviceName := printf "%s-minio" .Release.Name }}
 {{- $host := include "teable-infra.s3Host" . }}
-{{- $tlsSecretName := $minio.ingress.tls.secretName | default "minio-s3-tls" }}
+{{- $tlsSecretName := $minio.ingress.tls.secretName | default (printf "%s-tls" $host) }}
 {{- /* Attachment uploads stream through this host as presigned PUTs; nginx's default 1m body cap would reject them, so proxy-body-size is unlimited unless the user overrides it. */}}
 {{- $annotations := merge (dict) ($minio.ingress.annotations | default dict) (dict "nginx.ingress.kubernetes.io/proxy-body-size" "0") }}
 {{- if $minio.ingress.enabled }}
@@ -32,7 +32,19 @@ spec:
     - host: {{ $host | quote }}
       http:
         paths:
-          - path: /
+          {{- /* Path-style S3 on the shared host: one prefix per bucket plus the health
+                 endpoint. Presigned signatures cover host+path and proxying is
+                 pass-through, so sharing the Infra host is transparent to clients. */}}
+          {{- range $b := (values $minio.buckets | sortAlpha) }}
+          - path: {{ printf "/%s" $b | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: s3
+          {{- end }}
+          - path: /minio/health
             pathType: Prefix
             backend:
               service:

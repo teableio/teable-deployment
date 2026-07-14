@@ -1,6 +1,6 @@
 # Domain/address derivation -- single-root-domain principle:
 #   cloud: the only domain concept is BASE_DOMAIN; every service is split from it (main site = root domain,
-#          infra./s3./git. subdomains, *.app/*.sandbox wildcards). To use separate domains, fill the matching
+#          infra. subdomain carrying /v1+git+storage paths, *.app/*.sandbox wildcards). To use separate domains, fill the matching
 #          *_HOST override in the .env "advanced" section (blank = derived).
 #   local: no domain concept at all; everything is *.localhost + LAN IP (attachment/artifact presigned URLs
 #          require the browser and the containers to reach the same address).
@@ -32,7 +32,7 @@ if [ "$MODE" = "cloud" ]; then
       exit 1
     fi
     set_if_blank PUBLIC_ORIGIN "https://${TEABLE_HOST_EFF}" "$ENV_FILE"
-    set_if_blank TEABLE_MINIO_ENDPOINT_HOST "s3.${BASE_DOMAIN}" "$ENV_FILE"
+    set_if_blank TEABLE_MINIO_ENDPOINT_HOST "${INFRA_HOST_EFF}" "$ENV_FILE"
     set_if_blank TEABLE_MINIO_ENDPOINT_PORT "443" "$ENV_FILE"
     set_if_blank TEABLE_MINIO_USE_SSL "true" "$ENV_FILE"
   else

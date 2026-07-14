@@ -51,7 +51,7 @@ done
 if [ "$MODE" = "cloud" ]; then
   TEABLE_URL="https://${TEABLE_HOST:-}"
   INFRA_URL="https://${INFRA_HOST:-}"
-  S3_HEALTH_URL="https://s3.${BASE_DOMAIN:-}/minio/health/live"
+  S3_HEALTH_URL="https://${INFRA_HOST:-}/minio/health/live"
   req() { curl -s -o /dev/null -w '%{http_code}' -m 20 "$1"; }
 else
   TEABLE_URL="http://localhost"

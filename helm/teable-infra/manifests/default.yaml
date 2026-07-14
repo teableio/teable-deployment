@@ -1779,6 +1779,8 @@ spec:
           value: '7'
         - name: GIT_REGISTRY_GC_UTC_HOUR
           value: '19'
+        - name: GIT_REGISTRY_BASE_PATH
+          value: "/git"
         - name: GIT_REGISTRY_JWT_PUBLIC_KEY
           valueFrom:
             secretKeyRef:
@@ -1967,7 +1969,7 @@ spec:
         - name: APP_RUNTIME_CLEANUP_INTERVAL_SECONDS
           value: '900'
         - name: APP_RUNTIME_ARTIFACT_S3_ENDPOINT
-          value: https://s3.teable.example.org
+          value: https://infra.teable.example.org
         - name: APP_RUNTIME_ARTIFACT_S3_REGION
           value: us-east-1
         - name: APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_ID
@@ -1993,7 +1995,7 @@ spec:
         - name: GIT_REGISTRY_INTERNAL_URL
           value: http://teable-git-registry.opensandbox-system.svc
         - name: GIT_REGISTRY_PUBLIC_URL
-          value: https://git.teable.example.org
+          value: https://infra.teable.example.org/git
         - name: GIT_REGISTRY_JWT_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
@@ -2321,7 +2323,7 @@ spec:
         - name: BACKEND_STORAGE_PROVIDER
           value: minio
         - name: BACKEND_STORAGE_MINIO_ENDPOINT
-          value: s3.teable.example.org
+          value: infra.teable.example.org
         - name: BACKEND_STORAGE_MINIO_PORT
           value: '443'
         - name: BACKEND_STORAGE_MINIO_USE_SSL
@@ -2490,21 +2492,14 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - git.teable.example.org
-    secretName: git-registry-tls
+    - infra.teable.example.org
+    secretName: infra.teable.example.org-tls
   rules:
-  - host: git.teable.example.org
+  - host: infra.teable.example.org
     http:
       paths:
-      - path: "/apps"
+      - path: "/git"
         pathType: Prefix
-        backend:
-          service:
-            name: teable-git-registry
-            port:
-              name: http
-      - path: "/healthz"
-        pathType: Exact
         backend:
           service:
             name: teable-git-registry
@@ -2560,13 +2555,34 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - s3.teable.example.org
-    secretName: minio-s3-tls
+    - infra.teable.example.org
+    secretName: infra.teable.example.org-tls
   rules:
-  - host: s3.teable.example.org
+  - host: infra.teable.example.org
     http:
       paths:
-      - path: "/"
+      - path: "/teable-app-artifacts"
+        pathType: Prefix
+        backend:
+          service:
+            name: teable-minio
+            port:
+              name: s3
+      - path: "/teable-private"
+        pathType: Prefix
+        backend:
+          service:
+            name: teable-minio
+            port:
+              name: s3
+      - path: "/teable-public"
+        pathType: Prefix
+        backend:
+          service:
+            name: teable-minio
+            port:
+              name: s3
+      - path: "/minio/health"
         pathType: Prefix
         backend:
           service:
@@ -2667,42 +2683,6 @@ spec:
     name: letsencrypt-dns
   dnsNames:
   - "*.app.teable.example.org"
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: teable-git-registry
-  namespace: opensandbox-system
-  labels:
-    app.kubernetes.io/name: git-registry
-    app.kubernetes.io/instance: teable
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: opensandbox
-spec:
-  secretName: git-registry-tls
-  issuerRef:
-    name: letsencrypt-dns
-    kind: ClusterIssuer
-  dnsNames:
-  - git.teable.example.org
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: teable-minio
-  namespace: opensandbox-system
-  labels:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/instance: teable
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: opensandbox
-spec:
-  secretName: minio-s3-tls
-  issuerRef:
-    name: letsencrypt-dns
-    kind: ClusterIssuer
-  dnsNames:
-  - s3.teable.example.org
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

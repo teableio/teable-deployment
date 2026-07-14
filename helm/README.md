@@ -9,9 +9,9 @@ cluster, driven by one umbrella chart.
 - An ingress-nginx controller with a public IP
 - cert-manager (or bring your own TLS certificates — see the values example)
 - A default StorageClass (or set the `storageClassName` fields per component)
-- One root domain with DNS control: six records point at your ingress
-  controller (listed in the values example), all derived from that single
-  domain
+- One base domain with DNS control -- typically a subdomain of yours (e.g.
+  `teable.example.com`): four records point at your ingress controller
+  (listed in the values example), all derived from that single domain
 
 ## Quick start
 

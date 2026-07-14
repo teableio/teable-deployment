@@ -43,13 +43,12 @@ https://{{ include "teable-infra.infraHost" . }}
 {{- if $base -}}*.app.{{ $base }}{{- else -}}*.app.example.com{{- end -}}
 {{- end -}}
 
-{{- /* git-registry public URL: https://git.<baseDomain> plus gitRegistry.basePath.
-       The derived host serves at the root by default (basePath ""), so the URL must
-       not carry a path segment the server never strips; when basePath is set the
-       URL follows it, matching GIT_REGISTRY_BASE_PATH on the workload. */ -}}
+{{- /* git-registry public URL: the Infra host plus gitRegistry.basePath (default /git).
+       Git shares the Infra Service domain -- the production-proven shape -- so a bare
+       install needs no dedicated git DNS record. The URL follows basePath, matching
+       GIT_REGISTRY_BASE_PATH on the workload. */ -}}
 {{- define "teable-infra.gitPublicUrl" -}}
-{{- $base := include "teable-infra.baseDomain" . -}}
-{{- if $base -}}https://git.{{ $base }}{{ .Values.gitRegistry.basePath }}{{- end -}}
+https://{{ include "teable-infra.infraHost" . }}{{ .Values.gitRegistry.basePath }}
 {{- end -}}
 
 {{- /* Teable app host: explicit teable.host wins, else the apex of baseDomain (the app owns the root of the domain), else an example.org placeholder. */ -}}
@@ -63,10 +62,11 @@ https://{{ include "teable-infra.infraHost" . }}
 {{- if .Values.teable.publicOrigin -}}{{ .Values.teable.publicOrigin }}{{- else -}}https://{{ include "teable-infra.teableHost" . }}{{- end -}}
 {{- end -}}
 
-{{- /* Public S3 (MinIO) host: explicit minio.host wins, else s3.<baseDomain>, else an example.org placeholder. */ -}}
+{{- /* Public S3 (MinIO) host: explicit minio.host wins, else the Infra host. Presigned
+       URLs are path-style and route by bucket path prefixes on the shared host, so a
+       bare install needs no dedicated s3 DNS record. */ -}}
 {{- define "teable-infra.s3Host" -}}
-{{- $base := include "teable-infra.baseDomain" . -}}
-{{- if .Values.minio.host -}}{{ .Values.minio.host }}{{- else if $base -}}s3.{{ $base }}{{- else -}}s3.example.org{{- end -}}
+{{- if .Values.minio.host -}}{{ .Values.minio.host }}{{- else -}}{{ include "teable-infra.infraHost" . }}{{- end -}}
 {{- end -}}
 
 {{- /* Public S3 URL: https://<s3Host> (presigned URLs and the artifact store endpoint are always TLS). */ -}}

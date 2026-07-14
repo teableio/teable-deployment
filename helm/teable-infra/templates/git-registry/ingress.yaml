@@ -5,9 +5,11 @@
 {{- $serviceName := printf "%s-git-registry" .Release.Name }}
 {{- /* Explicit host/secretName win; when blank they are derived from global.baseDomain (git.<base> / a chart-local TLS secret name). Both stay required when baseDomain is blank too. */}}
 {{- $baseDomain := include "teable-infra.baseDomain" . }}
-{{- $derivedHost := ternary (printf "git.%s" $baseDomain) "" (ne $baseDomain "") }}
+{{- $derivedHost := include "teable-infra.infraHost" . }}
 {{- $host := $gitRegistry.ingress.host | default $derivedHost }}
-{{- $derivedTlsSecretName := ternary "git-registry-tls" "" (ne $baseDomain "") }}
+{{- /* Shared-host default: the /v1 ingress block issues <infra host>-tls for the Infra
+       domain; git rides the same host and certificate. */}}
+{{- $derivedTlsSecretName := printf "%s-tls" (include "teable-infra.infraHost" .) }}
 {{- $tlsSecretName := $gitRegistry.ingress.tls.secretName | default $derivedTlsSecretName }}
 {{- if $gitRegistry.ingress.enabled }}
 apiVersion: networking.k8s.io/v1

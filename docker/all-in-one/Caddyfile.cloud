@@ -7,8 +7,17 @@
 
 import caddy.snippets
 
-# Console + Infra API + sandbox port-preview rewrite (Teable's TEABLE_INFRA_API_URL points here)
+# Console + Infra API + git smart-http + object storage + sandbox port-preview rewrite.
+# One host, one certificate: /git and the bucket path-prefixes ride the Infra domain,
+# so the deployment needs no dedicated git./s3. DNS records.
 {$INFRA_HOST} {
+	handle /git/* {
+		reverse_proxy git-registry:8080
+	}
+	@minio path /{$S3_BUCKET}/* /{$TEABLE_PUBLIC_BUCKET}/* /{$TEABLE_PRIVATE_BUCKET}/* /minio/health/*
+	handle @minio {
+		reverse_proxy minio:9000
+	}
 	import infra_and_v1
 }
 
@@ -22,12 +31,3 @@ import caddy.snippets
 	import sandbox_preview
 }
 
-# Artifact store S3 (path-style; presigned host = s3.<domain>, matching this site)
-s3.{$BASE_DOMAIN} {
-	reverse_proxy minio:9000
-}
-
-# App Builder git smart-http (optional)
-git.{$BASE_DOMAIN} {
-	reverse_proxy git-registry:8080
-}

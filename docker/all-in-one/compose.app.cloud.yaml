@@ -18,7 +18,7 @@ services:
       teable-sandbox-net:
         aliases:
           - ${TEABLE_HOST}
-          - s3.${BASE_DOMAIN}      # sandboxes upload build artifacts to the presigned s3. endpoint
+          - ${INFRA_HOST}          # sandboxes upload build artifacts to presigned URLs on the Infra host
     volumes:
       # Same-target override of the base mount: swap in the entry config that carries the Teable routes
       - ./Caddyfile.app.cloud:/etc/caddy/Caddyfile:ro

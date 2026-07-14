@@ -234,10 +234,11 @@ gitRegistry:
   # Defaults to reusing infraService.image
   image: ""
   # Base of the gitUrl returned by the credentials API, e.g. https://infra.example.com/git (includes basePath).
-  # Blank: derived from global.baseDomain (https://git.<base>/git); required if both are blank.
+  # Blank: derived as https://<infra host><basePath>.
   publicUrl: ""
-  # Public path prefix (e.g. /git): shares the Infra Service domain so self-hosted deployments need no extra domain; empty string means a dedicated domain at root path
-  basePath: ""
+  # Public path prefix: git shares the Infra Service domain (production-proven shape),
+  # so no dedicated git DNS record is needed; empty string means a dedicated domain at root path.
+  basePath: "/git"
   jwtSecretName: git-registry-jwt
   jwtSecret:
     # chart generates the ed25519 signing keypair on install (idempotent: an
@@ -279,9 +280,10 @@ gitRegistry:
       enabled: true
       secretName: ""
     certificate:
-      # default-on: cert-manager Certificate for git.<baseDomain> (issuer must exist;
-      # see the TLS section of the values example). Set false to bring your own Secret.
-      enabled: true
+      # Off by default: git rides the Infra host, whose certificate is issued by the
+      # opensandbox-server /v1 ingress block. Only enable together with a dedicated
+      # gitRegistry.ingress.host.
+      enabled: false
       name: ""
       issuerName: letsencrypt-dns
       issuerKind: ClusterIssuer
@@ -656,7 +658,8 @@ minio:
   # Third-party images: pin a digest for production installs.
   image: minio/minio:latest
   mcImage: minio/mc:latest
-  # Public S3 endpoint host (browsers hit it directly via presigned URLs); blank = s3.<baseDomain>.
+  # Public S3 endpoint host (browsers hit it via presigned URLs). Blank: rides the Infra
+  # host -- buckets route by path prefix, no dedicated s3 DNS record needed.
   host: ""
   storage:
     size: 50Gi
@@ -682,10 +685,12 @@ minio:
     annotations: {}
     tls:
       enabled: true
-      # Blank: chart-local default (minio-s3-tls).
+      # Blank: derived as <s3 host>-tls (= the shared Infra host certificate by default).
       secretName: ""
     certificate:
-      enabled: true
+      # Off by default: the shared Infra host certificate covers the bucket paths.
+      # Only enable together with a dedicated minio.host.
+      enabled: false
       issuerName: letsencrypt-dns
       issuerKind: ClusterIssuer
 

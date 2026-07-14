@@ -14,9 +14,15 @@ services:
       APP_RUNTIME_DOMAIN: app.${BASE_DOMAIN:?fill .env then run ./apply.sh cloud}   # apps run at {appId}.app.<domain>
       APP_RUNTIME_PUBLIC_SCHEME: https
       OPENSANDBOX_PREVIEW_WILDCARD_DOMAIN: "*.sandbox.${BASE_DOMAIN}"
-      # Presigned URLs uniformly use https://s3.<domain>: external clients go over the public network, while infra-service reaches caddy directly via its teable-appnet alias (host identical on both sides).
-      APP_RUNTIME_ARTIFACT_S3_ENDPOINT: https://s3.${BASE_DOMAIN}
-      GIT_REGISTRY_PUBLIC_URL: https://git.${BASE_DOMAIN}                          # only for external/console manual clone
+      # Presigned URLs ride the Infra host (bucket path-prefix routing): external clients go over the
+      # public network, while infra-service reaches caddy via its teable-appnet alias (host identical on both sides).
+      APP_RUNTIME_ARTIFACT_S3_ENDPOINT: https://${INFRA_HOST:?fill .env then run ./apply.sh cloud}
+      GIT_REGISTRY_PUBLIC_URL: https://${INFRA_HOST}/git                           # only for external/console manual clone
+
+  # Shared-host git: /git prefix on the Infra domain (server strips it; root-path form stays for internal clients).
+  git-registry:
+    environment:
+      GIT_REGISTRY_BASE_PATH: /git
 
   # TLS edge + routing: Cloudflare DNS-01 auto-issues/renews the wildcard certificate (the official image has no DNS plugins, see Dockerfile.caddy).
   caddy:
@@ -29,7 +35,7 @@ services:
     networks:
       teable-appnet:
         aliases:
-          - s3.${BASE_DOMAIN}      # lets infra-service reach caddy in-container (no host loopback), matching the presigned-URL host
+          - ${INFRA_HOST}          # lets infra-service reach caddy in-container (no host loopback), matching the presigned-URL host
     ports:
       - "80:80"        # ACME + http->https
       - "443:443"
@@ -46,6 +52,10 @@ services:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN in .env}
       OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh cloud}   # injected server-side by the sandbox preview block
       SANDBOX_PREVIEW_HOST: sandbox.${BASE_DOMAIN}                                       # rewrite target for port previews (no scheme)
+      # Bucket path prefixes routed to MinIO on the Infra host (parse-time placeholders in Caddyfile).
+      S3_BUCKET: ${S3_BUCKET:-teable-app-artifacts}
+      TEABLE_PUBLIC_BUCKET: ${TEABLE_PUBLIC_BUCKET:-teable-public}
+      TEABLE_PRIVATE_BUCKET: ${TEABLE_PRIVATE_BUCKET:-teable-private}
     depends_on:
       # Not gated on infra health: caddy must start first to run ACME; reverse_proxy retries while upstreams are not ready.
       - opensandbox-server
