@@ -1,0 +1,41 @@
+{{- if and .Values.server.gateway.enabled .Values.server.gateway.ingress.enabled }}
+{{- $host := include "opensandbox-server.gatewayIngressHost" . }}
+{{- if not $host }}
+{{- fail "server.gateway.ingress.host or server.gateway.host is required when server.gateway.ingress.enabled=true" }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    helm.sh/chart: {{ include "opensandbox-server.chart" . }}
+    {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-gateway
+    app.kubernetes.io/part-of: opensandbox
+  {{- with .Values.server.gateway.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.server.gateway.ingress.className }}
+  ingressClassName: {{ .Values.server.gateway.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: {{ .Values.server.gateway.ingress.path | default "/" | quote }}
+            pathType: {{ .Values.server.gateway.ingress.pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "opensandbox-server.ingressGatewayFullname" . }}
+                port:
+                  number: 80
+  {{- if .Values.server.gateway.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ include "opensandbox-server.gatewayIngressTlsSecret" . }}
+  {{- end }}
+{{- end }}

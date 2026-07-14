@@ -1,0 +1,47 @@
+{{- $policy := .Values.runtimeNetworkPolicy | default dict }}
+{{- if $policy.enabled }}
+{{- $sandbox := $policy.sandbox | default dict }}
+{{- if ($sandbox.enabled | default true) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: teable-sandbox-allow-all-egress
+  namespace: {{ $sandbox.namespace | default "teable-sandbox" | quote }}
+  labels:
+    app.kubernetes.io/name: teable-sandbox-egress
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  podSelector:
+    matchExpressions:
+      - key: opensandbox.io/id
+        operator: Exists
+  policyTypes:
+    - Egress
+  egress:
+    - {}
+---
+{{- end }}
+{{- $appRuntime := $policy.appRuntime | default dict }}
+{{- if ($appRuntime.enabled | default true) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: teable-app-runtime-allow-all-egress
+  namespace: {{ $appRuntime.namespace | default "app-deploy" | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime-egress
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: teable-app-runtime
+  policyTypes:
+    - Egress
+  egress:
+    - {}
+{{- end }}
+{{- end }}

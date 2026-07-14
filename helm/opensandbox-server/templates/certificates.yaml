@@ -1,0 +1,52 @@
+{{- if .Values.server.ingress.certificate.enabled }}
+{{- $host := include "opensandbox-server.serverIngressHost" . }}
+{{- if not .Values.server.ingress.certificate.issuerName }}
+{{- fail "server.ingress.certificate.issuerName is required when server.ingress.certificate.enabled=true" }}
+{{- end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.server.ingress.certificate.secretName | default (include "opensandbox-server.serverIngressTlsSecret" .) }}
+  issuerRef:
+    name: {{ .Values.server.ingress.certificate.issuerName }}
+    kind: {{ .Values.server.ingress.certificate.issuerKind | default "ClusterIssuer" }}
+  dnsNames:
+    {{- if .Values.server.ingress.certificate.dnsNames }}
+    {{- toYaml .Values.server.ingress.certificate.dnsNames | nindent 4 }}
+    {{- else }}
+    - {{ $host | quote }}
+    {{- end }}
+---
+{{- end }}
+{{- if and .Values.server.gateway.enabled .Values.server.gateway.ingress.certificate.enabled }}
+{{- $host := include "opensandbox-server.gatewayIngressHost" . }}
+{{- if not .Values.server.gateway.ingress.certificate.issuerName }}
+{{- fail "server.gateway.ingress.certificate.issuerName is required when server.gateway.ingress.certificate.enabled=true" }}
+{{- end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    helm.sh/chart: {{ include "opensandbox-server.chart" . }}
+    {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-gateway
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ .Values.server.gateway.ingress.certificate.secretName | default (include "opensandbox-server.gatewayIngressTlsSecret" .) }}
+  issuerRef:
+    name: {{ .Values.server.gateway.ingress.certificate.issuerName }}
+    kind: {{ .Values.server.gateway.ingress.certificate.issuerKind | default "ClusterIssuer" }}
+  dnsNames:
+    {{- if .Values.server.gateway.ingress.certificate.dnsNames }}
+    {{- toYaml .Values.server.gateway.ingress.certificate.dnsNames | nindent 4 }}
+    {{- else }}
+    - {{ $host | quote }}
+    {{- end }}
+{{- end }}

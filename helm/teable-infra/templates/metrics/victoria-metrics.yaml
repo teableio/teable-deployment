@@ -1,0 +1,111 @@
+{{- /* Observability component: VictoriaMetrics (PVC + Deployment + Service).
+     Independent of infra-service itself; still toggled by infraService.victoriaMetrics.enabled (key-path migration deferred). */}}
+{{- if .Values.infraService.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $victoriaMetrics := .Values.infraService.victoriaMetrics }}
+{{- if $victoriaMetrics.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-victoria-metrics
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: opensandbox-victoria-metrics
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $victoriaMetrics.persistentVolumeClaim.storage | default "50Gi" | quote }}
+  storageClassName: {{ $victoriaMetrics.persistentVolumeClaim.storageClassName | default "standard-rwo" | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-victoria-metrics
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: opensandbox-victoria-metrics
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: 1
+  strategy:
+    type: {{ $victoriaMetrics.updateStrategyType | default "RollingUpdate" | quote }}
+    {{- with $victoriaMetrics.rollingUpdate }}
+    rollingUpdate:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opensandbox-victoria-metrics
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opensandbox-victoria-metrics
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      {{- with .Values.infraService.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: victoria-metrics
+          image: {{ $victoriaMetrics.image | quote }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - -storageDataPath={{ $victoriaMetrics.storageDataPath | default "/victoria-metrics-data" }}
+            - -retentionPeriod={{ $victoriaMetrics.retentionPeriod | default "30d" }}
+            - -httpListenAddr=:8428
+          ports:
+            - name: http
+              containerPort: 8428
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml $victoriaMetrics.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ $victoriaMetrics.storageDataPath | default "/victoria-metrics-data" | quote }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-victoria-metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-victoria-metrics
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: opensandbox-victoria-metrics
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: opensandbox-victoria-metrics
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 8428
+      targetPort: http
+{{- end }}
+{{- end }}

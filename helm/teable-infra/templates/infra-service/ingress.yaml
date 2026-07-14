@@ -1,0 +1,45 @@
+{{- /* infra-service external entry point (console + Infra API).
+       Host and TLS secret derive from global.baseDomain when left blank; the derived
+       secret name (<host>-tls) matches the opensandbox-server /v1 ingress default so
+       both ingresses on the shared host reuse one certificate. */}}
+{{- if and .Values.infraService.enabled .Values.infraService.ingress.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $monitorServiceName := printf "%s-infra-service" .Release.Name }}
+{{- $host := .Values.infraService.ingress.host | default (include "teable-infra.infraHost" .) }}
+{{- $tlsSecretName := .Values.infraService.ingress.tls.secretName | default (printf "%s-tls" $host) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-infra-service
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    {{- with .Values.infraService.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.infraService.ingress.className | quote }}
+  {{- if .Values.infraService.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ $tlsSecretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          {{- range (.Values.infraService.ingress.paths | default (list "/")) }}
+          - path: {{ . | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $monitorServiceName }}
+                port:
+                  name: http
+          {{- end }}
+{{- end }}

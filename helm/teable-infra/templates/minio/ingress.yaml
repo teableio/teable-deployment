@@ -1,0 +1,63 @@
+{{- /* MinIO S3 external entry point: browsers hit presigned attachment URLs on this host, so it must be publicly reachable. Ingress + cert-manager Certificate (each toggled independently). */}}
+{{- if .Values.minio.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $minio := .Values.minio }}
+{{- $serviceName := printf "%s-minio" .Release.Name }}
+{{- $host := include "teable-infra.s3Host" . }}
+{{- $tlsSecretName := $minio.ingress.tls.secretName | default "minio-s3-tls" }}
+{{- /* Attachment uploads stream through this host as presigned PUTs; nginx's default 1m body cap would reject them, so proxy-body-size is unlimited unless the user overrides it. */}}
+{{- $annotations := merge (dict) ($minio.ingress.annotations | default dict) (dict "nginx.ingress.kubernetes.io/proxy-body-size" "0") }}
+{{- if $minio.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ $minio.ingress.className | default "nginx" | quote }}
+  {{- if $minio.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ $tlsSecretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: s3
+{{- end }}
+---
+{{- if $minio.ingress.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ $tlsSecretName | quote }}
+  issuerRef:
+    name: {{ required "minio.ingress.certificate.issuerName is required" $minio.ingress.certificate.issuerName | quote }}
+    kind: {{ $minio.ingress.certificate.issuerKind | default "ClusterIssuer" | quote }}
+  dnsNames:
+    - {{ $host | quote }}
+{{- end }}
+{{- end }}

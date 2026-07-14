@@ -1,0 +1,147 @@
+{{- /* git-registry core workload: PVC + Deployment + Service (git smart-http for App Builder). */}}
+{{- if .Values.gitRegistry.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $gitRegistry := .Values.gitRegistry }}
+{{- $image := $gitRegistry.image | default .Values.infraService.image }}
+{{- $serviceName := printf "%s-git-registry" .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $serviceName }}-data
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $gitRegistry.persistence.size | default "100Gi" | quote }}
+  {{- with $gitRegistry.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: 1
+  # PVC is RWO; a rolling update would have old and new Pods contend for the same disk, so Recreate is required
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: git-registry
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: git-registry
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      {{- with .Values.infraService.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $gitRegistry.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $gitRegistry.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: git-registry
+          image: {{ required "infraService.image or gitRegistry.image is required when gitRegistry.enabled=true" $image | quote }}
+          imagePullPolicy: {{ .Values.infraService.imagePullPolicy | default "IfNotPresent" | quote }}
+          command: ["node", ".output/git-registry/server.mjs"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: GIT_REGISTRY_PORT
+              value: "8080"
+            - name: GIT_REGISTRY_DATA_DIR
+              value: "/data"
+            - name: GIT_REGISTRY_HOOKS_DIR
+              value: "/app/hooks"
+            - name: GIT_REGISTRY_REPO_SIZE_LIMIT
+              value: {{ $gitRegistry.repoSizeLimitBytes | default 104857600 | quote }}
+            - name: GIT_REGISTRY_MAX_INPUT_SIZE
+              value: {{ $gitRegistry.maxInputSizeBytes | default 67108864 | quote }}
+            - name: GIT_REGISTRY_MAX_CONCURRENT_GIT
+              value: {{ $gitRegistry.maxConcurrentGit | default 32 | quote }}
+            - name: GIT_REGISTRY_GIT_TIMEOUT_MS
+              value: {{ $gitRegistry.gitTimeoutMs | default 120000 | quote }}
+            - name: GIT_REGISTRY_TRASH_RETENTION_DAYS
+              value: {{ $gitRegistry.trashRetentionDays | default 7 | quote }}
+            - name: GIT_REGISTRY_GC_UTC_HOUR
+              value: {{ $gitRegistry.gcUtcHour | default 19 | quote }}
+            {{- if $gitRegistry.basePath }}
+            - name: GIT_REGISTRY_BASE_PATH
+              value: {{ $gitRegistry.basePath | quote }}
+            {{- end }}
+            - name: GIT_REGISTRY_JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $gitRegistry.jwtSecretName | default "git-registry-jwt" | quote }}
+                  key: {{ $gitRegistry.jwtPublicKeyKey | default "public" | quote }}
+            - name: GIT_REGISTRY_INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $gitRegistry.internalApiKeySecretName | default "opensandbox-api-key" | quote }}
+                  key: {{ $gitRegistry.internalApiKeyKey | default "api-key" | quote }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml $gitRegistry.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $serviceName }}-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+{{- end }}

@@ -1,0 +1,91 @@
+{{- /* RBAC for App Runtime: runtime SA (identity for dynamic app containers) + deployer SA/Role/Binding (used by infra-service to deploy). */}}
+{{- if .Values.appRuntime.enabled }}
+{{- $runtime := .Values.appRuntime }}
+{{- $namespace := $runtime.namespace | default "app-deploy" }}
+{{- $deployerNamespace := $runtime.deployer.serviceAccountNamespace | default (.Values.imagePreheater.namespaceOverride | default .Release.Namespace) }}
+{{- $deployerName := $runtime.deployer.serviceAccountName | default "teable-app-deployer" }}
+{{- $runtimeServiceAccountName := $runtime.runtimeServiceAccountName | default "teable-app-runtime" }}
+{{- $imagePullSecrets := default (.Values.imagePreheater.imagePullSecrets | default list) ($runtime.imagePullSecrets | default list) }}
+{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $runtimeServiceAccountName | quote }}
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+{{- if $imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml $imagePullSecrets | nindent 2 }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: teable-app-deployer
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "ingresses/status"]
+    verbs: ["get", "list", "watch"]
+  {{- if eq $ingressMode "dynamic" }}
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["create", "update", "patch", "delete"]
+  {{- end }}
+  - apiGroups: [""]
+    resources: ["services", "pods", "pods/log", "events", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets"]
+    verbs: ["create", "update", "patch", "delete"]
+---
+{{- if $runtime.deployer.createServiceAccount }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $deployerName | quote }}
+  namespace: {{ $deployerNamespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime-deployer
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+---
+{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: teable-app-deployer
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: teable-app-deployer
+subjects:
+  - kind: ServiceAccount
+    name: {{ $deployerName | quote }}
+    namespace: {{ $deployerNamespace | quote }}
+  {{- with $runtime.deployer.extraSubjects }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}

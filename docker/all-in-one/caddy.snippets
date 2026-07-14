@@ -1,0 +1,38 @@
+# Shared routes -- imported by both the local and cloud Caddyfiles; the sandbox preview rewrite lives only here.
+# {$SANDBOX_PREVIEW_HOST} / {env.OPENSANDBOX_API_KEY} are injected by compose per mode and substituted at parse time.
+
+# Console + Infra API + sandbox port-preview rewrite.
+#   Port preview (/v1/sandboxes/{id}/endpoints/{port}) returns host:port/proxy/{port} by default, which 404s root-path assets of Next/SPA apps;
+#   rewrite it here to the root-path subdomain {id}-{port}.{$SANDBOX_PREVIEW_HOST} (no scheme; consumers add their own), and hand proxying to (sandbox_preview).
+(infra_and_v1) {
+	@endpoints path_regexp ep ^/v1/sandboxes/([a-z0-9-]+)/endpoints/([0-9]+)/?$
+	handle @endpoints {
+		header Content-Type application/json
+		respond `{"endpoint":"{re.ep.1}-{re.ep.2}.{$SANDBOX_PREVIEW_HOST}"}` 200
+	}
+	# Sandbox engine API (auth header passed through)
+	handle /v1/* {
+		reverse_proxy opensandbox-server:8090
+	}
+	# Console/Infra API; app previews also go here (infra's built-in gateway matches by Host)
+	handle {
+		reverse_proxy infra-service:8080
+	}
+}
+
+# Sandbox previews (independent origin at root path): Host={id}-{port}.sandbox.<domain> -> engine server-proxy.
+#   Inject the key (browser top-level navigations cannot carry headers); Accept-Encoding=identity disables compression to avoid multi-hop decoding errors; WebSocket passes through by default.
+(sandbox_preview) {
+	@sbx header_regexp sbx Host ^([a-z0-9-]+)-([0-9]+)\.
+	handle @sbx {
+		rewrite * /v1/sandboxes/{re.sbx.1}/proxy/{re.sbx.2}{uri}
+		reverse_proxy opensandbox-server:8090 {
+			header_up OPEN-SANDBOX-API-KEY {env.OPENSANDBOX_API_KEY}
+			header_up Accept-Encoding identity
+		}
+	}
+	# Catch-all: Host does not match the {id}-{port} shape (should not happen normally)
+	handle {
+		respond 404
+	}
+}

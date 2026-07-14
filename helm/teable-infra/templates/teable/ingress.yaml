@@ -1,0 +1,73 @@
+{{- /* Teable app external entry point: Ingress + cert-manager Certificate (each toggled independently). */}}
+{{- if .Values.teable.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $teable := .Values.teable }}
+{{- $serviceName := printf "%s-teable" .Release.Name }}
+{{- $host := include "teable-infra.teableHost" . }}
+{{- $tlsSecretName := $teable.ingress.tls.secretName | default "teable-tls" }}
+{{- if $teable.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    {{- with $teable.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $teable.ingress.className | default "nginx" | quote }}
+  {{- if $teable.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ $tlsSecretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          {{- if .Values.minio.enabled }}
+          {{- /* The app builds public asset URLs as <origin>/<bucket>/..., so this host must route the public bucket prefix to MinIO or avatars/attachments 404. Listed before the catch-all so it wins. */}}
+          - path: {{ printf "/%s" .Values.minio.buckets.public | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-minio
+                port:
+                  name: s3
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: http
+{{- end }}
+---
+{{- if $teable.ingress.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ $tlsSecretName | quote }}
+  issuerRef:
+    name: {{ required "teable.ingress.certificate.issuerName is required" $teable.ingress.certificate.issuerName | quote }}
+    kind: {{ $teable.ingress.certificate.issuerKind | default "ClusterIssuer" | quote }}
+  dnsNames:
+    - {{ $host | quote }}
+{{- end }}
+{{- end }}

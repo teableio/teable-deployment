@@ -1,0 +1,66 @@
+{{- /* App Runtime external surface: wildcard certificate + fixed Ingress for gateway mode (dynamic mode Ingresses are created on the fly by infra-service). */}}
+{{- if .Values.appRuntime.enabled }}
+{{- $runtime := .Values.appRuntime }}
+{{- $namespace := $runtime.namespace | default "app-deploy" }}
+{{- $deployerNamespace := $runtime.deployer.serviceAccountNamespace | default (.Values.imagePreheater.namespaceOverride | default .Release.Namespace) }}
+{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+{{- $tlsSecretName := "app-wildcard-tls" }}
+{{- if hasKey $runtime.ingress.tls "secretName" }}
+{{- $tlsSecretName = $runtime.ingress.tls.secretName }}
+{{- end }}
+{{- if and $runtime.ingress.tls.enabled $runtime.ingress.tls.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $runtime.ingress.tls.certificate.name | default "app-wildcard" | quote }}
+  namespace: {{ ternary $deployerNamespace $namespace (eq $ingressMode "gateway") | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ $tlsSecretName | quote }}
+  issuerRef:
+    kind: {{ $runtime.ingress.tls.certificate.issuerKind | default "ClusterIssuer" | quote }}
+    name: {{ $runtime.ingress.tls.certificate.issuerName | default "letsencrypt-dns" | quote }}
+  dnsNames:
+    {{- toYaml ($runtime.ingress.tls.certificate.dnsNames | default (list ($runtime.ingress.wildcardDomain | default (include "teable-infra.appWildcard" $)))) | nindent 4 }}
+---
+{{- end }}
+{{- if eq $ingressMode "gateway" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: teable-app-runtime-gateway
+  namespace: {{ $deployerNamespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime-gateway
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    {{- with $runtime.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $runtime.ingress.className | default "nginx" | quote }}
+  {{- if $runtime.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $runtime.ingress.wildcardDomain | default (include "teable-infra.appWildcard" $) | quote }}
+      secretName: {{ $tlsSecretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ $runtime.ingress.wildcardDomain | default (include "teable-infra.appWildcard" $) | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-infra-service
+                port:
+                  name: http
+{{- end }}
+{{- end }}

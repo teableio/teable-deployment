@@ -1,0 +1,35 @@
+apiVersion: v2
+name: teable-infra
+description: Teable Infra umbrella chart for OpenSandbox, infra service, App Runtime and infra addons
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+
+keywords:
+  - teable
+  - infra
+  - opensandbox
+  - app-runtime
+  - kubernetes
+
+home: https://github.com/teableio/teable-infra
+sources:
+  - https://github.com/teableio/teable-infra
+
+maintainers:
+  - name: Teable
+    email: support@teable.io
+
+kubeVersion: ">=1.21.1-0"
+
+dependencies:
+  - name: opensandbox-controller
+    version: "0.2.0"
+    repository: "file://../opensandbox-controller"
+  - name: opensandbox-server
+    version: "0.1.0"
+    repository: "file://../opensandbox-server"
+
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: Apache-2.0

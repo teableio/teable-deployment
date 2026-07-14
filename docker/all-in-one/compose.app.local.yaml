@@ -1,0 +1,30 @@
+# all-in-one local-mode overlay: Teable becomes the :80 catch-all; console moves to infra.localhost, app previews to *.app.localhost.
+# (In infra-only local mode the :80 catch-all is infra-service; once the app is added the primary site is mentally Teable, hence the Caddyfile swap.)
+name: teable-sandbox-infra
+
+services:
+  infra-service:
+    environment:
+      # Preview domain split from the Teable main site: <appId>.app.localhost (infra-only mode uses <appId>.localhost via the catch-all)
+      APP_RUNTIME_DOMAIN: app.localhost
+
+  teable:
+    environment:
+      # The Infra entrypoint must include the /v1 split (the SDK uses it to call the engine directly); points at caddy's internal alias, not the bare infra-service container.
+      TEABLE_INFRA_API_URL: http://infra.localhost
+
+  caddy:
+    networks:
+      teable-appnet:
+        aliases:
+          - infra.localhost        # app containers reach the Infra entry over the internal network (Host matches infra_and_v1)
+    volumes:
+      # Same-target override of the base mount: swap in the entry config that carries the Teable routes
+      - ./Caddyfile.app.local:/etc/caddy/Caddyfile:ro
+      - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
+    environment:
+      TEABLE_PUBLIC_BUCKET: ${TEABLE_PUBLIC_BUCKET:-teable-public}   # used for public-bucket path forwarding
+      # Sandbox endpoint/preview domain: local mode always uses local domains. Known limitation: AI chat's agent connection cannot resolve
+      # local domains from inside containers yet (a sandbox-SDK improvement is planned); deploy/build flows are unaffected -- use cloud
+      # mode with a real domain for AI chat.
+      SANDBOX_PREVIEW_HOST: ${SANDBOX_PREVIEW_HOST:-sandbox.localhost}

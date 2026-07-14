@@ -1,0 +1,45 @@
+# all-in-one cloud entrypoint: TLS termination + routing (imports shared caddy.snippets).
+# Difference from Caddyfile.cloud: the Teable main site is at TEABLE_HOST (default = root domain); the console is at INFRA_HOST (default infra.<domain>).
+# Wildcard certificates (*.app / *.sandbox) require DNS-01; the caddy-data volume must persist (stores certs, avoids re-issue rate limits).
+{
+	email {$ACME_EMAIL}
+	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN} # token needs Zone:Read + DNS:Edit
+}
+
+import caddy.snippets
+
+# Teable main site. Public-bucket paths forward to MinIO: under the minio provider the app builds public asset URLs
+# as <PUBLIC_ORIGIN>/<public-bucket>/..., so the entrypoint must hand that prefix to MinIO (path-style).
+{$TEABLE_HOST} {
+	handle /{$TEABLE_PUBLIC_BUCKET}/* {
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy teable:3000
+	}
+}
+
+# Console + Infra API + sandbox port-preview rewrite (Teable's TEABLE_INFRA_API_URL goes over the internal network; this site serves browsers and the doctor.sh self-check)
+{$INFRA_HOST} {
+	import infra_and_v1
+}
+
+# App previews
+*.app.{$BASE_DOMAIN} {
+	reverse_proxy infra-service:8080
+}
+
+# Sandbox previews (independent origin at root path)
+*.sandbox.{$BASE_DOMAIN} {
+	import sandbox_preview
+}
+
+# Object storage (path-style; artifact and attachment presigned hosts both point here, different buckets)
+s3.{$BASE_DOMAIN} {
+	reverse_proxy minio:9000
+}
+
+# App Builder git smart-http (optional)
+git.{$BASE_DOMAIN} {
+	reverse_proxy git-registry:8080
+}

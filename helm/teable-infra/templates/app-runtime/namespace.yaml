@@ -1,0 +1,78 @@
+{{- /* App Runtime namespace baseline: Namespace + quotas + LimitRange + defaults ConfigMap. */}}
+{{- if .Values.appRuntime.enabled }}
+{{- $runtime := .Values.appRuntime }}
+{{- $namespace := $runtime.namespace | default "app-deploy" }}
+{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+{{- $tlsSecretName := "app-wildcard-tls" }}
+{{- if hasKey $runtime.ingress.tls "secretName" }}
+{{- $tlsSecretName = $runtime.ingress.tls.secretName }}
+{{- end }}
+{{- if $runtime.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+    {{- with $runtime.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+---
+{{- end }}
+{{- if and $runtime.resources.quota.enabled $runtime.resources.quota.hard }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: teable-app-runtime
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  hard:
+    {{- toYaml $runtime.resources.quota.hard | nindent 4 }}
+---
+{{- end }}
+{{- if $runtime.resources.limitRange.enabled }}
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: teable-app-runtime
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  limits:
+    - type: Container
+      default:
+        {{- toYaml $runtime.resources.limitRange.default | nindent 8 }}
+      defaultRequest:
+        {{- toYaml $runtime.resources.limitRange.defaultRequest | nindent 8 }}
+---
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: teable-app-runtime-defaults
+  namespace: {{ $namespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-runtime
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+data:
+  ingress-mode: {{ $ingressMode | quote }}
+  domain: {{ $runtime.ingress.domain | default (include "teable-infra.appDomain" $) | quote }}
+  wildcard-domain: {{ $runtime.ingress.wildcardDomain | default (include "teable-infra.appWildcard" $) | quote }}
+  ingress-class-name: {{ $runtime.ingress.className | default "nginx" | quote }}
+  tls-secret-name: {{ $tlsSecretName | quote }}
+  default-replicas: {{ $runtime.workload.defaultReplicas | default 1 | quote }}
+{{- end }}

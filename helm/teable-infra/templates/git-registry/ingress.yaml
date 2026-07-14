@@ -1,0 +1,85 @@
+{{- /* git-registry external entry point: Ingress + cert-manager Certificate (each toggled independently). */}}
+{{- if .Values.gitRegistry.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $gitRegistry := .Values.gitRegistry }}
+{{- $serviceName := printf "%s-git-registry" .Release.Name }}
+{{- /* Explicit host/secretName win; when blank they are derived from global.baseDomain (git.<base> / a chart-local TLS secret name). Both stay required when baseDomain is blank too. */}}
+{{- $baseDomain := include "teable-infra.baseDomain" . }}
+{{- $derivedHost := ternary (printf "git.%s" $baseDomain) "" (ne $baseDomain "") }}
+{{- $host := $gitRegistry.ingress.host | default $derivedHost }}
+{{- $derivedTlsSecretName := ternary "git-registry-tls" "" (ne $baseDomain "") }}
+{{- $tlsSecretName := $gitRegistry.ingress.tls.secretName | default $derivedTlsSecretName }}
+{{- if $gitRegistry.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    {{- with $gitRegistry.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $gitRegistry.ingress.className | default "nginx" | quote }}
+  {{- if $gitRegistry.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ required "gitRegistry.ingress.host (or global.baseDomain) is required" $host | quote }}
+      secretName: {{ required "gitRegistry.ingress.tls.secretName (or global.baseDomain) is required" $tlsSecretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ required "gitRegistry.ingress.host (or global.baseDomain) is required" $host | quote }}
+      http:
+        paths:
+          {{- if $gitRegistry.basePath }}
+          # Path-prefix mode: shares the Infra Service domain; the whole /git segment routes to git-registry
+          - path: {{ $gitRegistry.basePath | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: http
+          {{- else }}
+          - path: /apps
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: http
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  name: http
+          {{- end }}
+{{- end }}
+---
+{{- if $gitRegistry.ingress.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $gitRegistry.ingress.certificate.name | default $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: git-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ required "gitRegistry.ingress.tls.secretName (or global.baseDomain) is required" $tlsSecretName | quote }}
+  issuerRef:
+    name: {{ required "gitRegistry.ingress.certificate.issuerName is required" $gitRegistry.ingress.certificate.issuerName | quote }}
+    kind: {{ $gitRegistry.ingress.certificate.issuerKind | default "ClusterIssuer" | quote }}
+  dnsNames:
+    - {{ required "gitRegistry.ingress.host (or global.baseDomain) is required" $host | quote }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,38 @@
+{{- if .Values.server.ingress.enabled }}
+{{- $host := include "opensandbox-server.serverIngressHost" . }}
+{{- if not $host }}
+{{- fail "server.ingress.host is required when server.ingress.enabled=true" }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+  {{- with .Values.server.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.server.ingress.className }}
+  ingressClassName: {{ .Values.server.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: {{ .Values.server.ingress.path | default "/" | quote }}
+            pathType: {{ .Values.server.ingress.pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "opensandbox-server.fullname" . }}
+                port:
+                  number: 80
+  {{- if .Values.server.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ include "opensandbox-server.serverIngressTlsSecret" . }}
+  {{- end }}
+{{- end }}

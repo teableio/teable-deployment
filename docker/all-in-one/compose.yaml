@@ -1,0 +1,158 @@
+# Teable full docker-backend stack -- base layer (the 5 backend services shared by both modes + volumes + shared env).
+#   Local: docker compose -f compose.yaml -f compose.local.yaml up -d
+#   Cloud: docker compose -f compose.yaml -f compose.cloud.yaml up -d
+# apply.sh writes COMPOSE_FILE into .env; after that plain `docker compose up -d` works (first run pulls images automatically; cloud mode also builds the Caddy image from Dockerfile.caddy).
+# The entrypoint (Caddy) and project name are set in the overlays; dynamic app/sandbox containers are launched on the host dockerd by the services on demand.
+
+networks:
+  # Control-plane network: infra-service and the app containers it launches share this network so the gateway can reach container IPs. Explicit name avoids the project-name prefix.
+  teable-appnet:
+    name: ${APP_RUNTIME_DOCKER_NETWORK:-teable-appnet}
+    driver: bridge
+  # Sandbox-only network: sandboxes run here and opensandbox-server also attaches so it can reach them by container IP; sandboxes stay off the control-plane network to preserve isolation.
+  # Both this name and network_mode in the toml read SANDBOX_DOCKER_NETWORK (single source, cannot drift).
+  teable-sandbox-net:
+    name: ${SANDBOX_DOCKER_NETWORK:-teable-sandbox-net}
+    driver: bridge
+
+volumes:
+  opensandbox-state:
+  infra-state:
+  git-registry-data:
+  minio-data:
+  # Shared agent workspace (mirrors the k8s PVC). external: survives `docker compose down -v`; pre-created by apply.sh; compose neither creates nor deletes it.
+  teable-agent-juicefs:
+    external: true
+
+services:
+  # AI sandbox engine (docker mode). sandbox-net lets the server reach sandboxes directly by container IP.
+  opensandbox-server:
+    image: ${OPENSANDBOX_SERVER_IMAGE:?set in .env}
+    container_name: opensandbox-server
+    restart: unless-stopped
+    networks: [teable-appnet, teable-sandbox-net]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock        # launch sandboxes on the host
+      - ./opensandbox.generated.toml:/etc/opensandbox/config.toml:ro
+      - opensandbox-state:/data
+    environment:
+      SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
+      # api_key is not written into the toml; it is injected from env (overrides server.api_key). The whole stack shares one OPENSANDBOX_API_KEY.
+      OPENSANDBOX_SERVER_API_KEY: ${OPENSANDBOX_API_KEY:?run ./apply.sh first}
+
+  # Console + Infra API + app-runtime docker backend + built-in app gateway.
+  infra-service:
+    # INFRA_SERVICE_IMAGE in .env is the single source of the pulled tag (git-registry uses this same image).
+    image: ${INFRA_SERVICE_IMAGE:?set in .env}
+    container_name: infra-service
+    restart: unless-stopped
+    networks: [teable-appnet]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock         # launch/manage app containers
+      - infra-state:/var/lib/teable-app-runtime
+      - teable-agent-juicefs:/mnt/juicefs                 # mirrors the k8s mountPath
+    environment:
+      # --- Backend switches ---
+      APP_RUNTIME_BACKEND: docker
+      K8S_IN_CLUSTER: "false"
+      PORT: "8080"
+      # --- Auth / session (whole stack shares one OPENSANDBOX_API_KEY) ---
+      AUTH_PROVIDER: api-key
+      SESSION_SECRET: ${SESSION_SECRET:?run ./apply.sh first}
+      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?run ./apply.sh first}
+      INFRA_API_KEY: ${OPENSANDBOX_API_KEY}
+      # --- Sandbox engine ---
+      OPENSANDBOX_RUNTIME_URL: http://opensandbox-server:8090
+      SANDBOX_OPENSANDBOX_IMAGE: ${SANDBOX_OPENSANDBOX_IMAGE:?set in .env}
+      # --- app-runtime docker backend (DOMAIN/SCHEME/S3_ENDPOINT/GIT_PUBLIC set in overlays) ---
+      APP_RUNTIME_DOCKER_SOCKET_PATH: /var/run/docker.sock
+      APP_RUNTIME_DOCKER_NETWORK: ${APP_RUNTIME_DOCKER_NETWORK:-teable-appnet}
+      APP_RUNTIME_STATE_DIR: /var/lib/teable-app-runtime
+      APP_RUNTIME_INGRESS_MODE: gateway
+      APP_RUNTIME_HOST_MATCH_MODE: suffix
+      APP_RUNTIME_DEFAULT_IMAGE: ${APP_RUNTIME_DEFAULT_IMAGE:-}
+      APP_RUNTIME_ALLOWED_IMAGE_PREFIXES: ${APP_RUNTIME_ALLOWED_IMAGE_PREFIXES:-ghcr.io/teableio/}
+      APP_RUNTIME_ARTIFACT_PUBLIC_ORIGIN: http://infra-service:8080   # app containers pull artifacts from origin (internal service name)
+      # --- Artifact store S3/MinIO (ENDPOINT set in overlays; presigned URLs bind to its host) ---
+      APP_RUNTIME_ARTIFACT_STORE_PROVIDER: s3
+      APP_RUNTIME_ARTIFACT_BUCKET: ${S3_BUCKET:-teable-app-artifacts}
+      APP_RUNTIME_ARTIFACT_S3_REGION: ${S3_REGION:-us-east-1}
+      APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?run ./apply.sh first}
+      APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_SECRET: ${S3_SECRET_KEY:?run ./apply.sh first}
+      APP_RUNTIME_ARTIFACT_S3_FORCE_PATH_STYLE: "true"
+      # --- git-registry (private key injected via docker-compose.override.yml) ---
+      GIT_REGISTRY_ENABLED: "true"
+      GIT_REGISTRY_INTERNAL_URL: http://git-registry:8080            # infra-service's own access
+      GIT_REGISTRY_SANDBOX_URL: ${GIT_REGISTRY_SANDBOX_URL:-http://git-registry:8080}   # sandboxes clone directly over the internal network; external access uses the overlay's PUBLIC_URL
+      # --- File browser / S3 compat (DEFAULT_PATH and S3_COMPAT_BUCKETS defaults are built into the infra-service image, hence omitted) ---
+      FILE_BROWSER_ENABLED: "true"
+      FILE_BROWSER_ROOT: /mnt/juicefs                     # mirrors the k8s mountPath (no default)
+      S3_COMPAT_ENABLED: "true"
+    # node:22 ships fetch and the image has no curl, so probe with node; /api/health needs no auth.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      opensandbox-server:
+        condition: service_started
+      minio-init:                                         # wait until buckets exist (reuses minio-init's readiness gate)
+        condition: service_completed_successfully
+
+  # App Builder git smart-http (same image as infra, different entrypoint).
+  git-registry:
+    image: ${INFRA_SERVICE_IMAGE:?set in .env}
+    container_name: git-registry
+    restart: unless-stopped
+    command: ["node", ".output/git-registry/server.mjs"]
+    networks: [teable-appnet, teable-sandbox-net]   # sandbox-net: sandboxes clone directly over the internal network
+    volumes:
+      - git-registry-data:/data
+    environment:
+      GIT_REGISTRY_PORT: "8080"
+      GIT_REGISTRY_DATA_DIR: /data
+      GIT_REGISTRY_INTERNAL_API_KEY: ${OPENSANDBOX_API_KEY:?run ./apply.sh first}   # Bearer token for internal routes
+      # Public key (GIT_REGISTRY_JWT_PUBLIC_KEY) is injected via docker-compose.override.yml
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # app-runtime artifact store (S3-compatible). Pin the digest in production: get the sha256 via `docker compose images minio` and set MINIO_IMAGE in .env.
+  minio:
+    image: ${MINIO_IMAGE:-minio/minio:latest}
+    container_name: minio
+    restart: unless-stopped
+    networks: [teable-appnet]
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?run ./apply.sh first}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?run ./apply.sh first}
+      MINIO_REGION: ${S3_REGION:-us-east-1}               # aligned with S3_REGION; used for presigned-URL validation
+
+  # Bucket creation (loop until minio is ready, then mc mb); infra-service gates its startup on this.
+  minio-init:
+    image: ${MINIO_MC_IMAGE:-minio/mc:latest}
+    container_name: minio-init
+    restart: "no"
+    networks: [teable-appnet]
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        until mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" >/dev/null 2>&1; do
+          echo 'waiting for minio...'; sleep 2;
+        done;
+        mc mb --ignore-existing "local/$$S3_BUCKET";
+        echo "bucket $$S3_BUCKET ready";
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?run ./apply.sh first}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?run ./apply.sh first}
+      S3_BUCKET: ${S3_BUCKET:-teable-app-artifacts}

@@ -1,0 +1,269 @@
+{{- /*
+docker-registry image GC: weekly prune of the ci-* tag backlog + registry blob reclamation.
+Requires an existing docker-registry deployment (not shipped with this chart); this template
+references its Service, data PVC, and auth Secret by name (see the registryGc.* values).
+
+prune retention rule: references in use by the cluster (pods/deploy/sts/ds/cronjob templates), union
+the newest N ci-* per repository, union those built < KEEP_HOURS ago; non-ci-* tags are never deleted.
+The registry keeps serving during GC.
+Manual trigger: kubectl create job -n registry-system --from=cronjob/docker-registry-gc registry-gc-manual
+*/ -}}
+{{- if and .Values.registryGc .Values.registryGc.enabled }}
+{{- $ns := .Values.registryGc.namespace | default "registry-system" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: docker-registry-gc
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: docker-registry-gc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-docker-registry-gc
+  labels:
+    app.kubernetes.io/name: docker-registry-gc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  # Read-only listing to collect the "images in use by the cluster" set, protecting them from prune
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["list"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-docker-registry-gc
+  labels:
+    app.kubernetes.io/name: docker-registry-gc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-docker-registry-gc
+subjects:
+  - kind: ServiceAccount
+    name: docker-registry-gc
+    namespace: {{ $ns }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry-gc
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: docker-registry-gc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+data:
+  # Minimal config for registry garbage-collect: same storage location as the main deployment
+  config.yml: |
+    version: 0.1
+    storage:
+      filesystem:
+        rootdirectory: /var/lib/registry
+      delete:
+        enabled: true
+  prune.mjs: |
+    // Prune ci-* tags: delete manifests via the API so the subsequent garbage-collect reclaims blobs.
+    import fs from "node:fs";
+    const REGISTRY_HOST = process.env.REGISTRY_HOST ?? "registry.example.com";
+    const REG = process.env.REGISTRY_URL ?? "http://docker-registry.registry-system.svc.cluster.local:5000";
+    const KEEP_RECENT = Number(process.env.KEEP_RECENT ?? 5);
+    const KEEP_HOURS = Number(process.env.KEEP_HOURS ?? 72);
+    const DRY_RUN = process.env.DRY_RUN === "true";
+    const MANIFEST_ACCEPT = [
+      "application/vnd.docker.distribution.manifest.list.v2+json",
+      "application/vnd.oci.image.index.v1+json",
+      "application/vnd.docker.distribution.manifest.v2+json",
+      "application/vnd.oci.image.manifest.v1+json",
+    ].join(", ");
+
+    const dockerconfig = JSON.parse(fs.readFileSync("/registry-auth/.dockerconfigjson", "utf8"));
+    const authEntry = Object.values(dockerconfig.auths)[0];
+    const basic = `Basic ${authEntry.auth}`;
+    const reg = (path, init = {}) =>
+      fetch(`${REG}${path}`, { ...init, headers: { Authorization: basic, ...(init.headers ?? {}) } });
+
+    // in-cluster CA is injected via NODE_EXTRA_CA_CERTS in the podspec
+    const saToken = fs.readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/token", "utf8");
+    const k8s = async (path) => {
+      const res = await fetch(`https://kubernetes.default.svc${path}`, {
+        headers: { Authorization: `Bearer ${saToken}` },
+      });
+      if (!res.ok) throw new Error(`k8s ${path}: ${res.status}`);
+      return res.json();
+    };
+
+    async function inUseRefs() {
+      const refs = new Set();
+      const add = (image) => {
+        if (typeof image === "string" && image.startsWith(`${REGISTRY_HOST}/`)) {
+          refs.add(image.slice(REGISTRY_HOST.length + 1));
+        }
+      };
+      const podSpecImages = (spec) =>
+        [...(spec?.containers ?? []), ...(spec?.initContainers ?? [])].forEach((c) => add(c.image));
+      const pods = await k8s("/api/v1/pods?limit=2000");
+      pods.items?.forEach((p) => podSpecImages(p.spec));
+      for (const kind of ["deployments", "statefulsets", "daemonsets"]) {
+        const list = await k8s(`/apis/apps/v1/${kind}?limit=2000`);
+        list.items?.forEach((o) => podSpecImages(o.spec?.template?.spec));
+      }
+      const cron = await k8s("/apis/batch/v1/cronjobs?limit=2000");
+      cron.items?.forEach((o) => podSpecImages(o.spec?.jobTemplate?.spec?.template?.spec));
+      return refs;
+    }
+
+    async function manifestInfo(repo, ref) {
+      const res = await reg(`/v2/${repo}/manifests/${encodeURIComponent(ref)}`, {
+        headers: { Accept: MANIFEST_ACCEPT },
+      });
+      if (!res.ok) return undefined;
+      const digest = res.headers.get("docker-content-digest");
+      const body = await res.json();
+      const children = (body.manifests ?? []).map((m) => m.digest);
+      let created;
+      if (body.config?.digest) {
+        const blob = await reg(`/v2/${repo}/blobs/${body.config.digest}`);
+        if (blob.ok) created = (await blob.json()).created;
+      }
+      return { digest, children, created: created ? Date.parse(created) : undefined };
+    }
+
+    const protectedRefs = await inUseRefs();
+    console.log(`in-use refs: ${[...protectedRefs].join(", ") || "(none)"}`);
+
+    const catalog = await (await reg("/v2/_catalog?n=500")).json();
+    let deleted = 0;
+    for (const repo of catalog.repositories ?? []) {
+      const tagList = (await (await reg(`/v2/${repo}/tags/list`)).json()).tags ?? [];
+      const ciTags = tagList.filter((t) => /^ci-/.test(t));
+      if (ciTags.length === 0) continue;
+
+      const infos = [];
+      for (const tag of ciTags) {
+        const info = await manifestInfo(repo, tag);
+        if (info?.digest) infos.push({ tag, ...info });
+      }
+      // Protected set: in-use digests + newest KEEP_RECENT + those built within KEEP_HOURS
+      const protectedDigests = new Set();
+      for (const { tag, digest, children } of infos) {
+        if (protectedRefs.has(`${repo}:${tag}`)) [digest, ...children].forEach((d) => protectedDigests.add(d));
+      }
+      infos
+        .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))
+        .forEach(({ digest, children, created }, index) => {
+          const fresh = created && Date.now() - created < KEEP_HOURS * 3600_000;
+          if (index < KEEP_RECENT || fresh) [digest, ...children].forEach((d) => protectedDigests.add(d));
+        });
+
+      for (const { tag, digest, children } of infos) {
+        if (protectedDigests.has(digest)) continue;
+        for (const d of [...children, digest]) {
+          if (protectedDigests.has(d)) continue;
+          if (DRY_RUN) {
+            console.log(`DRY_RUN delete ${repo}@${d} (tag ${tag})`);
+            continue;
+          }
+          const res = await reg(`/v2/${repo}/manifests/${d}`, { method: "DELETE" });
+          console.log(`delete ${repo}:${tag} @${d} -> ${res.status}`);
+          if (res.ok) deleted += 1;
+        }
+      }
+    }
+    console.log(`pruned manifests: ${deleted}`);
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: docker-registry-gc
+  namespace: {{ $ns }}
+  labels:
+    app.kubernetes.io/name: docker-registry-gc
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  schedule: {{ .Values.registryGc.schedule | default "10 4 * * 0" | quote }}
+  timeZone: {{ .Values.registryGc.timeZone | default "Asia/Shanghai" | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: docker-registry-gc
+        spec:
+          serviceAccountName: docker-registry-gc
+          restartPolicy: Never
+          # The prune image lives in the private registry and needs pull credentials (defaults to reusing the registry auth secret)
+          imagePullSecrets:
+            - name: {{ .Values.registryGc.authSecretName | default "opensandbox-artifact-registry" }}
+          # RWO data disk requires scheduling on the same node as the registry
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: docker-registry
+          initContainers:
+            - name: prune
+              image: {{ required "registryGc.pruneImage is required when registryGc.enabled=true" .Values.registryGc.pruneImage | quote }}
+              command: ["node", "/gc/prune.mjs"]
+              env:
+                - name: NODE_EXTRA_CA_CERTS
+                  value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                - name: KEEP_RECENT
+                  value: {{ .Values.registryGc.keepRecent | default 5 | quote }}
+                - name: KEEP_HOURS
+                  value: {{ .Values.registryGc.keepHours | default 72 | quote }}
+                - name: REGISTRY_HOST
+                  value: {{ .Values.registryGc.registryHost | default "registry.example.com" | quote }}
+              volumeMounts:
+                - name: gc-config
+                  mountPath: /gc
+                - name: registry-auth
+                  mountPath: /registry-auth
+                  readOnly: true
+          containers:
+            - name: garbage-collect
+              image: {{ required "registryGc.gcImage is required when registryGc.enabled=true" .Values.registryGc.gcImage | quote }}
+              command: ["/bin/registry", "garbage-collect", "/gc/config.yml"]
+              volumeMounts:
+                - name: gc-config
+                  mountPath: /gc
+                - name: registry-data
+                  mountPath: /var/lib/registry
+          volumes:
+            - name: gc-config
+              configMap:
+                name: docker-registry-gc
+            - name: registry-auth
+              secret:
+                secretName: {{ .Values.registryGc.authSecretName | default "opensandbox-artifact-registry" }}
+            - name: registry-data
+              persistentVolumeClaim:
+                claimName: {{ .Values.registryGc.dataPvcName | default "docker-registry-data" }}
+{{- end }}

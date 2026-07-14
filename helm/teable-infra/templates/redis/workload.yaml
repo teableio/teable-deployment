@@ -1,0 +1,118 @@
+{{- /* Bundled Redis for the Teable app's cache/queues: PVC + Deployment + Service (AOF-persisted so queued automation jobs survive restarts). */}}
+{{- if .Values.redis.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $redis := .Values.redis }}
+{{- $serviceName := printf "%s-redis" .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $serviceName }}-data
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $redis.storage.size | default "5Gi" | quote }}
+  {{- with $redis.storage.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: 1
+  # PVC is RWO; a rolling update would have old and new Pods contend for the same disk, so Recreate is required
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      containers:
+        - name: redis
+          image: {{ $redis.image | quote }}
+          {{- /* exec keeps redis-server as PID 1 so it receives SIGTERM directly and can flush the AOF on shutdown; the shell wrapper exists only to expand $REDIS_PASSWORD. */}}
+          command:
+            - sh
+            - -c
+            - exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
+          ports:
+            - name: redis
+              containerPort: 6379
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.teable.secret.name | quote }}
+                  key: redis-password
+            {{- /* redis-cli reads REDISCLI_AUTH so the probe authenticates without exposing the password in the Pod's command args. */}}
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.teable.secret.name | quote }}
+                  key: redis-password
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml $redis.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $serviceName }}-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+{{- end }}

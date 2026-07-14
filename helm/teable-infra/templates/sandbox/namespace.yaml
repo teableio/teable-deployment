@@ -1,0 +1,15 @@
+{{- /* Sandbox dataplane namespace: BatchSandbox pods run here (opensandbox-server config
+       [kubernetes].namespace, gateway dataplaneNamespace and runtimeNetworkPolicy.sandbox
+       all point at it). Created by default so a bare install works on a fresh cluster;
+       set sandboxNamespace.create=false when the namespace is managed outside the chart. */}}
+{{- if .Values.sandboxNamespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.sandboxNamespace.name | quote }}
+  labels:
+    app.kubernetes.io/name: teable-sandbox
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+{{- end }}

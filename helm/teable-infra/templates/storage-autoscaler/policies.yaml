@@ -1,0 +1,41 @@
+{{- /*
+ACK cloud-disk PVC autoscaling policies (StorageAutoScalerPolicy, storage.alibabacloud.com).
+Depends on the ACK managed component storage-operator; GKE clusters lack this CRD. Disabled by
+default; rendered only when storageAutoscaler.enabled=true (ACK-specific CRD).
+*/ -}}
+{{- if and .Values.storageAutoscaler .Values.storageAutoscaler.enabled }}
+{{- range .Values.storageAutoscaler.policies }}
+---
+apiVersion: storage.alibabacloud.com/v1alpha1
+kind: StorageAutoScalerPolicy
+metadata:
+  name: {{ .name }}
+  labels:
+    app.kubernetes.io/name: storage-autoscaler-policy
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  namespaces:
+    {{- range .namespaces }}
+    - {{ . | quote }}
+    {{- end }}
+  pvcSelector:
+    matchLabels:
+      {{- range $key, $value := .matchLabels }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+  conditions:
+    - name: usage-above-threshold
+      key: volume-capacity-used-percentage
+      operator: Gt
+      values:
+        - {{ .threshold | quote }}
+  actions:
+    - name: expand
+      type: volume-expand
+      params:
+        scale: {{ .scale | quote }}
+        limits: {{ .limits | quote }}
+{{- end }}
+{{- end }}

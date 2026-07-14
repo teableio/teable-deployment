@@ -1,0 +1,116 @@
+{{- /* Bundled MinIO: PVC + Deployment + Service. Only the S3 API (9000) is exposed; the admin console stays cluster-internal-only by design. */}}
+{{- if .Values.minio.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $minio := .Values.minio }}
+{{- $serviceName := printf "%s-minio" .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $serviceName }}-data
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $minio.storage.size | default "50Gi" | quote }}
+  {{- with $minio.storage.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: 1
+  # PVC is RWO; a rolling update would have old and new Pods contend for the same disk, so Recreate is required
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      containers:
+        - name: minio
+          image: {{ $minio.image | quote }}
+          args:
+            - server
+            - /data
+          ports:
+            - name: s3
+              containerPort: 9000
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.teable.secret.name | quote }}
+                  key: minio-access-key
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.teable.secret.name | quote }}
+                  key: minio-secret-key
+            {{- /* The console is intentionally not exposed via Service/Ingress; disabling it entirely leaves the S3 API as the only listening surface. */}}
+            - name: MINIO_BROWSER
+              value: "off"
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: s3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: s3
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml $minio.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $serviceName }}-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: s3
+{{- end }}

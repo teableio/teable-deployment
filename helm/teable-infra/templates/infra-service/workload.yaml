@@ -1,0 +1,432 @@
+{{- /* infra-service core workload: Deployment + Service. RBAC/Ingress/storage/metrics live in sibling files and the metrics/ directory. */}}
+{{- if .Values.infraService.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $global := .Values.global | default dict }}
+{{- $victoriaMetrics := .Values.infraService.victoriaMetrics }}
+{{- $oauth := .Values.infraService.oauth | default dict }}
+{{- $authProvider := $oauth.provider | default "api-key" }}
+{{- $appRuntimeTlsSecretName := "app-wildcard-tls" }}
+{{- if hasKey .Values.infraService.appRuntime "tlsSecretName" }}
+{{- $appRuntimeTlsSecretName = .Values.infraService.appRuntime.tlsSecretName }}
+{{- end }}
+{{- /* s3 is the full-stack default (bundled MinIO); internal profiles set gcs/oss explicitly, so they are unaffected by the fallback. */}}
+{{- $artifactProvider := .Values.infraService.appRuntime.artifactStoreProvider | default "s3" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-infra-service
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: {{ .Values.infraService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: infra-service
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: infra-service
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      {{- with .Values.infraService.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.infraService.serviceAccountName | quote }}
+      containers:
+        - name: monitor
+          image: {{ required "infraService.image is required when infraService.enabled=true" .Values.infraService.image | quote }}
+          imagePullPolicy: {{ .Values.infraService.imagePullPolicy | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: K8S_IN_CLUSTER
+              value: "true"
+            - name: GCP_PROJECT_ID
+              value: {{ get $global "projectId" | default "" | quote }}
+            - name: GKE_LOCATION
+              value: {{ get $global "gkeLocation" | default "" | quote }}
+            - name: GKE_CLUSTER_NAME
+              value: {{ get $global "gkeClusterName" | default "" | quote }}
+            - name: K8S_NAMESPACES
+              value: {{ join "," .Values.infraService.namespaces | quote }}
+            - name: HISTORY_SAMPLE_SECONDS
+              value: {{ .Values.infraService.historySampleSeconds | default 5 | quote }}
+            - name: HISTORY_WINDOW_SECONDS
+              value: {{ .Values.infraService.historyWindowSeconds | default 600 | quote }}
+            - name: FILE_BROWSER_ENABLED
+              value: {{ ternary "true" "false" .Values.infraService.fileBrowser.enabled | quote }}
+            - name: FILE_BROWSER_ROOT
+              value: {{ .Values.infraService.fileBrowser.mountPath | quote }}
+            - name: FILE_BROWSER_DEFAULT_PATH
+              value: {{ .Values.infraService.fileBrowser.defaultPath | default "/teable" | quote }}
+            - name: FILE_BROWSER_MAX_UPLOAD_BYTES
+              value: {{ printf "%.0f" (float64 .Values.infraService.fileBrowser.maxUploadBytes) | quote }}
+            - name: S3_COMPAT_ENABLED
+              value: {{ ternary "true" "false" (.Values.infraService.s3Compat.enabled | default false) | quote }}
+            - name: S3_COMPAT_BUCKETS
+              value: {{ .Values.infraService.s3Compat.buckets | default dict | toJson | quote }}
+            - name: S3_COMPAT_MAX_UPLOAD_BYTES
+              value: {{ printf "%.0f" (float64 (.Values.infraService.s3Compat.maxUploadBytes | default .Values.infraService.fileBrowser.maxUploadBytes)) | quote }}
+            - name: S3_COMPAT_ALLOW_OVERWRITE
+              value: {{ ternary "true" "false" (.Values.infraService.s3Compat.allowOverwrite | default true) | quote }}
+            - name: OPENSANDBOX_RUNTIME_URL
+              value: {{ .Values.infraService.opensandbox.runtimeUrl | default (include "teable-infra.infraUrl" .) | quote }}
+            - name: OPENSANDBOX_PREVIEW_WILDCARD_DOMAIN
+              value: {{ .Values.infraService.opensandbox.previewWildcardDomain | default (include "teable-infra.sandboxWildcard" .) | quote }}
+            - name: OPENSANDBOX_NAMESPACE
+              value: {{ .Values.infraService.opensandbox.namespace | default "opensandbox-system" | quote }}
+            - name: OPENSANDBOX_API_KEY_SECRET_NAME
+              value: {{ .Values.infraService.opensandbox.apiKeySecretName | default "opensandbox-api-key" | quote }}
+            - name: OPENSANDBOX_SERVER_DEPLOYMENT_NAME
+              value: {{ .Values.infraService.opensandbox.serverDeploymentName | default "opensandbox-server" | quote }}
+            - name: SANDBOX_MAX_LIFETIME_SECONDS
+              value: {{ .Values.infraService.opensandbox.sandboxMaxLifetimeSeconds | default 86400 | quote }}
+            - name: SANDBOX_LIFETIME_CLEANUP_INTERVAL_SECONDS
+              value: {{ .Values.infraService.opensandbox.sandboxLifetimeCleanupIntervalSeconds | default 300 | quote }}
+            - name: BENCHMARK_SANDBOX_CPU
+              value: {{ .Values.infraService.benchmark.cpu | default "2" | quote }}
+            - name: BENCHMARK_SANDBOX_MEMORY
+              value: {{ .Values.infraService.benchmark.memory | default "4Gi" | quote }}
+            - name: BENCHMARK_SANDBOX_TIMEOUT_MS
+              value: {{ .Values.infraService.benchmark.timeoutMs | default 420000 | quote }}
+            - name: BENCHMARK_SANDBOX_PVC_NAME
+              value: {{ .Values.infraService.benchmark.pvcName | default "teable-agent-juicefs" | quote }}
+            - name: BENCHMARK_RESULT_PATH
+              value: {{ .Values.infraService.benchmark.resultPath | default "/mnt/juicefs/.infra-service/benchmark/latest.json" | quote }}
+            - name: IMAGE_PREHEAT_NAMESPACE
+              value: {{ .Values.infraService.imagePreheat.namespace | default "opensandbox-system" | quote }}
+            - name: IMAGE_PREHEAT_API_KEY_SECRET_NAME
+              value: {{ .Values.infraService.imagePreheat.apiKeySecretName | default "opensandbox-api-key" | quote }}
+            - name: IMAGE_PREHEAT_REGISTRY_SECRET_NAME
+              value: {{ .Values.infraService.imagePreheat.registrySecretName | default "opensandbox-preheater-registry" | quote }}
+            - name: IMAGE_PREHEAT_HOLD_IMAGE
+              value: {{ .Values.infraService.imagePreheat.holdImage | default "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64" | quote }}
+            - name: IMAGE_PREHEAT_NODE_SELECTOR_KEY
+              value: {{ .Values.infraService.imagePreheat.nodeSelectorKey | default "kubernetes.io/os" | quote }}
+            {{- /* Default targets all Linux nodes; substitute a dedicated sandbox node pool label if you have one. */}}
+            - name: IMAGE_PREHEAT_NODE_SELECTOR_VALUE
+              value: {{ .Values.infraService.imagePreheat.nodeSelectorValue | default "linux" | quote }}
+            - name: APP_RUNTIME_NAMESPACE
+              value: {{ .Values.infraService.appRuntime.namespace | default "app-deploy" | quote }}
+            - name: APP_RUNTIME_DOMAIN
+              value: {{ .Values.infraService.appRuntime.domain | default (include "teable-infra.appDomain" .) | quote }}
+            - name: APP_RUNTIME_HOST_MATCH_MODE
+              value: {{ .Values.infraService.appRuntime.hostMatchMode | default "suffix" | quote }}
+            {{- if .Values.infraService.appRuntime.hostPrefix }}
+            - name: APP_RUNTIME_HOST_PREFIX
+              value: {{ .Values.infraService.appRuntime.hostPrefix | quote }}
+            {{- end }}
+            - name: APP_RUNTIME_PUBLIC_SCHEME
+              value: {{ .Values.infraService.appRuntime.publicScheme | default "https" | quote }}
+            - name: APP_RUNTIME_SERVICE_ACCOUNT_NAME
+              value: {{ .Values.infraService.appRuntime.serviceAccountName | default "teable-app-runtime" | quote }}
+            - name: APP_RUNTIME_DEFAULT_IMAGE
+              value: {{ .Values.infraService.appRuntime.defaultImage | default "" | quote }}
+            - name: APP_RUNTIME_REGISTRY_SECRET_NAME
+              value: {{ .Values.infraService.appRuntime.registrySecretName | default "opensandbox-preheater-registry" | quote }}
+            - name: APP_RUNTIME_DEFAULT_REPLICAS
+              value: {{ .Values.infraService.appRuntime.defaultReplicas | default 1 | quote }}
+            - name: APP_RUNTIME_DEFAULT_CPU_REQUEST
+              value: {{ .Values.infraService.appRuntime.defaultCpuRequest | default "25m" | quote }}
+            - name: APP_RUNTIME_DEFAULT_MEMORY_REQUEST
+              value: {{ .Values.infraService.appRuntime.defaultMemoryRequest | default "96Mi" | quote }}
+            - name: APP_RUNTIME_DEFAULT_CPU_LIMIT
+              value: {{ .Values.infraService.appRuntime.defaultCpuLimit | default "2" | quote }}
+            - name: APP_RUNTIME_DEFAULT_MEMORY_LIMIT
+              value: {{ .Values.infraService.appRuntime.defaultMemoryLimit | default "4Gi" | quote }}
+            - name: APP_RUNTIME_INGRESS_MODE
+              value: {{ .Values.infraService.appRuntime.ingressMode | default .Values.appRuntime.ingress.mode | default "dynamic" | quote }}
+            - name: APP_RUNTIME_INGRESS_CLASS_NAME
+              value: {{ .Values.infraService.appRuntime.ingressClassName | default "nginx" | quote }}
+            - name: APP_RUNTIME_TLS_SECRET_NAME
+              value: {{ $appRuntimeTlsSecretName | quote }}
+            - name: APP_RUNTIME_INGRESS_ANNOTATIONS
+              value: {{ .Values.infraService.appRuntime.ingressAnnotations | default dict | toJson | quote }}
+            - name: APP_RUNTIME_DEPLOY_PROBE_TIMEOUT_MS
+              value: {{ .Values.infraService.appRuntime.deployProbeTimeoutMs | default 30000 | quote }}
+            - name: APP_RUNTIME_DEPLOY_PROBE_INTERVAL_MS
+              value: {{ .Values.infraService.appRuntime.deployProbeIntervalMs | default 2000 | quote }}
+            - name: APP_RUNTIME_ARTIFACT_STORE_PROVIDER
+              value: {{ $artifactProvider | quote }}
+            {{- /* A blank bucket only defaults for the s3 provider (it targets the chart-managed MinIO bucket); gcs/oss deployments name their own bucket. */}}
+            - name: APP_RUNTIME_ARTIFACT_BUCKET
+              value: {{ .Values.infraService.appRuntime.artifactBucket | default (ternary .Values.minio.buckets.artifacts "" (eq $artifactProvider "s3")) | quote }}
+            - name: APP_RUNTIME_ARTIFACT_PUBLIC_ORIGIN
+              value: {{ .Values.infraService.appRuntime.artifactPublicOrigin | default (include "teable-infra.infraUrl" .) | quote }}
+            - name: APP_RUNTIME_ARTIFACT_UPLOAD_TTL_SECONDS
+              value: {{ .Values.infraService.appRuntime.artifactUploadTtlSeconds | default 900 | quote }}
+            - name: APP_RUNTIME_ARTIFACT_MAX_BYTES
+              value: {{ .Values.infraService.appRuntime.artifactMaxBytes | default 268435456 | quote }}
+            - name: APP_RUNTIME_UNHEALTHY_TTL_SECONDS
+              value: {{ .Values.infraService.appRuntime.unhealthyTtlSeconds | default 21600 | quote }}
+            - name: APP_RUNTIME_CLEANUP_INTERVAL_SECONDS
+              value: {{ .Values.infraService.appRuntime.cleanupIntervalSeconds | default 900 | quote }}
+            {{- if eq $artifactProvider "oss" }}
+            - name: APP_RUNTIME_ARTIFACT_OSS_ENDPOINT
+              value: {{ required "infraService.appRuntime.artifactOss.endpoint is required when artifactStoreProvider=oss" .Values.infraService.appRuntime.artifactOss.endpoint | quote }}
+            - name: APP_RUNTIME_ARTIFACT_OSS_REGION
+              value: {{ required "infraService.appRuntime.artifactOss.region is required when artifactStoreProvider=oss" .Values.infraService.appRuntime.artifactOss.region | quote }}
+            - name: APP_RUNTIME_ARTIFACT_OSS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "infraService.appRuntime.artifactOss.accessKeySecretName is required when artifactStoreProvider=oss" .Values.infraService.appRuntime.artifactOss.accessKeySecretName | quote }}
+                  key: {{ .Values.infraService.appRuntime.artifactOss.accessKeyIdKey | default "access-key-id" | quote }}
+            - name: APP_RUNTIME_ARTIFACT_OSS_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "infraService.appRuntime.artifactOss.accessKeySecretName is required when artifactStoreProvider=oss" .Values.infraService.appRuntime.artifactOss.accessKeySecretName | quote }}
+                  key: {{ .Values.infraService.appRuntime.artifactOss.accessKeySecretKey | default "access-key-secret" | quote }}
+            {{- if .Values.infraService.appRuntime.artifactOss.securityTokenSecretName }}
+            - name: APP_RUNTIME_ARTIFACT_OSS_SECURITY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.infraService.appRuntime.artifactOss.securityTokenSecretName | quote }}
+                  key: {{ .Values.infraService.appRuntime.artifactOss.securityTokenKey | default "security-token" | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if eq $artifactProvider "s3" }}
+            {{- /* Blank endpoint/credentials fall back to the bundled MinIO (chart-derived S3 host + generated app secret) so a bare install is turnkey; explicit profile values always win and render unchanged. */}}
+            {{- $artifactS3 := .Values.infraService.appRuntime.artifactS3 }}
+            {{- $s3SecretName := $artifactS3.accessKeySecretName | default .Values.teable.secret.name }}
+            {{- /* The generated app secret stores the MinIO root credentials under minio-* keys; the generic access-key-* key names only apply to explicitly configured secrets. */}}
+            {{- $s3IdKey := "minio-access-key" }}
+            {{- $s3SecretKey := "minio-secret-key" }}
+            {{- if $artifactS3.accessKeySecretName }}
+            {{- $s3IdKey = $artifactS3.accessKeyIdKey | default "access-key-id" }}
+            {{- $s3SecretKey = $artifactS3.accessKeySecretKey | default "access-key-secret" }}
+            {{- end }}
+            - name: APP_RUNTIME_ARTIFACT_S3_ENDPOINT
+              value: {{ $artifactS3.endpoint | default (include "teable-infra.s3Url" .) | quote }}
+            - name: APP_RUNTIME_ARTIFACT_S3_REGION
+              value: {{ $artifactS3.region | default "us-east-1" | quote }}
+            - name: APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $s3SecretName | quote }}
+                  key: {{ $s3IdKey | quote }}
+            - name: APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $s3SecretName | quote }}
+                  key: {{ $s3SecretKey | quote }}
+            - name: APP_RUNTIME_ARTIFACT_S3_FORCE_PATH_STYLE
+              value: {{ ternary "true" "false" ($artifactS3.forcePathStyle | default true) | quote }}
+            {{- end }}
+            {{- if and .Values.infraService.alibabaCloud .Values.infraService.alibabaCloud.accessKeySecretName }}
+            - name: ALIBABA_CLOUD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.infraService.alibabaCloud.accessKeySecretName | quote }}
+                  key: {{ .Values.infraService.alibabaCloud.accessKeyIdKey | default "access-key-id" | quote }}
+            - name: ALIBABA_CLOUD_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.infraService.alibabaCloud.accessKeySecretName | quote }}
+                  key: {{ .Values.infraService.alibabaCloud.accessKeySecretKey | default "access-key-secret" | quote }}
+            - name: ALIBABA_CLOUD_REGION
+              value: {{ .Values.infraService.alibabaCloud.region | default "cn-hangzhou" | quote }}
+            {{- end }}
+            {{- if .Values.infraService.backupProvider }}
+            - name: BACKUP_PROVIDER
+              value: {{ .Values.infraService.backupProvider | quote }}
+            {{- end }}
+            - name: APP_RUNTIME_NODE_SELECTOR
+              value: {{ .Values.infraService.appRuntime.nodeSelector | default dict | toJson | quote }}
+            - name: APP_RUNTIME_TOLERATIONS
+              value: {{ .Values.infraService.appRuntime.tolerations | default list | toJson | quote }}
+            - name: APP_RUNTIME_ALLOWED_IMAGE_PREFIXES
+              value: {{ join "," .Values.infraService.appRuntime.allowedImagePrefixes | quote }}
+            {{- if .Values.gitRegistry.enabled }}
+            - name: GIT_REGISTRY_ENABLED
+              value: "true"
+            - name: GIT_REGISTRY_INTERNAL_URL
+              value: "http://{{ .Release.Name }}-git-registry.{{ $namespace }}.svc"
+            - name: GIT_REGISTRY_PUBLIC_URL
+              value: {{ required "gitRegistry.publicUrl (or global.baseDomain) is required when gitRegistry.enabled=true" (.Values.gitRegistry.publicUrl | default (include "teable-infra.gitPublicUrl" .)) | quote }}
+            - name: GIT_REGISTRY_JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.gitRegistry.jwtSecretName | default "git-registry-jwt" | quote }}
+                  key: {{ .Values.gitRegistry.jwtPrivateKeyKey | default "private" | quote }}
+            {{- end }}
+            {{- with .Values.infraService.packages }}
+            {{- with .internalRegistry }}
+            - name: PACKAGE_INTERNAL_REGISTRY_ENABLED
+              value: {{ ternary "true" "false" (.enabled | default false) | quote }}
+            {{- if .url }}
+            - name: PACKAGE_INTERNAL_REGISTRY_URL
+              value: {{ .url | quote }}
+            {{- end }}
+            {{- if .displayHost }}
+            - name: PACKAGE_INTERNAL_REGISTRY_DISPLAY_HOST
+              value: {{ .displayHost | quote }}
+            {{- end }}
+            {{- if .repoLimit }}
+            - name: PACKAGE_INTERNAL_REGISTRY_REPO_LIMIT
+              value: {{ .repoLimit | quote }}
+            {{- end }}
+            {{- if .tagLimit }}
+            - name: PACKAGE_INTERNAL_REGISTRY_TAG_LIMIT
+              value: {{ .tagLimit | quote }}
+            {{- end }}
+            {{- if .bearerTokenSecretName }}
+            - name: PACKAGE_INTERNAL_REGISTRY_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .bearerTokenSecretName | quote }}
+                  key: {{ .bearerTokenSecretKey | default "token" | quote }}
+            {{- end }}
+            {{- if .basicAuthSecretName }}
+            - name: PACKAGE_INTERNAL_REGISTRY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .basicAuthSecretName | quote }}
+                  key: {{ .usernameKey | default "username" | quote }}
+            - name: PACKAGE_INTERNAL_REGISTRY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .basicAuthSecretName | quote }}
+                  key: {{ .passwordKey | default "password" | quote }}
+            {{- end }}
+            {{- if .dockerConfigSecretName }}
+            - name: PACKAGE_INTERNAL_REGISTRY_DOCKER_CONFIG_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .dockerConfigSecretName | quote }}
+                  key: {{ .dockerConfigSecretKey | default ".dockerconfigjson" | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .artifactRegistry }}
+            - name: PACKAGE_GCP_ARTIFACT_REGISTRY_ENABLED
+              value: {{ ternary "true" "false" (.enabled | default false) | quote }}
+            {{- if .location }}
+            - name: PACKAGE_GCP_ARTIFACT_LOCATION
+              value: {{ .location | quote }}
+            {{- end }}
+            {{- if .repositories }}
+            - name: PACKAGE_GCP_ARTIFACT_REPOSITORIES
+              value: {{ join "," .repositories | quote }}
+            {{- end }}
+            {{- if .pageSize }}
+            - name: PACKAGE_GCP_ARTIFACT_REGISTRY_PAGE_SIZE
+              value: {{ .pageSize | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            - name: VICTORIA_METRICS_ENABLED
+              value: {{ ternary "true" "false" $victoriaMetrics.enabled | quote }}
+            {{- if $victoriaMetrics.enabled }}
+            - name: VICTORIA_METRICS_URL
+              value: "http://{{ .Release.Name }}-victoria-metrics.{{ $namespace }}.svc.cluster.local:8428"
+            {{- end }}
+            - name: JUICEFS_WRITEBACK_VOLUME_ID
+              value: {{ .Values.infraService.juicefsWriteback.volumeId | default "teable-agent-juicefs-pv" | quote }}
+            - name: JUICEFS_MOUNT_NAMESPACE
+              value: {{ .Values.infraService.juicefsWriteback.mountNamespace | default "kube-system" | quote }}
+            - name: JUICEFS_CACHE_DIRS
+              value: {{ join "," (.Values.infraService.juicefsWriteback.cacheDirs | default (list "/mnt/stateful_partition/kube-ephemeral-ssd/jfsCache" "/var/jfsCache")) | quote }}
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.infraService.sessionSecretName | quote }}
+                  key: {{ .Values.infraService.sessionSecretKey | quote }}
+            {{- if .Values.infraService.sessionCookieDomain }}
+            - name: SESSION_COOKIE_DOMAIN
+              value: {{ .Values.infraService.sessionCookieDomain | quote }}
+            {{- end }}
+            - name: AUTH_PROVIDER
+              value: {{ $authProvider | quote }}
+            {{- if ne $authProvider "api-key" }}
+            - name: OAUTH_CLIENT_ID
+              value: {{ $oauth.clientId | default .Values.infraService.github.clientId | quote }}
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $oauth.clientSecretName | default .Values.infraService.github.clientSecretName | quote }}
+                  key: {{ $oauth.clientSecretKey | default .Values.infraService.github.clientSecretKey | quote }}
+            - name: OAUTH_CALLBACK_URL
+              value: {{ $oauth.callbackUrl | default .Values.infraService.github.callbackUrl | quote }}
+            - name: OAUTH_AUTHORIZE_URL
+              value: {{ $oauth.authorizeUrl | default "https://github.com/login/oauth/authorize" | quote }}
+            - name: OAUTH_TOKEN_URL
+              value: {{ $oauth.tokenUrl | default "https://github.com/login/oauth/access_token" | quote }}
+            - name: OAUTH_USERINFO_URL
+              value: {{ $oauth.userInfoUrl | default "https://api.github.com/user" | quote }}
+            - name: OAUTH_SCOPE
+              value: {{ $oauth.scope | default "read:org" | quote }}
+            - name: OAUTH_LOGIN_LABEL
+              value: {{ $oauth.loginLabel | default "GitHub" | quote }}
+            - name: OAUTH_ALLOWED_EMAIL_DOMAINS
+              value: {{ join "," ($oauth.allowedEmailDomains | default list) | quote }}
+            {{- end }}
+            {{- if eq $authProvider "github" }}
+            - name: GITHUB_CLIENT_ID
+              value: {{ .Values.infraService.github.clientId | quote }}
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.infraService.github.clientSecretName | quote }}
+                  key: {{ .Values.infraService.github.clientSecretKey | quote }}
+            - name: GITHUB_CALLBACK_URL
+              value: {{ .Values.infraService.github.callbackUrl | quote }}
+            - name: GITHUB_ALLOWED_ORG
+              value: {{ .Values.infraService.github.allowedOrg | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.infraService.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.infraService.fileBrowser.enabled }}
+            - name: juicefs
+              mountPath: {{ .Values.infraService.fileBrowser.mountPath | quote }}
+              readOnly: {{ .Values.infraService.fileBrowser.readOnly }}
+            {{- end }}
+      volumes:
+        {{- if .Values.infraService.fileBrowser.enabled }}
+        - name: juicefs
+          persistentVolumeClaim:
+            claimName: {{ .Values.infraService.fileBrowser.pvcName | quote }}
+            readOnly: {{ .Values.infraService.fileBrowser.readOnly }}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-infra-service
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+{{- end }}

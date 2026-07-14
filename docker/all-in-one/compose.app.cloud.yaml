@@ -1,0 +1,28 @@
+# all-in-one cloud-mode overlay: the Teable main site takes TEABLE_HOST (default = root domain); the console yields to infra.<domain>.
+# Preview domains (app./sandbox.) and the s3./git. layout stay unchanged; only the entry Caddyfile is swapped for the version with Teable routes.
+name: teable-sandbox-infra
+
+services:
+  teable:
+    environment:
+      # The Infra entrypoint must include the /v1 split (the SDK uses it to call the engine directly); goes via caddy's internal alias, and the publicly issued certificate still validates.
+      TEABLE_INFRA_API_URL: https://${INFRA_HOST:?run ./apply.sh cloud --with-app first}
+
+  caddy:
+    networks:
+      teable-appnet:
+        aliases:
+          - ${INFRA_HOST}          # app containers reach the Infra entry internally (same name as the public one, avoids hairpin)
+      # Sandbox -> Teable main app uses a fixed name (PUBLIC_ORIGIN); attach caddy to the sandbox network with an alias
+      # so on hairpin-restricted hosts (GCP-like) sandboxes can reach it without leaving the host, semantically equivalent to the public entry.
+      teable-sandbox-net:
+        aliases:
+          - ${TEABLE_HOST}
+          - s3.${BASE_DOMAIN}      # sandboxes upload build artifacts to the presigned s3. endpoint
+    volumes:
+      # Same-target override of the base mount: swap in the entry config that carries the Teable routes
+      - ./Caddyfile.app.cloud:/etc/caddy/Caddyfile:ro
+      - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
+    environment:
+      TEABLE_HOST: ${TEABLE_HOST:?run ./apply.sh cloud --with-app first}
+      TEABLE_PUBLIC_BUCKET: ${TEABLE_PUBLIC_BUCKET:-teable-public}   # used for public-bucket path forwarding

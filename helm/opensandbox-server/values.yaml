@@ -1,0 +1,171 @@
+# Copyright 2026 Alibaba Group Holding Ltd.
+# Default values for opensandbox-server.
+
+# -- Override the name of the chart
+nameOverride: ""
+# -- Resource names and app.kubernetes.io/name are fixed to this value, independent of release name
+fullnameOverride: "opensandbox-server"
+
+# -- Override the namespace (default: opensandbox-system)
+namespaceOverride: ""
+
+# -- Image pull secrets for the server deployment. Each entry: {name: <secret-name>}.
+imagePullSecrets: []
+
+# Server configuration
+server:
+  # Server RBAC (ServiceAccount, ClusterRole, ClusterRoleBinding).
+  rbac:
+    # -- Set false when cluster RBAC is centrally managed; bring your own SA + bindings.
+    # Workloads keep referencing the same ServiceAccount name either way.
+    create: true
+
+  # -- Additional environment variables for the server container.
+  env: []
+  # - name: OPENSANDBOX_API_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: opensandbox-api-key
+  #       key: api-key
+  # -- Optional env var name used to inject [server].api_key into a runtime config file.
+  apiKeyEnvName: ""
+
+  # -- Server image configuration
+  image:
+    repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server
+    tag: "v0.2.0-fix4"
+
+  # -- Number of server replicas
+  replicaCount: 2
+
+  # -- Resource requests and limits
+  resources:
+    limits:
+      cpu: "2"
+      memory: 8Gi
+    requests:
+      cpu: "1"
+      memory: 4Gi
+
+  tolerations: []
+  affinity: {}
+  volumeMounts: []
+  volumes: []
+
+  # Optional BatchSandbox pod template override. When set, it is mounted at
+  # /etc/opensandbox/batchsandbox-template.yaml and can be referenced by configToml.
+  batchSandboxTemplate: ""
+
+  # Egress policy applied to sandbox Pods in the dataplane namespace.
+  # By default, sandbox Pods can reach the public internet but not Kubernetes
+  # internal Pod/Service/VPC ranges or cloud metadata endpoints.
+  sandboxNetworkPolicy:
+    enabled: false
+    name: sandbox-egress-public-only
+    serviceCidrs: []
+    additionalBlockedCidrs: []
+    dnsNamespace: kube-system
+    dnsPorts:
+      - 53
+
+  # Lifecycle API ingress. Exposes opensandbox-server to the Control Service
+  # (the opensandbox-server control-plane API) when the Control Service runs
+  # outside the Kubernetes cluster.
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: ""
+    path: "/"
+    pathType: "Prefix"
+    tls:
+      enabled: false
+      secretName: ""
+    certificate:
+      enabled: false
+      issuerName: ""
+      issuerKind: ClusterIssuer
+      secretName: ""
+      dnsNames: []
+
+  # Gateway (components/ingress): when enabled, writes config [ingress] and deploys the gateway
+  gateway:
+    enabled: false
+    # Gateway RBAC (ServiceAccount, ClusterRole, ClusterRoleBinding); only rendered when gateway is enabled.
+    rbac:
+      # -- Set false when cluster RBAC is centrally managed; bring your own SA + bindings.
+      # The gateway workload keeps referencing the same ServiceAccount name either way.
+      create: true
+    # Public host sandbox previews are served on. Blank: derived from global.baseDomain
+    # (*.sandbox.<base>); falls back to the opensandbox.example.com placeholder.
+    host: ""
+    gatewayRouteMode: "header"
+    image:
+      repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress
+      tag: "v1.0.7-amd64"
+    replicaCount: 2
+    port: 28888
+    dataplaneNamespace: "teable-sandbox"
+    providerType: "batchsandbox"
+    logLevel: "info"
+    resources:
+      limits:
+        cpu: "2"
+        memory: 8Gi
+      requests:
+        cpu: "1"
+        memory: 4Gi
+    ingress:
+      enabled: false
+      className: ""
+      annotations: {}
+      host: ""
+      path: "/"
+      pathType: "Prefix"
+      tls:
+        enabled: false
+        secretName: ""
+      certificate:
+        enabled: false
+        issuerName: ""
+        issuerKind: ClusterIssuer
+        secretName: ""
+        dnsNames: []
+    # OSEP-0011 (upstream OpenSandbox spec) signing keys shared between server and ingress.
+    # When keys are provided, the server signs route tokens with the active key
+    # and the ingress gateway verifies them.
+    secureAccess:
+      activeKey: ""
+      # List of signing keys. Each entry: { key_id: "a", key: "<base64-secret>" }.
+      # key_id must be exactly one character in [0-9a-z].
+      keys: []
+
+# -- Server config (TOML). Mounted at /etc/opensandbox/config.toml.
+configToml: |
+  [server]
+  host = "0.0.0.0"
+  port = 80
+  api_key = ""
+
+  [log]
+  level = "INFO"
+
+  [runtime]
+  type = "kubernetes"
+  execd_image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2"
+
+  [kubernetes]
+  kubeconfig_path = ""
+  namespace = "teable-sandbox"
+  informer_enabled = true
+  informer_resync_seconds = 300
+  informer_watch_timeout_seconds = 60
+  sandbox_create_timeout_seconds = 86400
+  sandbox_create_poll_interval_seconds = 0.5
+  snapshot_create_timeout_seconds = 900
+  workload_provider = "batchsandbox"
+  batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
+  
+  [egress]
+  image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"
+  mode = "dns+nft"

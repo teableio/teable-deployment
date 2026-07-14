@@ -1,0 +1,117 @@
+{{- if .Values.imagePreheater.enabled }}
+{{- /* Static preheat covers the platform sidecars only; the Teable app preheats its own
+       agent image through the Infra API on startup (prefix + its own release tag). */}}
+{{- $images := .Values.imagePreheater.images }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-image-preheater
+  namespace: {{ .Values.imagePreheater.namespaceOverride | default .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: opensandbox-image-preheater
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  annotations:
+    teable.ai/preheat-images: {{ $images | toJson | quote }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opensandbox-image-preheater
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opensandbox-image-preheater
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+      annotations:
+        teable.ai/preheat-images: {{ $images | toJson | quote }}
+    spec:
+      {{- with .Values.imagePreheater.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePreheater.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePreheater.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: preheater
+          image: {{ .Values.imagePreheater.image | quote }}
+          imagePullPolicy: {{ .Values.imagePreheater.imagePullPolicy | quote }}
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              nerdctl_base="nerdctl --address {{ .Values.imagePreheater.containerdSocketPath }} --namespace {{ .Values.imagePreheater.containerdNamespace }}"
+
+              if [ -f /var/run/opensandbox/registry/.dockerconfigjson ]; then
+                mkdir -p /root/.docker
+                cp /var/run/opensandbox/registry/.dockerconfigjson /root/.docker/config.json
+                chmod 0600 /root/.docker/config.json
+              fi
+
+              while true; do
+                ok=1
+                {{- range $images }}
+                image={{ . | quote }}
+                attempt=1
+                pulled=0
+                while [ "$attempt" -le {{ $.Values.imagePreheater.pullRetryCount }} ]; do
+                  echo "Pulling ${image}, attempt ${attempt}"
+                  if $nerdctl_base pull "$image"; then
+                    pulled=1
+                    break
+                  fi
+                  attempt=$((attempt + 1))
+                  sleep {{ $.Values.imagePreheater.pullRetrySleepSeconds }}
+                done
+                if [ "$pulled" != "1" ]; then
+                  ok=0
+                fi
+                {{- end }}
+                if [ "$ok" = "1" ]; then
+                  date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/preheater-ready
+                fi
+                sleep {{ .Values.imagePreheater.refreshIntervalSeconds }}
+              done
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            runAsGroup: 0
+          readinessProbe:
+            exec:
+              command:
+                - test
+                - -f
+                - /tmp/preheater-ready
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: containerd-sock
+              mountPath: {{ .Values.imagePreheater.containerdSocketPath | quote }}
+            {{- if .Values.imagePreheater.authSecretName }}
+            - name: registry-auth
+              mountPath: /var/run/opensandbox/registry
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: containerd-sock
+          hostPath:
+            path: {{ .Values.imagePreheater.containerdSocketPath | quote }}
+            type: Socket
+        {{- if .Values.imagePreheater.authSecretName }}
+        - name: registry-auth
+          secret:
+            secretName: {{ .Values.imagePreheater.authSecretName | quote }}
+            items:
+              - key: .dockerconfigjson
+                path: .dockerconfigjson
+        {{- end }}
+{{- end }}

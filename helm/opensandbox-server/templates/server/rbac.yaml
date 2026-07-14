@@ -1,0 +1,60 @@
+{{- if (.Values.server.rbac).create -}}
+# Copyright 2026 Alibaba Group Holding Ltd.
+# Server RBAC: ServiceAccount, ClusterRole, ClusterRoleBinding.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "opensandbox-server.serviceAccountName" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+{{- with .Values.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+---
+apiVersion: {{ include "opensandbox-server.rbac.apiVersion" . }}
+kind: ClusterRole
+metadata:
+  name: {{ include "opensandbox-server.roleName" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/status", "events", "services", "configmaps"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "delete", "get"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get"]
+  - apiGroups: ["node.k8s.io"]
+    resources: ["runtimeclasses"]
+    verbs: ["get", "list"]
+  - apiGroups: ["sandbox.opensandbox.io"]
+    resources: ["batchsandboxes", "batchsandboxes/status", "batchsandboxes/finalizers"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["sandbox.opensandbox.io"]
+    resources: ["pools", "pools/status", "pools/finalizers"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["sandbox.opensandbox.io"]
+    resources: ["sandboxsnapshots", "sandboxsnapshots/status", "sandboxsnapshots/finalizers"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+---
+apiVersion: {{ include "opensandbox-server.rbac.apiVersion" . }}
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}-rolebinding
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "opensandbox-server.roleName" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "opensandbox-server.serviceAccountName" . }}
+    namespace: {{ include "opensandbox-server.namespace" . }}
+{{- end }}

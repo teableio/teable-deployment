@@ -1,0 +1,146 @@
+# Copyright 2026 Alibaba Group Holding Ltd.
+# Server workload: ConfigMap, Deployment, Service.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}-config
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+data:
+  config.toml: |
+{{ .Values.configToml | indent 4 }}
+{{ include "opensandbox-server.ingressConfigToml" . | indent 4 }}
+{{- if .Values.server.batchSandboxTemplate }}
+  batchsandbox-template.yaml: |
+{{ .Values.server.batchSandboxTemplate | indent 4 }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "opensandbox-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config-toml: {{ printf "%s\n%s" .Values.configToml (include "opensandbox-server.ingressConfigToml" .) | sha256sum | quote }}
+        checksum/batchsandbox-template: {{ .Values.server.batchSandboxTemplate | default "" | sha256sum | quote }}
+      labels:
+        {{- include "opensandbox-server.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "opensandbox-server.serviceAccountName" . }}
+      containers:
+        - name: main
+          image: {{ include "opensandbox-server.serverImage" . }}
+          imagePullPolicy: {{ include "opensandbox-server.imagePullPolicy" . }}
+          {{- if .Values.server.apiKeyEnvName }}
+          command:
+            - "/bin/sh"
+            - "-ec"
+          {{- end }}
+          args:
+            {{- if .Values.server.apiKeyEnvName }}
+            - |
+              mkdir -p /tmp/opensandbox
+              python3 - <<'PY'
+              import os
+              from pathlib import Path
+
+              source = Path("/etc/opensandbox/config.toml")
+              target = Path("/tmp/opensandbox/config.toml")
+              api_key = os.environ.get({{ .Values.server.apiKeyEnvName | quote }}, "")
+              text = source.read_text()
+              text = text.replace('api_key = ""', f'api_key = "{api_key}"', 1)
+              target.write_text(text)
+              PY
+              exec opensandbox-server --config /tmp/opensandbox/config.toml
+            {{- else }}
+            - "--config"
+            - "/etc/opensandbox/config.toml"
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: SANDBOX_CONFIG_PATH
+              value: "/etc/opensandbox/config.toml"
+            {{- with .Values.server.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/opensandbox/config.toml
+              subPath: config.toml
+              readOnly: true
+            {{- if .Values.server.batchSandboxTemplate }}
+            - name: config
+              mountPath: /etc/opensandbox/batchsandbox-template.yaml
+              subPath: batchsandbox-template.yaml
+              readOnly: true
+            {{- end }}
+            {{- with .Values.server.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "opensandbox-server.fullname" . }}-config
+        {{- with .Values.server.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.server.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opensandbox-server.fullname" . }}
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "opensandbox-server.selectorLabels" . | nindent 4 }}

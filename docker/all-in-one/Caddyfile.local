@@ -1,0 +1,17 @@
+# Local entrypoint (no TLS; browsers natively resolve *.localhost to 127.0.0.1). Imports shared caddy.snippets.
+{
+	auto_https off
+}
+
+import caddy.snippets
+
+# Sandbox previews (most specific first). NOTE: the http:// prefix is mandatory: a bare hostname gets assigned to :443, while all local traffic is on :80
+# (host 80/8088 -> container :80); falling through to the :80 catch-all below makes the execd health check fail (the engine health-probes sandbox preview URLs; through the catch-all they would 404).
+http://*.sandbox.localhost {
+	import sandbox_preview
+}
+
+# Catch-all: Infra console + Infra API + app previews (served on both host ports 80 and 8088)
+:80 {
+	import infra_and_v1
+}

@@ -1,0 +1,229 @@
+{{- /* RBAC for infra-service: SA + cluster-wide read-only ClusterRole + three cross-namespace Roles (engine key rotation / app-runtime management / image preheating).
+     With rbac.create=false the whole group is skipped (for clusters managing RBAC centrally; bring your own identically named SA and grants). */}}
+{{- if and .Values.infraService.enabled (.Values.infraService.rbac).create }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.infraService.serviceAccountName | quote }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  {{- with .Values.infraService.serviceAccountAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-infra-service
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/status", "namespaces", "pods", "pods/log", "services", "persistentvolumeclaims", "persistentvolumes", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]
+  # kubelet stats/summary: aggregates actual PVC usage
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  # ACK cloud-disk autoscaler policy (GKE lacks this API group; the rule exists but is inert)
+  - apiGroups: ["storage.alibabacloud.com"]
+    resources: ["storageautoscalerpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["sandbox.opensandbox.io"]
+    resources: ["batchsandboxes", "pools", "sandboxsnapshots"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["sandbox.opensandbox.io"]
+    resources: ["batchsandboxes"]
+    verbs: ["delete", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-infra-service
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-infra-service
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-infra-service-opensandbox-key
+  namespace: {{ .Values.infraService.opensandbox.namespace | default "opensandbox-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames:
+      - {{ .Values.infraService.opensandbox.apiKeySecretName | default "opensandbox-api-key" | quote }}
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames:
+      - {{ .Values.infraService.opensandbox.serverDeploymentName | default "opensandbox-server" | quote }}
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-infra-service-opensandbox-key
+  namespace: {{ .Values.infraService.opensandbox.namespace | default "opensandbox-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-infra-service-opensandbox-key
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-infra-service-app-runtime
+  namespace: {{ .Values.infraService.appRuntime.namespace | default "app-deploy" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "ingresses/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["delete"]
+  {{- if eq (.Values.infraService.appRuntime.ingressMode | default .Values.appRuntime.ingress.mode | default "dynamic") "dynamic" }}
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["create", "update", "patch"]
+  {{- end }}
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: ["serving.knative.dev"]
+    resources: ["services", "routes"]
+    verbs: ["get", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-infra-service-app-runtime
+  namespace: {{ .Values.infraService.appRuntime.namespace | default "app-deploy" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-infra-service-app-runtime
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-infra-service-image-preheat
+  namespace: {{ .Values.infraService.imagePreheat.namespace | default "opensandbox-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["create", "delete", "get", "list", "patch", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames:
+      - {{ .Values.infraService.imagePreheat.apiKeySecretName | default "opensandbox-api-key" | quote }}
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-infra-service-image-preheat
+  namespace: {{ .Values.infraService.imagePreheat.namespace | default "opensandbox-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-infra-service-image-preheat
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+{{- end }}

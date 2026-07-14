@@ -1,0 +1,39 @@
+# OpenSandbox docker-mode config template (shared by both modes). Placeholders are rendered by apply.sh into opensandbox.generated.toml:
+#   __OPENSANDBOX_REGISTRY__ (execd/egress source) and __SANDBOX_NETWORK__ (sandbox network name) = the same-named .env entries.
+# api_key is not in this file: compose injects it via env OPENSANDBOX_SERVER_API_KEY, so the rendered output contains no secrets.
+# Reference: https://github.com/alibaba/OpenSandbox/blob/main/server/configuration.md
+
+[server]
+host = "0.0.0.0"
+port = 8090
+api_key = ""                                # injected via compose env OPENSANDBOX_SERVER_API_KEY; leave empty
+max_sandbox_timeout_seconds = 86400
+
+[runtime]
+type = "docker"
+execd_image = "__OPENSANDBOX_REGISTRY__/execd:v1.0.18"   # injected by the server into every sandbox container
+
+[store]
+type = "sqlite"
+path = "/data/opensandbox.db"               # lives on the opensandbox-state volume
+
+[storage]
+allowed_host_paths = []                      # bind-mount allowlist (empty = allow all; lock down in production)
+volume_default_size = "1Gi"
+
+[docker]
+# Sandboxes attach to a dedicated network and opensandbox-server joins it too, to reach them by container IP (the default docker0 "bridge" cannot connect across networks -> SandboxReadyTimeout).
+# Network name is injected by apply.sh (= SANDBOX_DOCKER_NETWORK in .env, same source as compose, cannot drift).
+network_mode = "__SANDBOX_NETWORK__"
+host_ip = "127.0.0.1"                        # direct port mappings bind to loopback; previews go via Caddy->server-proxy, not through these ports
+drop_capabilities = ["AUDIT_WRITE", "MKNOD", "NET_ADMIN", "NET_RAW", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_TIME", "SYS_TTY_CONFIG"]
+# allow setuid privilege elevation inside sandboxes
+no_new_privileges = false
+pids_limit = 4096                            # guards against fork bombs
+
+[ingress]
+mode = "direct"                              # docker mode only supports direct
+
+[egress]
+image = "__OPENSANDBOX_REGISTRY__/egress:v1.0.12"   # server starts an egress sidecar per sandbox on demand
+mode = "dns"

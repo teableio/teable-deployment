@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docker-compose:
+    name: Docker compose chains
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Runtime-only chain renders
+        working-directory: docker/all-in-one
+        run: |
+          ./apply.sh local
+          docker compose config -q
+      - name: All-in-one chain renders
+        working-directory: docker/all-in-one
+        run: |
+          ./apply.sh local --with-app
+          docker compose config -q
+      - name: Scripts parse
+        working-directory: docker/all-in-one
+        run: |
+          bash -n apply.sh doctor.sh pin-image.sh prepull.sh lib.sh apply.d/*.sh
+
+  helm:
+    name: Helm charts render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Dependency build
+        run: helm dependency build helm/teable-infra
+      - name: Lint
+        run: helm lint helm/teable-infra
+      - name: Bare render (defaults only)
+        run: |
+          helm template t helm/teable-infra -n opensandbox-system > /dev/null
+      - name: Render with the example values
+        run: |
+          helm template t helm/teable-infra -n opensandbox-system \
+            -f helm/examples/values.example.yaml > /dev/null
+      - name: Render with a base domain
+        run: |
+          helm template t helm/teable-infra -n opensandbox-system \
+            --set global.baseDomain=ci.example.org > /dev/null
+      - name: Doctor parses
+        run: bash -n helm/doctor.sh
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --no-git --redact -v

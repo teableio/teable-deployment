@@ -1,0 +1,54 @@
+# Cloud host overlay: real domain + wildcard TLS (Caddy + Cloudflare DNS-01) + public-network hardening (only caddy publishes ports).
+#   cp .env.cloud.example .env   # fill in domain/email/token by hand (images are prefilled)
+#   ./apply.sh cloud && docker compose up -d
+name: teable-sandbox-infra
+
+volumes:
+  caddy-data:        # ACME account + certificates; must persist (otherwise re-issuing on every restart easily hits LE rate limits)
+  caddy-config:
+
+services:
+  # opensandbox-server / the sandbox network are defined in the base; cloud needs no override. No backend service publishes host ports; all external traffic goes through caddy.
+  infra-service:
+    environment:
+      APP_RUNTIME_DOMAIN: app.${BASE_DOMAIN:?fill .env then run ./apply.sh cloud}   # apps run at {appId}.app.<domain>
+      APP_RUNTIME_PUBLIC_SCHEME: https
+      OPENSANDBOX_PREVIEW_WILDCARD_DOMAIN: "*.sandbox.${BASE_DOMAIN}"
+      # Presigned URLs uniformly use https://s3.<domain>: external clients go over the public network, while infra-service reaches caddy directly via its teable-appnet alias (host identical on both sides).
+      APP_RUNTIME_ARTIFACT_S3_ENDPOINT: https://s3.${BASE_DOMAIN}
+      GIT_REGISTRY_PUBLIC_URL: https://git.${BASE_DOMAIN}                          # only for external/console manual clone
+
+  # TLS edge + routing: Cloudflare DNS-01 auto-issues/renews the wildcard certificate (the official image has no DNS plugins, see Dockerfile.caddy).
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    image: teable-infra/caddy-cloudflare:cloud
+    container_name: caddy
+    restart: unless-stopped
+    networks:
+      teable-appnet:
+        aliases:
+          - s3.${BASE_DOMAIN}      # lets infra-service reach caddy in-container (no host loopback), matching the presigned-URL host
+    ports:
+      - "80:80"        # ACME + http->https
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 (QUIC), optional
+    volumes:
+      - ./Caddyfile.cloud:/etc/caddy/Caddyfile:ro
+      - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN:?fill .env then run ./apply.sh cloud}
+      INFRA_HOST: ${INFRA_HOST:?fill .env then run ./apply.sh cloud}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN in .env}
+      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh cloud}   # injected server-side by the sandbox preview block
+      SANDBOX_PREVIEW_HOST: sandbox.${BASE_DOMAIN}                                       # rewrite target for port previews (no scheme)
+    depends_on:
+      # Not gated on infra health: caddy must start first to run ACME; reverse_proxy retries while upstreams are not ready.
+      - opensandbox-server
+      - infra-service
+      - minio
+      - git-registry

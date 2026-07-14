@@ -1,0 +1,5 @@
+# The caddy image (Dockerfile.caddy) uses this directory as its build context; keep secrets/derived files out of the build context.
+# (Dockerfile.caddy COPYs no context files, but exclude these anyway to keep the context minimal and rule out leaks.)
+.env
+docker-compose.override.yml
+opensandbox.generated.toml

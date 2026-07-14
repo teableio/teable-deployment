@@ -1,0 +1,119 @@
+# Example values for a production teable-infra install.
+#
+# The chart is turnkey: every service, database and storage backend below runs
+# inside your cluster, and only global.baseDomain is required. Copy this file,
+# adjust what you need, then:
+#
+#   helm dependency build helm/teable-infra
+#   helm install teable helm/teable-infra -n opensandbox-system --create-namespace \
+#     -f my-values.yaml
+#
+# Prerequisites:
+#   - an ingress-nginx controller with a public IP
+#   - cert-manager (unless you bring your own TLS certificates, see section 2)
+#   - a default StorageClass (or set the storageClassName fields per component)
+
+# ── 1. Domain ────────────────────────────────────────────────────────────────
+# One root domain; every entry point derives from it:
+#
+#   <baseDomain>            Teable (the product)
+#   infra.<baseDomain>      Infra console + API
+#   s3.<baseDomain>         object storage (file/asset URLs)
+#   git.<baseDomain>        app source repositories
+#   *.app.<baseDomain>      deployed apps
+#   *.sandbox.<baseDomain>  sandbox previews
+#
+# Create DNS records for all six entries (the two wildcards included) pointing
+# at your ingress controller's public IP before installing.
+global:
+  baseDomain: teable.example.org
+
+# ── 2. TLS ───────────────────────────────────────────────────────────────────
+# Default: cert-manager issues every certificate through a ClusterIssuer named
+# "letsencrypt-dns". Two hosts are wildcards (*.app, *.sandbox), so the issuer
+# must use a DNS-01 solver. Create it once before installing, e.g. Cloudflare:
+#
+#   apiVersion: cert-manager.io/v1
+#   kind: ClusterIssuer
+#   metadata:
+#     name: letsencrypt-dns
+#   spec:
+#     acme:
+#       server: https://acme-v02.api.letsencrypt.org/directory
+#       email: you@example.org
+#       privateKeySecretRef:
+#         name: letsencrypt-dns-account
+#       solvers:
+#         - dns01:
+#             cloudflare:
+#               apiTokenSecretRef:
+#                 name: cloudflare-api-token
+#                 key: api-token
+#
+# Using a different issuer name? Override certificate.issuerName in the six
+# certificate blocks (teable / minio / gitRegistry / appRuntime.ingress.tls /
+# opensandbox-server server.ingress / server.gateway.ingress).
+#
+# Bringing your own certificates instead? Set certificate.enabled: false in
+# those same six blocks and create the TLS Secrets yourself in the
+# opensandbox-system namespace:
+#
+#   host                    Secret name
+#   <baseDomain>            teable-tls
+#   infra.<baseDomain>      infra.<baseDomain>-tls
+#   s3.<baseDomain>         minio-s3-tls
+#   git.<baseDomain>        git-registry-tls
+#   *.app.<baseDomain>      app-wildcard-tls
+#   *.sandbox.<baseDomain>  sandbox.<baseDomain>-tls
+
+# ── 3. Components ────────────────────────────────────────────────────────────
+# One block per component: image pins and storage sizes together. Sizes are the
+# chart defaults; raise them to match your workload. storageClassName blank =
+# cluster default. All data lives in PersistentVolumeClaims.
+
+teable:
+  # Defaults to :latest so a first install just works. For production, pin the
+  # tag from the release you are installing (see VERSIONS.md) and upgrade
+  # deliberately.
+  image: ghcr.io/teableio/teable:latest
+  # Server-side timestamps (automation schedules, exports) follow this zone.
+  timezone: UTC
+  storage:
+    size: 10Gi            # app asset cache
+    storageClassName: ""
+
+postgres:
+  storage:
+    size: 20Gi            # Teable business data
+    storageClassName: ""
+
+redis:
+  storage:
+    size: 5Gi             # cache + automation queues
+    storageClassName: ""
+
+minio:
+  # Third-party images ship pinned by the chart except MinIO; pin it here.
+  image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+  mcImage: minio/mc:RELEASE.2025-04-16T18-13-26Z
+  storage:
+    size: 50Gi            # attachments + app build artifacts
+    storageClassName: ""
+
+gitRegistry:
+  persistence:
+    size: 100Gi           # app source repositories
+    storageClassName: ""
+
+# ── 4. Backups ───────────────────────────────────────────────────────────────
+# Back up these regularly; together they are a complete restore point:
+#
+#   PostgreSQL     kubectl exec deploy/<release>-postgres -n opensandbox-system -- \
+#                    pg_dump -U teable -Fc teable > teable-$(date +%F).dump
+#   MinIO          mirror the buckets with `mc mirror`, or snapshot the PVC
+#   git repos      snapshot the git-registry PVC
+#   Teable assets  snapshot the teable assets PVC
+#
+# Redis holds cache and in-flight queues only; it needs no backup.
+# Restore = reinstall the chart, restore PostgreSQL with pg_restore, then copy
+# the object storage buckets and PVC contents back.

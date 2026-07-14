@@ -1,0 +1,50 @@
+{{- if .Values.server.sandboxNetworkPolicy.enabled }}
+{{- $policy := .Values.server.sandboxNetworkPolicy }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $policy.name | default "sandbox-egress-public-only" }}
+  namespace: {{ .Values.server.gateway.dataplaneNamespace | default "teable-sandbox" }}
+  labels:
+    {{- include "opensandbox-server.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: opensandbox.io/id
+        operator: Exists
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $policy.dnsNamespace | default "kube-system" | quote }}
+      ports:
+        {{- range $policy.dnsPorts }}
+        - protocol: UDP
+          port: {{ . }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              {{- range $policy.serviceCidrs }}
+              - {{ . | quote }}
+              {{- end }}
+              {{- range $policy.additionalBlockedCidrs }}
+              - {{ . | quote }}
+              {{- end }}
+    - to:
+        - ipBlock:
+            cidr: ::/0
+            except:
+              - fc00::/7
+              - fe80::/10
+{{- end }}

@@ -1,0 +1,62 @@
+{{- /* Shared-filesystem side of fileBrowser (JuiceFS PV/PVC): AI/Sandbox data lands here; backend for the /s3-compatible API. */}}
+{{- if .Values.infraService.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $fileBrowser := .Values.infraService.fileBrowser }}
+{{- if and $fileBrowser.enabled $fileBrowser.persistentVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $fileBrowser.persistentVolume.name | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+    juicefs-name: {{ $fileBrowser.persistentVolume.juicefsName | quote }}
+spec:
+  accessModes:
+    {{- toYaml $fileBrowser.persistentVolume.accessModes | nindent 4 }}
+  capacity:
+    storage: {{ $fileBrowser.persistentVolume.capacity | quote }}
+  {{- with $fileBrowser.persistentVolume.mountOptions }}
+  mountOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  csi:
+    driver: {{ $fileBrowser.persistentVolume.driver | default "csi.juicefs.com" | quote }}
+    fsType: {{ $fileBrowser.persistentVolume.fsType | default "juicefs" | quote }}
+    nodePublishSecretRef:
+      name: {{ $fileBrowser.persistentVolume.secretName | quote }}
+      namespace: {{ $fileBrowser.persistentVolume.secretNamespace | quote }}
+    volumeHandle: {{ $fileBrowser.persistentVolume.volumeHandle | default $fileBrowser.persistentVolume.name | quote }}
+  persistentVolumeReclaimPolicy: {{ $fileBrowser.persistentVolume.reclaimPolicy | default "Retain" | quote }}
+  volumeMode: Filesystem
+---
+{{- end }}
+{{- if and $fileBrowser.enabled $fileBrowser.persistentVolumeClaim.create }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fileBrowser.persistentVolumeClaim.name | default $fileBrowser.pvcName | quote }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    {{- toYaml $fileBrowser.persistentVolumeClaim.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ $fileBrowser.persistentVolumeClaim.storage | quote }}
+  {{- /* When bound to a specific PV, keep storageClassName as-is (an explicit "" disables dynamic provisioning); when both are blank, omit the key so the cluster default StorageClass applies. */}}
+  {{- if or $fileBrowser.persistentVolumeClaim.volumeName $fileBrowser.persistentVolumeClaim.storageClassName }}
+  storageClassName: {{ $fileBrowser.persistentVolumeClaim.storageClassName | quote }}
+  {{- end }}
+  volumeMode: Filesystem
+  {{- with $fileBrowser.persistentVolumeClaim.volumeName }}
+  volumeName: {{ . | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

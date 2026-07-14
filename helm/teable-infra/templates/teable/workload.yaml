@@ -1,0 +1,200 @@
+{{- /* Teable app core workload: PVC + Deployment + Service. The env contract mirrors the verified docker-compose reference deployment. */}}
+{{- if .Values.teable.enabled }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $teable := .Values.teable }}
+{{- $secretName := $teable.secret.name }}
+{{- $serviceName := printf "%s-teable" .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $serviceName }}-assets
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $teable.storage.size | default "10Gi" | quote }}
+  {{- with $teable.storage.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: {{ $teable.replicaCount | default 1 }}
+  # The assets PVC is RWO; a rolling update would have old and new Pods contend for the same disk, so Recreate is required
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: teable
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: teable
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: opensandbox
+    spec:
+      {{- with $teable.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: teable
+          image: {{ $teable.image | quote }}
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            {{- /* Secret-sourced credentials are declared first: the kubelet only substitutes $(VAR) references to variables defined earlier in this list. */}}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: db-password
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: redis-password
+            {{- /* Server-side timestamps (automation schedules, exports) follow this zone. */}}
+            - name: TZ
+              value: {{ $teable.timezone | quote }}
+            {{- /* Absolute URLs in share links, OAuth callbacks and emails are built from this origin. */}}
+            - name: PUBLIC_ORIGIN
+              value: {{ include "teable-infra.teableOrigin" . | quote }}
+            {{- /* $(DB_PASSWORD) is substituted by the kubelet at container start, so the password never appears in the rendered manifest. */}}
+            - name: PRISMA_DATABASE_URL
+              value: "postgresql://{{ $teable.db.user }}:$(DB_PASSWORD)@{{ .Release.Name }}-postgres:5432/{{ $teable.db.name }}"
+            {{- /* Redis backs the cache and job queues; realtime collaboration and automation workers require it. */}}
+            - name: BACKEND_CACHE_PROVIDER
+              value: "redis"
+            {{- /* Same $(VAR) technique as the database URL: the password stays out of the manifest. */}}
+            - name: BACKEND_CACHE_REDIS_URI
+              value: "redis://default:$(REDIS_PASSWORD)@{{ .Release.Name }}-redis:6379/0"
+            - name: BACKEND_STORAGE_PROVIDER
+              value: "minio"
+            {{- /* Browser-facing presigned-URL host: attachments up/download directly against the public S3 ingress, so this must be the external host, not the Service. */}}
+            - name: BACKEND_STORAGE_MINIO_ENDPOINT
+              value: {{ include "teable-infra.s3Host" . | quote }}
+            - name: BACKEND_STORAGE_MINIO_PORT
+              value: "443"
+            - name: BACKEND_STORAGE_MINIO_USE_SSL
+              value: "true"
+            {{- /* In-cluster server-side operations use the Service directly and skip the public ingress round-trip. */}}
+            - name: BACKEND_STORAGE_MINIO_INTERNAL_ENDPOINT
+              value: "{{ .Release.Name }}-minio"
+            - name: BACKEND_STORAGE_MINIO_INTERNAL_PORT
+              value: "9000"
+            - name: BACKEND_STORAGE_MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: minio-access-key
+            - name: BACKEND_STORAGE_MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: minio-secret-key
+            - name: BACKEND_STORAGE_PUBLIC_BUCKET
+              value: {{ .Values.minio.buckets.public | quote }}
+            - name: BACKEND_STORAGE_PRIVATE_BUCKET
+              value: {{ .Values.minio.buckets.private | quote }}
+            {{- /* The source ships public hardcoded defaults for the encryption key/IV; without per-install values anyone could decrypt stored credentials. */}}
+            - name: BACKEND_STORAGE_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: storage-encryption-key
+            - name: BACKEND_STORAGE_ENCRYPTION_IV
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: storage-encryption-iv
+            {{- /* Automation/code-execution sandboxes are provisioned through OpenSandbox via the Infra API. */}}
+            - name: SANDBOX_PROVIDER
+              value: "opensandbox"
+            {{- /* The provider only talks to the Infra API; whether that API deploys apps to k8s or docker is infra-service's concern. */}}
+            - name: APP_DEPLOY_PROVIDER
+              value: "docker-runtime"
+            {{- /* Must be the ingress entry that path-splits /v1 to the sandbox engine; pointing at the bare infra-service Service breaks sandbox creation. */}}
+            - name: TEABLE_INFRA_API_URL
+              value: {{ include "teable-infra.infraUrl" . | quote }}
+            - name: TEABLE_INFRA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.apiKeySecret.name | default "opensandbox-api-key" | quote }}
+                  key: api-key
+            {{- /* Virtual bucket served by infra-service's S3-compatible endpoint (agent workspace files), not a MinIO bucket. */}}
+            - name: TEABLE_INFRA_BUCKET
+              value: "teable-agent"
+            {{- /* Tagless prefix: the app pairs it with its own release tag and preheats
+                   the resulting image through the Infra API on startup. */}}
+            - name: SANDBOX_OPENSANDBOX_IMAGE
+              value: {{ $teable.sandboxAgentImagePrefix | quote }}
+            {{- /* Signs sandbox session tokens; per-install random so tokens cannot be forged across installs. */}}
+            - name: SANDBOX_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: sandbox-jwt-secret
+            {{- /* SANDBOX_OPENSANDBOX_RUNTIME is intentionally unset: kubernetes is the app's default and correct here; only the docker path must override it. */}}
+            {{- /* SANDBOX_URL is intentionally unset: the integrated automation sandbox starts inside the app container when it is absent. */}}
+          {{- /* First boot runs DB migrations, which can take minutes; a tight liveness delay would kill the Pod mid-migration and corrupt the bootstrap. */}}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 300
+            periodSeconds: 20
+          resources:
+            {{- toYaml $teable.resources | nindent 12 }}
+          volumeMounts:
+            - name: assets
+              mountPath: /app/.assets
+      volumes:
+        - name: assets
+          persistentVolumeClaim:
+            claimName: {{ $serviceName }}-assets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+{{- end }}

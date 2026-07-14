@@ -1,0 +1,35 @@
+# all-in-one local entrypoint (no TLS; browsers natively resolve *.localhost to 127.0.0.1). Imports shared caddy.snippets.
+# Difference from Caddyfile.local: the Teable main site takes over the :80 catch-all; console/engine move to infra.localhost.
+{
+	auto_https off
+}
+
+import caddy.snippets
+
+# Sandbox previews (most specific first). NOTE: the http:// prefix is mandatory: a bare hostname gets assigned to :443, while all local traffic is on :80.
+# Local mode always uses local domains (SANDBOX_PREVIEW_HOST defaults to sandbox.localhost, natively resolved by browsers).
+http://*.{$SANDBOX_PREVIEW_HOST:sandbox.localhost} {
+	import sandbox_preview
+}
+
+# App Builder dynamic app previews (infra's built-in gateway matches by Host)
+http://*.app.localhost {
+	reverse_proxy infra-service:8080
+}
+
+# Infra console + /v1 (Teable reaches the Infra API through this site via the internal infra.localhost network alias; browsers and the doctor.sh self-check use it too)
+http://infra.localhost {
+	import infra_and_v1
+}
+
+# Catch-all: Teable main site (host 80 and 8088 both map to container :80 and land here).
+# Public-bucket paths forward to MinIO: under the minio provider the app builds public asset URLs as <PUBLIC_ORIGIN>/<public-bucket>/...,
+# so the entrypoint must hand that prefix to MinIO (path-style; bucket name is the first path segment).
+:80 {
+	handle /{$TEABLE_PUBLIC_BUCKET}/* {
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy teable:3000
+	}
+}

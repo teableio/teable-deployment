@@ -1,0 +1,697 @@
+# Default values for teable-infra (umbrella chart).
+# This chart aggregates values from opensandbox-controller and opensandbox-server sub-charts.
+
+# Controller component values
+opensandbox-controller:
+  # Default values are inherited from the sub-chart.
+  # Override specific controller settings here if needed.
+  controller:
+    logLevel: info
+    replicaCount: 1
+    snapshot:
+      # DockerHub: opensandbox/image-committer:v0.1.0
+      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+      commitJobTimeout: 10m
+      registry: ""
+      registryInsecure: false
+      snapshotPushSecret: ""
+      resumePullSecret: ""
+
+# Server component values
+opensandbox-server:
+  # Default values are inherited from the sub-chart.
+  # Override specific server settings here if needed.
+  server:
+    replicaCount: 2
+    # BatchSandbox pod template. The sub-chart config references this file, so a
+    # default must exist for a bare install; profiles override it with
+    # platform-specific scheduling (node pools, tolerations).
+    batchSandboxTemplate: |
+      # Metadata template (merged with runtime-generated metadata)
+      metadata:
+      # Spec template
+      spec:
+        replicas: 1
+        template:
+          spec:
+            restartPolicy: Never
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              fsGroup: 0
+              fsGroupChangePolicy: OnRootMismatch
+              seccompProfile:
+                type: Unconfined
+            containers:
+              - name: sandbox
+                volumeMounts:
+                  - name: workspace-state
+                    mountPath: /home/agent/workspace-state
+            volumes:
+              - name: workspace-state
+                emptyDir: {}
+    # Inject the shared OpenSandbox API key into the server config so the /v1 API
+    # is authenticated out of the box (the Secret is chart-generated, see apiKeySecret).
+    apiKeyEnvName: OPENSANDBOX_API_KEY
+    env:
+      - name: OPENSANDBOX_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: opensandbox-api-key
+            key: api-key
+    # default-on: /v1 on the Infra Service host (infra.<baseDomain>). Teable and
+    # infra-service reach the sandbox engine through this path-split entry.
+    ingress:
+      enabled: true
+      className: nginx
+      path: /v1
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      tls:
+        enabled: true
+      certificate:
+        # One certificate for the shared infra.<baseDomain> host; the infra-service
+        # ingress reuses the same derived secret (<host>-tls).
+        enabled: true
+        issuerName: letsencrypt-dns
+    # default-on: sandbox preview gateway serving *.sandbox.<baseDomain> (browser
+    # preview of running sandboxes). Wildcard TLS requires a DNS-01 issuer.
+    gateway:
+      enabled: true
+      gatewayRouteMode: wildcard
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
+      ingress:
+        enabled: true
+        className: nginx
+        annotations:
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        tls:
+          enabled: true
+        certificate:
+          enabled: true
+          issuerName: letsencrypt-dns
+
+# Global values (passed to both sub-charts).
+global:
+  # root domain; when set, per-service hostnames are derived from it (infra./sandbox./app./git.).
+  # Leave blank to keep example.com placeholders.
+  baseDomain: ""
+  # GKE-specific keys consumed by infra-service (all optional; leave unset on other platforms):
+  # projectId: my-gcp-project    # GCP project ID
+  # gkeLocation: us-central1     # GKE cluster location
+  # gkeClusterName: my-cluster   # GKE cluster name
+  # Example: shared image pull secrets
+  # imagePullSecrets:
+  #   - name: my-registry-secret
+
+imagePreheater:
+  # default-on: pre-pulls sandbox images on every node so first sandbox start is fast
+  enabled: true
+  namespaceOverride: opensandbox-system
+  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+  imagePullPolicy: IfNotPresent
+  containerdSocketPath: /run/containerd/containerd.sock
+  containerdNamespace: k8s.io
+  authSecretName: ""
+  imagePullSecrets: []
+  refreshIntervalSeconds: 3600
+  pullRetryCount: 3
+  pullRetrySleepSeconds: 5
+  nodeSelector: {}
+  tolerations: []
+  # Platform sidecars only (matching the opensandbox-server config defaults). The sandbox
+  # agent image is NOT listed here: the Teable app preheats its own agent image through
+  # the Infra API on startup (prefix + its own release tag).
+  images:
+    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2
+    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64
+
+# Sandbox dataplane namespace (where BatchSandbox pods run). Must match the
+# opensandbox-server [kubernetes].namespace config, the gateway dataplaneNamespace
+# and runtimeNetworkPolicy.sandbox.namespace.
+sandboxNamespace:
+  # default-on so a bare install works on a fresh cluster; set false when the
+  # namespace is managed outside the chart.
+  create: true
+  name: teable-sandbox
+
+runtimeNetworkPolicy:
+  # default-on: baseline egress isolation for the sandbox and app-runtime namespaces
+  enabled: true
+  sandbox:
+    enabled: true
+    namespace: teable-sandbox
+  appRuntime:
+    enabled: true
+    namespace: app-deploy
+
+appRuntime:
+  # default-on: app deployment plane (namespace/quota/RBAC/cert) consumed by infra-service
+  enabled: true
+  namespace: app-deploy
+  createNamespace: true
+  labels:
+    teable.ai/runtime-plane: app
+    teable.ai/deploy-provider: kubernetes
+  imagePullSecrets: []
+  runtimeServiceAccountName: teable-app-runtime
+  workload:
+    defaultReplicas: 1
+    nodeSelector: {}
+    tolerations: []
+  ingress:
+    mode: dynamic
+    className: nginx
+    # Blank: derived from global.baseDomain (app.<base>); falls back to app.example.com.
+    domain: ""
+    # Blank: derived from global.baseDomain (*.app.<base>); falls back to *.app.example.com.
+    wildcardDomain: ""
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      enabled: true
+      secretName: app-wildcard-tls
+      certificate:
+        enabled: true
+        name: app-wildcard
+        issuerKind: ClusterIssuer
+        issuerName: letsencrypt-dns
+        # Empty: derived from wildcardDomain / global.baseDomain.
+        dnsNames: []
+  resources:
+    quota:
+      enabled: true
+      hard:
+        requests.cpu: "20"
+        requests.memory: 32Gi
+        limits.cpu: "200"
+        limits.memory: 400Gi
+        pods: "100"
+        secrets: "300"
+        configmaps: "300"
+    limitRange:
+      enabled: true
+      default:
+        cpu: "2"
+        memory: 4Gi
+      defaultRequest:
+        cpu: 200m
+        memory: 256Mi
+  deployer:
+    createServiceAccount: true
+    serviceAccountName: teable-app-deployer
+    serviceAccountNamespace: opensandbox-system
+    extraSubjects: []
+  images:
+    artifactRegistryPrefixes:
+      - registry.example.com/teable-infra/
+      - registry.example.com/teable-apps/
+    ghcrPrefixes:
+      - ghcr.io/teableio/
+
+# App Builder git registry (same image as infra-service, separate entrypoint)
+# Ed25519 keypair generation (one per cloud; private key signs on monitor, public key verifies on git-registry):
+#   openssl genpkey -algorithm ed25519 -out git-registry-jwt.key
+#   openssl pkey -in git-registry-jwt.key -pubout -out git-registry-jwt.pub
+#   kubectl -n opensandbox-system create secret generic git-registry-jwt \
+#     --from-file=private=git-registry-jwt.key --from-file=public=git-registry-jwt.pub
+gitRegistry:
+  # default-on: git storage backend for App Builder projects
+  enabled: true
+  # Defaults to reusing infraService.image
+  image: ""
+  # Base of the gitUrl returned by the credentials API, e.g. https://infra.example.com/git (includes basePath).
+  # Blank: derived from global.baseDomain (https://git.<base>/git); required if both are blank.
+  publicUrl: ""
+  # Public path prefix (e.g. /git): shares the Infra Service domain so self-hosted deployments need no extra domain; empty string means a dedicated domain at root path
+  basePath: ""
+  jwtSecretName: git-registry-jwt
+  jwtSecret:
+    # chart generates the ed25519 signing keypair on install (idempotent: an
+    # existing Secret is never touched); set false if you provision it yourself
+    # with the openssl commands above.
+    create: true
+  jwtPrivateKeyKey: private
+  jwtPublicKeyKey: public
+  internalApiKeySecretName: opensandbox-api-key
+  internalApiKeyKey: api-key
+  repoSizeLimitBytes: 104857600
+  maxInputSizeBytes: 67108864
+  maxConcurrentGit: 32
+  gitTimeoutMs: 120000
+  trashRetentionDays: 7
+  gcUtcHour: 19
+  persistence:
+    size: 100Gi
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  nodeSelector: {}
+  tolerations: []
+  ingress:
+    enabled: true
+    className: nginx
+    host: ""
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      enabled: true
+      secretName: ""
+    certificate:
+      # default-on: cert-manager Certificate for git.<baseDomain> (issuer must exist;
+      # see the TLS section of the values example). Set false to bring your own Secret.
+      enabled: true
+      name: ""
+      issuerName: letsencrypt-dns
+      issuerKind: ClusterIssuer
+
+infraService:
+  # default-on: control-plane console/API for sandboxes, files and app deployments
+  enabled: true
+  # RBAC group toggle: set false when RBAC is managed cluster-wide (you must provide an SA matching serviceAccountName with equivalent permissions).
+  rbac:
+    create: true
+  namespaceOverride: opensandbox-system
+  # Public delivery image so a bare install is turnkey; override with your own build if needed.
+  image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
+  imagePullPolicy: IfNotPresent
+  # Image pull secrets for the infra-service deployment. Each entry: {name: <secret-name>}.
+  # imagePullSecrets: []
+  historySampleSeconds: 5
+  historyWindowSeconds: 600
+  sessionSecretName: infra-service-session
+  sessionSecretKey: secret
+  sessionSecret:
+    # chart generates the session Secret for a turnkey install; set false if you manage it externally
+    create: true
+  # Set to .example.com to issue the session cookie for all subdomains; subdomain control planes reuse the login via the shared SESSION_SECRET.
+  sessionCookieDomain: ""
+  github:
+    clientId: ""
+    clientSecretName: infra-service-github-oauth
+    clientSecretKey: client-secret
+    callbackUrl: https://infra.example.com/api/auth/github/callback
+    allowedOrg: ""
+  oauth:
+    provider: api-key
+    clientId: ""
+    clientSecretName: infra-service-github-oauth
+    clientSecretKey: client-secret
+    callbackUrl: ""
+    authorizeUrl: https://github.com/login/oauth/authorize
+    tokenUrl: https://github.com/login/oauth/access_token
+    userInfoUrl: https://api.github.com/user
+    scope: read:org
+    loginLabel: GitHub
+  replicaCount: 1
+  serviceAccountName: infra-service
+  serviceAccountAnnotations: {}
+  namespaces:
+    - opensandbox-system
+    - opensandbox
+  fileBrowser:
+    enabled: true
+    # Environment-specific defaults: the JuiceFS PVC/PV names below come from a reference
+    # deployment; override them to match your own storage setup.
+    pvcName: teable-agent-juicefs-monitor
+    mountPath: /mnt/juicefs
+    defaultPath: /teable
+    readOnly: false
+    maxUploadBytes: 104857600
+    persistentVolume:
+      enabled: false
+      name: teable-agent-juicefs-monitor-pv
+      juicefsName: teable-agent-monitor
+      capacity: 10Ti
+      accessModes:
+        - ReadWriteMany
+      driver: csi.juicefs.com
+      fsType: juicefs
+      secretName: teable-agent-juicefs-secret
+      secretNamespace: opensandbox-system
+      volumeHandle: teable-agent-juicefs-monitor-pv
+      reclaimPolicy: Retain
+    persistentVolumeClaim:
+      # default-on: dynamically provisioned PVC so the file browser works out of the box
+      create: true
+      name: teable-agent-juicefs-monitor
+      accessModes:
+        - ReadWriteOnce
+      storage: 20Gi
+      # Blank: use the cluster default StorageClass (key is omitted from the PVC).
+      storageClassName: ""
+      # Blank: do not bind to a specific PV (dynamic provisioning); set together with persistentVolume.* for a static PV.
+      volumeName: ""
+  s3Compat:
+    enabled: false
+    buckets:
+      teable-agent: /teable
+    maxUploadBytes: 104857600
+    allowOverwrite: true
+  opensandbox:
+    # Blank: derived from global.baseDomain (https://infra.<base>); falls back to https://infra.example.com.
+    runtimeUrl: ""
+    # Wildcard domain used for sandbox preview URLs.
+    # Blank/unset: derived from global.baseDomain (*.sandbox.<base>); falls back to *.sandbox.example.com.
+    # previewWildcardDomain: "*.sandbox.example.com"
+    namespace: opensandbox-system
+    apiKeySecretName: opensandbox-api-key
+    serverDeploymentName: opensandbox-server
+    # Max sandbox lifetime in seconds: BatchSandboxes older than this are deleted directly by Infra Service (default 24h).
+    # Per-sandbox override via annotation infra.teable.io/max-lifetime-seconds ("0" exempts it).
+    sandboxMaxLifetimeSeconds: 86400
+    sandboxLifetimeCleanupIntervalSeconds: 300
+  benchmark:
+    cpu: "2"
+    memory: 4Gi
+    timeoutMs: 420000
+    # Environment-specific default (JuiceFS PVC name from a reference deployment); override to match your storage.
+    pvcName: teable-agent-juicefs
+    resultPath: /mnt/juicefs/.infra-service/benchmark/latest.json
+  imagePreheat:
+    namespace: opensandbox-system
+    apiKeySecretName: opensandbox-api-key
+    registrySecretName: opensandbox-preheater-registry
+    holdImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+    # Preheat node selector. The default targets all Linux nodes; substitute a dedicated
+    # sandbox node pool label (key/value) if you have one.
+    nodeSelectorKey: kubernetes.io/os
+    nodeSelectorValue: linux
+  appRuntime:
+    namespace: app-deploy
+    # Blank: derived from global.baseDomain (app.<base>); falls back to app.example.com.
+    domain: ""
+    hostMatchMode: suffix
+    hostPrefix: ""
+    publicScheme: https
+    ingressMode: dynamic
+    serviceAccountName: teable-app-runtime
+    defaultImage: ""
+    registrySecretName: opensandbox-preheater-registry
+    defaultReplicas: 1
+    defaultCpuRequest: 25m
+    defaultMemoryRequest: 96Mi
+    defaultCpuLimit: "2"
+    defaultMemoryLimit: 4Gi
+    ingressClassName: nginx
+    tlsSecretName: app-wildcard-tls
+    ingressAnnotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    deployProbeTimeoutMs: 30000
+    deployProbeIntervalMs: 2000
+    # s3 targets the bundled MinIO so a bare install stores artifacts out of the box;
+    # gcs (GKE) and oss (ACK) remain supported and are set explicitly by the internal profiles.
+    artifactStoreProvider: s3
+    # Blank: defaults to minio.buckets.artifacts when artifactStoreProvider=s3 (the bundled
+    # MinIO bucket); gcs/oss deployments must name their own bucket.
+    artifactBucket: ""
+    # Blank: derived from global.baseDomain (https://infra.<base>); falls back to https://infra.example.com.
+    artifactPublicOrigin: ""
+    artifactUploadTtlSeconds: 900
+    artifactMaxBytes: 268435456
+    unhealthyTtlSeconds: 21600
+    cleanupIntervalSeconds: 900
+    artifactOss:
+      endpoint: ""
+      region: ""
+      accessKeySecretName: ""
+      accessKeyIdKey: access-key-id
+      accessKeySecretKey: access-key-secret
+      securityTokenSecretName: ""
+      securityTokenKey: security-token
+    artifactS3:
+      # Blank: derived from global.baseDomain (https://s3.<base>), i.e. the bundled MinIO ingress.
+      endpoint: ""
+      # MinIO ignores the region but AWS SDK clients require one; us-east-1 is the conventional stand-in.
+      region: us-east-1
+      # Blank: falls back to teable.secret.name using its minio-access-key/minio-secret-key keys
+      # (the chart-generated MinIO root credentials); the key names below only apply to explicit secrets.
+      accessKeySecretName: ""
+      accessKeyIdKey: access-key-id
+      accessKeySecretKey: access-key-secret
+      # MinIO serves buckets as path segments, not subdomains, so path-style addressing is required.
+      forcePathStyle: true
+    nodeSelector: {}
+    tolerations: []
+    # Image prefixes users may deploy through App Runtime; add your private registry prefixes here.
+    allowedImagePrefixes:
+      - ghcr.io/teableio/
+  victoriaMetrics:
+    enabled: false
+    image: victoriametrics/victoria-metrics:v1.120.0@sha256:cee3078df5c9c69556730aa6eafa02fe32a1e146692f6f1df27d654b38668e7d
+    updateStrategyType: RollingUpdate
+    rollingUpdate: {}
+    retentionPeriod: 30d
+    storageDataPath: /victoria-metrics-data
+    persistentVolumeClaim:
+      storage: 50Gi
+      # Environment-specific default: standard-rwo is the GKE default StorageClass; override on other platforms.
+      storageClassName: standard-rwo
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  # Environment-specific defaults: the volume ID comes from a reference deployment and the
+  # first cacheDirs entry is the GKE Container-Optimized OS (COS) cache path; override to match your cluster.
+  juicefsWriteback:
+    volumeId: teable-agent-juicefs-pv
+    mountNamespace: kube-system
+    cacheDirs:
+      - /mnt/stateful_partition/kube-ephemeral-ssd/jfsCache
+      - /var/jfsCache
+  # Alibaba Cloud API credentials (optional, ACK-specific). Environment variables are only
+  # injected when accessKeySecretName is set.
+  # alibabaCloud:
+  #   accessKeySecretName: ""                # Secret holding the AccessKey pair
+  #   accessKeyIdKey: access-key-id          # Secret key for the AccessKey ID
+  #   accessKeySecretKey: access-key-secret  # Secret key for the AccessKey secret
+  #   region: cn-hangzhou
+  # Optional backup provider identifier, exposed to the service as BACKUP_PROVIDER.
+  # backupProvider: ""
+  # Package registry browsing (optional). All keys are read by templates/infra-service/workload.yaml.
+  # packages:
+  #   internalRegistry:
+  #     enabled: false
+  #     url: ""                      # registry API URL
+  #     displayHost: ""              # host shown in image references
+  #     repoLimit: 100               # max repositories listed
+  #     tagLimit: 50                 # max tags listed per repository
+  #     bearerTokenSecretName: ""    # Secret with a bearer token
+  #     bearerTokenSecretKey: token
+  #     basicAuthSecretName: ""      # Secret with username/password keys
+  #     usernameKey: username
+  #     passwordKey: password
+  #     dockerConfigSecretName: ""   # Secret with a .dockerconfigjson key
+  #     dockerConfigSecretKey: .dockerconfigjson
+  #   artifactRegistry:              # GCP Artifact Registry (GKE-specific)
+  #     enabled: false
+  #     location: ""                 # e.g. us-central1
+  #     repositories: []             # repository names to browse
+  #     pageSize: 100
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  ingress:
+    # default-on: console + Infra API on infra.<baseDomain> (path /). The sandbox
+    # engine /v1 lives on the same host via the opensandbox-server sub-chart ingress.
+    enabled: true
+    className: nginx
+    # Blank: derived from global.baseDomain (infra.<base>).
+    host: ""
+    paths:
+      - /
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      enabled: true
+      # Blank: derived as <host>-tls, shared with the /v1 ingress certificate.
+      secretName: ""
+
+# ACK cloud-disk PVC autoscaling (StorageAutoScalerPolicy). Alibaba Cloud ACK only; keep disabled on GKE.
+storageAutoscaler:
+  enabled: false
+  policies: []
+
+# docker-registry image GC (weekly prune of ci-* tags + blob reclamation).
+# Prerequisites (not shipped with this chart): an existing docker-registry deployment with a
+# Service and a data PVC, a registry auth Secret (.dockerconfigjson), and the target namespace.
+registryGc:
+  enabled: false
+  # Both images are required when registryGc.enabled=true.
+  pruneImage: ""  # image with Node.js for the tag prune step
+  gcImage: ""     # docker-registry (distribution) image providing /bin/registry garbage-collect
+  # Tuning keys consumed by templates/registry-gc/gc.yaml (defaults shown):
+  # namespace: registry-system                     # namespace of the docker-registry deployment
+  # schedule: "10 4 * * 0"                         # CronJob schedule
+  # timeZone: Asia/Shanghai                        # CronJob time zone; set to your operational time zone
+  # keepRecent: 5                                  # newest N ci-* tags kept per repository
+  # keepHours: 72                                  # ci-* tags built within this window are kept
+  # registryHost: registry.example.com             # registry host as it appears in cluster image references
+  # authSecretName: opensandbox-artifact-registry  # registry auth Secret (.dockerconfigjson)
+  # dataPvcName: docker-registry-data              # PVC backing the registry storage
+
+# Bundled Teable application (full-stack self-hosted install).
+# default-on so a bare `helm install --set global.baseDomain=<domain>` brings up the complete
+# product; internal profiles disable it because the app runs on a separate platform there.
+teable:
+  enabled: true
+  image: ghcr.io/teableio/teable:latest
+  replicaCount: 1
+  # Server-side timestamps (automation schedules, exports) follow this zone.
+  timezone: UTC
+  # Main site host; blank = the root of global.baseDomain (the app owns the apex domain).
+  host: ""
+  # Blank: derived as https://<host>.
+  publicOrigin: ""
+  # Sandbox agent image PREFIX -- no tag. Teable launches AI sessions with
+  # <prefix>:<its own release tag>, so the agent always matches the app version,
+  # and it preheats that image through the Infra API on startup.
+  # China deployments: registry.cn-shenzhen.aliyuncs.com/teable/teable-sandbox-agent
+  sandboxAgentImagePrefix: ghcr.io/teableio/teable-sandbox-agent
+  db:
+    name: teable
+    user: teable
+  secret:
+    # Chart-generated app secret bundle (DB/Redis/MinIO credentials, JWT and storage encryption
+    # material) so a bare install needs no manual secret prep. Idempotent: on upgrade existing
+    # values are reused via lookup, so credentials never rotate accidentally.
+    create: true
+    name: teable-app-secrets
+  # Image pull secrets for the teable deployment. Each entry: {name: <secret-name>}.
+  imagePullSecrets: []
+  storage:
+    # PVC for /app/.assets so attachments/assets survive Pod restarts.
+    size: 10Gi
+    # Blank: use the cluster default StorageClass.
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  ingress:
+    enabled: true
+    className: nginx
+    annotations: {}
+    tls:
+      enabled: true
+      # Blank: chart-local default (teable-tls).
+      secretName: ""
+    certificate:
+      enabled: true
+      issuerName: letsencrypt-dns
+      issuerKind: ClusterIssuer
+
+# Bundled PostgreSQL backing the Teable app (single-node, PVC-backed).
+# Internal profiles disable it: their databases run on managed services outside the chart.
+postgres:
+  enabled: true
+  # Matches the docker-compose reference deployment default so both install paths run the same major version.
+  image: postgres:15.4
+  storage:
+    size: 20Gi
+    # Blank: use the cluster default StorageClass.
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+# Bundled Redis for the Teable app's cache/queues (realtime collaboration, automation workers).
+redis:
+  enabled: true
+  image: redis:7.2.4
+  storage:
+    # AOF persistence lives here so queued automation jobs survive restarts.
+    size: 5Gi
+    # Blank: use the cluster default StorageClass.
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Bundled MinIO: S3-compatible object storage for app attachments and App Runtime artifacts.
+minio:
+  enabled: true
+  # Third-party images: pin a digest for production installs.
+  image: minio/minio:latest
+  mcImage: minio/mc:latest
+  # Public S3 endpoint host (browsers hit it directly via presigned URLs); blank = s3.<baseDomain>.
+  host: ""
+  storage:
+    size: 50Gi
+    # Blank: use the cluster default StorageClass.
+    storageClassName: ""
+  buckets:
+    # App Runtime deploy artifacts (consumed by infra-service via the s3 artifact store provider).
+    artifacts: teable-app-artifacts
+    # Anonymous-download bucket: the app links avatars/attachments as <origin>/<bucket>/...
+    public: teable-public
+    # Presigned-access-only bucket for private attachments.
+    private: teable-private
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  ingress:
+    enabled: true
+    className: nginx
+    annotations: {}
+    tls:
+      enabled: true
+      # Blank: chart-local default (minio-s3-tls).
+      secretName: ""
+    certificate:
+      enabled: true
+      issuerName: letsencrypt-dns
+      issuerKind: ClusterIssuer
+
+# Shared OpenSandbox API key Secret (key: api-key). infra-service, opensandbox-server and the
+# bundled Teable app all reference it, but nothing created it before (internal environments
+# provision it by hand), so a bare install must generate it. Idempotent via lookup on upgrade.
+apiKeySecret:
+  create: true
+  name: opensandbox-api-key
