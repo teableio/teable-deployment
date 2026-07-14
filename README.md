@@ -29,9 +29,13 @@ domain.
 ```bash
 cp helm/examples/values.example.yaml my-values.yaml   # set global.baseDomain, read the TLS section
 helm dependency build helm/teable-infra
-helm install teable helm/teable-infra -n opensandbox-system --create-namespace -f my-values.yaml
+helm install teable helm/teable-infra -n opensandbox-system --create-namespace \
+  -f my-values.yaml --wait --timeout 15m
 ./helm/doctor.sh          # all green = deployed
 ```
+
+`--wait` holds until every workload is ready (first install pulls images and
+runs database migrations, so give it a few minutes).
 
 Open `https://<baseDomain>` and register the first account (it becomes the
 admin). The infra console is at `https://infra.<baseDomain>`.
@@ -42,8 +46,9 @@ plays on the Docker path — `helm install` ↔ `up`, edit values +
 an install creates is readable up front in
 `helm/teable-infra/manifests/crds.yaml` and `manifests/default.yaml`; diff them
 between releases before upgrading. Applying those files directly with kubectl
-also works as an escape hatch — at the cost of losing Helm's release
-management.
+also works as an escape hatch — create the namespace first
+(`kubectl create namespace opensandbox-system`), replace the placeholder
+Secret values, and accept the cost of losing Helm's release management.
 
 To pin or upgrade image versions, apply
 [`helm/examples/images.values.yaml`](helm/examples/images.values.yaml) — it

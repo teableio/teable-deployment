@@ -12,6 +12,12 @@ services:
     environment:
       # The Infra entrypoint must include the /v1 split (the SDK uses it to call the engine directly); points at caddy's internal alias, not the bare infra-service container.
       TEABLE_INFRA_API_URL: http://infra.localhost
+      # Local mode has no wildcard sandbox DNS inside containers, so all sandbox traffic
+      # (including the AI chat agent connection) goes through the engine's path-based
+      # /v1 proxy instead of per-port subdomains. Requires opensandbox-server >= v0.2.0-fix5
+      # and a Teable release carrying SANDBOX_OPENSANDBOX_USE_SERVER_PROXY support;
+      # older app builds simply ignore this variable.
+      SANDBOX_OPENSANDBOX_USE_SERVER_PROXY: "true"
 
   caddy:
     networks:
@@ -24,7 +30,7 @@ services:
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
     environment:
       TEABLE_PUBLIC_BUCKET: ${TEABLE_PUBLIC_BUCKET:-teable-public}   # used for public-bucket path forwarding
-      # Sandbox endpoint/preview domain: local mode always uses local domains. Known limitation: AI chat's agent connection cannot resolve
-      # local domains from inside containers yet (a sandbox-SDK improvement is planned); deploy/build flows are unaffected -- use cloud
-      # mode with a real domain for AI chat.
+      # Sandbox endpoint/preview domain: local mode always uses local domains. Browser preview resolves
+      # *.sandbox.localhost natively; machine-side sandbox traffic goes through the /v1 path proxy
+      # (SANDBOX_OPENSANDBOX_USE_SERVER_PROXY above), so no wildcard DNS is needed anywhere.
       SANDBOX_PREVIEW_HOST: ${SANDBOX_PREVIEW_HOST:-sandbox.localhost}

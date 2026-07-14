@@ -18,15 +18,16 @@ Two choices before you start:
 cd docker/all-in-one
 ./apply.sh local --with-app     # zero manual input: secrets, addresses, entry points all generated
 docker compose up -d
-./doctor.sh                     # self-check; all green = deployed
+./doctor.sh                     # waits for first-start healthchecks, then checks; all green = deployed
 ```
 
 Open `http://<machine-ip>` and register the first account (it becomes the
 admin). The console is at `http://infra.localhost` from the machine's own
 browser.
 
-> Known limit of local mode: AI chat is unavailable (browser preview, app
-> builds and deployments are unaffected). Use cloud mode if you need AI chat.
+> AI chat in local mode requires a Teable image released after 2026-07-14
+> (sandbox traffic rides the path-based proxy, preconfigured here); run
+> `docker compose pull teable` to update if yours is older.
 
 ### cloud
 

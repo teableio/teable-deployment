@@ -5,7 +5,12 @@
 #   Port preview (/v1/sandboxes/{id}/endpoints/{port}) returns host:port/proxy/{port} by default, which 404s root-path assets of Next/SPA apps;
 #   rewrite it here to the root-path subdomain {id}-{port}.{$SANDBOX_PREVIEW_HOST} (no scheme; consumers add their own), and hand proxying to (sandbox_preview).
 (infra_and_v1) {
-	@endpoints path_regexp ep ^/v1/sandboxes/([a-z0-9-]+)/endpoints/([0-9]+)/?$
+	# use_server_proxy=true asks the engine for a path-proxied endpoint (no wildcard
+	# DNS needed) -- let those requests through; only rewrite the default form.
+	@endpoints {
+		path_regexp ep ^/v1/sandboxes/([a-z0-9-]+)/endpoints/([0-9]+)/?$
+		not query use_server_proxy=true
+	}
 	handle @endpoints {
 		header Content-Type application/json
 		respond `{"endpoint":"{re.ep.1}-{re.ep.2}.{$SANDBOX_PREVIEW_HOST}"}` 200

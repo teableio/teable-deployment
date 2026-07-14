@@ -33,6 +33,20 @@ APP_MODE=0; case "${COMPOSE_FILE:-}" in *compose.app.yaml*) APP_MODE=1 ;; esac
 MODE=local;  case "${COMPOSE_FILE:-}" in *compose.cloud.yaml*) MODE=cloud ;; esac
 echo "  Mode: ${MODE}$( [ "$APP_MODE" = 1 ] && echo ' + app(all-in-one)' )"
 
+# First start pulls images and runs healthchecks (the app allows up to 120s to boot);
+# checking while containers are still starting would misreport a healthy deployment.
+waited=0
+while :; do
+  starting="$($DOCKER compose ps --format '{{.Name}}|{{.Health}}' 2>/dev/null | awk -F'|' '$2=="starting"{print $1}' | paste -sd, -)"
+  [ -z "$starting" ] && break
+  if [ "$waited" -ge 300 ]; then
+    printf '  [..]   still starting after %ss: %s (checking anyway)\n' "$waited" "$starting"
+    break
+  fi
+  [ "$waited" = 0 ] && printf '  [..]   waiting for services to finish starting...\n'
+  sleep 5; waited=$((waited+5))
+done
+
 # Entry addresses: local goes through localhost + Host header; cloud uses the real domains
 if [ "$MODE" = "cloud" ]; then
   TEABLE_URL="https://${TEABLE_HOST:-}"
