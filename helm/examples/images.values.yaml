@@ -23,20 +23,20 @@ minio:
 infraService:
   image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
 imagePreheater:
-  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
 opensandbox-controller:
   controller:
     image:
       repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller
-      tag: v0.2.0-amd64
+      tag: v0.2.0
     snapshot:
-      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
 opensandbox-server:
   server:
     image:
       repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server
-      tag: v0.2.0-fix4
+      tag: v0.2.0-fix5
     gateway:
       image:
         repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress
-        tag: v1.0.7-amd64
+        tag: v1.0.7

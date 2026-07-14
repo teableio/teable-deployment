@@ -152,7 +152,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{- define "opensandbox-server.ingressGatewayImage" -}}
-{{- $tag := .Values.server.gateway.image.tag | default "v1.0.7-amd64" }}
+{{- $tag := .Values.server.gateway.image.tag | default "v1.0.7" }}
 {{- printf "%s:%s" .Values.server.gateway.image.repository $tag }}
 {{- end }}
 

@@ -266,7 +266,7 @@ data:
     batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
 
     [egress]
-    image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"
+    image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
     mode = "dns+nft"
 
     [ingress]
@@ -1387,7 +1387,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
   annotations:
-    teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"]'
+    teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"]'
 spec:
   selector:
     matchLabels:
@@ -1400,11 +1400,11 @@ spec:
         app.kubernetes.io/instance: teable
         app.kubernetes.io/part-of: opensandbox
       annotations:
-        teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"]'
+        teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"]'
     spec:
       containers:
       - name: preheater
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
         imagePullPolicy: IfNotPresent
         command:
         - "/bin/sh"
@@ -1436,7 +1436,7 @@ spec:
             if [ "$pulled" != "1" ]; then
               ok=0
             fi
-            image="registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"
+            image="registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
             attempt=1
             pulled=0
             while [ "$attempt" -le 3 ]; do
@@ -1513,7 +1513,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: manager
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0-amd64
+        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0
         imagePullPolicy: IfNotPresent
         command:
         - "/workspace/server"
@@ -1523,7 +1523,7 @@ spec:
         - "--zap-log-level=info"
         - "--kube-client-qps=100"
         - "--kube-client-burst=200"
-        - "--image-committer-image=registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64"
+        - "--image-committer-image=registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0"
         - "--commit-job-timeout=10m"
         ports:
         - name: health
@@ -1592,7 +1592,7 @@ spec:
       serviceAccountName: opensandbox-ingress-gateway
       containers:
       - name: main
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7-amd64
+        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7
         imagePullPolicy: IfNotPresent
         args:
         - "--namespace=teable-sandbox"
@@ -1648,7 +1648,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 6e885c8e1395a9e5b01483c8ca7c2ba8ee30b637f4a38b0cd18bede5c5a3f3c1
+        checksum/config-toml: c117322ae39232a56bfdc158d63b850479c75821ddfc2391057e6047b493dd4c
         checksum/batchsandbox-template: bf1caf1b588a88e298710c18206c85db07f5b5ea7f04662da8bb4ee76394cd33
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1658,7 +1658,7 @@ spec:
       serviceAccountName: opensandbox-server
       containers:
       - name: main
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix4
+        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix5
         imagePullPolicy: IfNotPresent
         command:
         - "/bin/sh"
@@ -1911,7 +1911,7 @@ spec:
         - name: IMAGE_PREHEAT_REGISTRY_SECRET_NAME
           value: opensandbox-preheater-registry
         - name: IMAGE_PREHEAT_HOLD_IMAGE
-          value: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+          value: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
         - name: IMAGE_PREHEAT_NODE_SELECTOR_KEY
           value: kubernetes.io/os
         - name: IMAGE_PREHEAT_NODE_SELECTOR_VALUE

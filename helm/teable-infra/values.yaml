@@ -10,7 +10,7 @@ opensandbox-controller:
     replicaCount: 1
     snapshot:
       # DockerHub: opensandbox/image-committer:v0.1.0
-      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
       commitJobTimeout: 10m
       registry: ""
       registryInsecure: false
@@ -121,7 +121,7 @@ imagePreheater:
   # default-on: pre-pulls sandbox images on every node so first sandbox start is fast
   enabled: true
   namespaceOverride: opensandbox-system
-  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
   imagePullPolicy: IfNotPresent
   containerdSocketPath: /run/containerd/containerd.sock
   containerdNamespace: k8s.io
@@ -137,7 +137,7 @@ imagePreheater:
   # the Infra API on startup (prefix + its own release tag).
   images:
     - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2
-    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64
+    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12
 
 # Sandbox dataplane namespace (where BatchSandbox pods run). Must match the
 # opensandbox-server [kubernetes].namespace config, the gateway dataplaneNamespace
@@ -393,7 +393,7 @@ infraService:
     namespace: opensandbox-system
     apiKeySecretName: opensandbox-api-key
     registrySecretName: opensandbox-preheater-registry
-    holdImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64
+    holdImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
     # Preheat node selector. The default targets all Linux nodes; substitute a dedicated
     # sandbox node pool label (key/value) if you have one.
     nodeSelectorKey: kubernetes.io/os

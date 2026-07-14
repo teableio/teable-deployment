@@ -20,7 +20,7 @@ controller:
     # -- Image pull policy
     pullPolicy: IfNotPresent
     # -- Overrides the image tag whose default is the chart appVersion
-    tag: "v0.2.0-amd64"
+    tag: "v0.2.0"
   
   # -- Number of controller replicas
   replicaCount: 1
@@ -48,7 +48,7 @@ controller:
   snapshot:
     # -- Image used for commit operations (must contain nerdctl tool)
     # DockerHub: opensandbox/image-committer:v0.1.0
-    imageCommitterImage: "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64"
+    imageCommitterImage: "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0"
     # -- Containerd socket path of host
     containerdSocketPath: ""
     # -- Timeout duration for commit jobs

@@ -33,7 +33,7 @@ server:
   # -- Server image configuration
   image:
     repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server
-    tag: "v0.2.0-fix4"
+    tag: "v0.2.0-fix5"
 
   # -- Number of server replicas
   replicaCount: 2
@@ -102,7 +102,7 @@ server:
     gatewayRouteMode: "header"
     image:
       repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress
-      tag: "v1.0.7-amd64"
+      tag: "v1.0.7"
     replicaCount: 2
     port: 28888
     dataplaneNamespace: "teable-sandbox"
@@ -167,5 +167,5 @@ configToml: |
   batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
   
   [egress]
-  image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12-amd64"
+  image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
   mode = "dns+nft"
