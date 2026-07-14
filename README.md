@@ -3,7 +3,7 @@
 Run the full Teable platform on your own infrastructure: the Teable app plus its
 AI runtime plane — sandboxes, the app builder and app deployments.
 
-Just want to try Teable (tables, collaboration, API, automation)? Use
+Just want to try Teable (AI Spreadsheet, APP Builder, AI Workflows)? Use
 [teable.ai](https://teable.ai) — nothing to deploy.
 
 ## Pick your path
