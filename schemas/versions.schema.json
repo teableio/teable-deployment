@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/teableio/teable-deployment/schemas/versions.schema.json",
+  "title": "Teable Platform Release manifest (versions.yaml)",
+  "type": "object",
+  "required": ["platformRelease", "releasedAt", "components", "verified"],
+  "additionalProperties": false,
+  "properties": {
+    "platformRelease": {
+      "type": "string",
+      "description": "Platform release identifier; also the git tag of this repository revision.",
+      "pattern": "^v\\d{4}\\.\\d{1,2}\\.\\d+$"
+    },
+    "releasedAt": { "type": "string", "format": "date-time" },
+    "components": {
+      "type": "object",
+      "description": "Every image the release pins, keyed by component name.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["image"],
+        "additionalProperties": false,
+        "properties": {
+          "image": {
+            "type": "string",
+            "description": "Full image reference including tag (registry mirror prefixes are substituted per region, tags stay identical)."
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "Manifest digest on the canonical registry at release time."
+          },
+          "architectures": {
+            "type": "array",
+            "items": { "enum": ["amd64", "arm64"] },
+            "minItems": 1
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "teableCompatibility": {
+      "type": "object",
+      "description": "Compatibility window for the Teable app connecting to this runtime.",
+      "additionalProperties": false,
+      "properties": {
+        "minRelease": {
+          "type": "string",
+          "description": "Oldest Teable release tag supported by this platform release (date-ordered release.* tag)."
+        },
+        "verifiedRelease": {
+          "type": "string",
+          "description": "The Teable release this platform release was verified against."
+        }
+      }
+    },
+    "requiredMigrations": {
+      "type": "array",
+      "description": "Migrations that must complete before or during the upgrade to this release; empty means hot-swappable.",
+      "items": {
+        "type": "object",
+        "required": ["id", "guide"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "guide": { "type": "string", "description": "Path to the upgrade guide within this repository." },
+          "irreversible": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "hotSwap": {
+      "type": "boolean",
+      "description": "True when upgrading from the previous platform release needs image updates only (no required migrations)."
+    },
+    "verified": {
+      "type": "object",
+      "description": "What was actually exercised before this release was cut.",
+      "required": ["docker", "kubernetes"],
+      "additionalProperties": false,
+      "properties": {
+        "docker": { "type": "string", "format": "date" },
+        "kubernetes": { "type": "string", "format": "date" },
+        "backupRestore": { "type": "string", "format": "date" }
+      }
+    }
+  }
+}

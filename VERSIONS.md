@@ -8,7 +8,7 @@
 
 | Component | Image | Notes |
 |---|---|---|
-| Teable app | `ghcr.io/teableio/teable:latest` | Docker deployments track `latest`; pin with `pin-image.sh` for production |
+| Teable app | `ghcr.io/teableio/teable:latest` | verified release: `release.2026-07-14T12-24-39Z.2228`; pin with `pin-image.sh` for production |
 | Infra Service / Git Registry | `ghcr.io/teableio/teable-infra-service:latest` | one image serves both |
 | Sandbox engine (server) | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix5` | includes the `/v1` proxy-endpoint fix (path-proxy mode needs >= fix5) |
 | Sandbox execd | `opensandbox/execd:v1.0.18` (engine-injected) | pulled from the public distribution registry |
