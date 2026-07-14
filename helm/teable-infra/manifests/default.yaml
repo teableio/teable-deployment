@@ -2,6 +2,10 @@
 # helm/examples/values.example.yaml (baseDomain: teable.example.org).
 # Read it to see every resource an install creates, or diff it between
 # releases before upgrading. Do not edit by hand.
+#
+# Secret values are placeholders: helm install generates real random ones.
+# If you apply this file directly with kubectl instead, replace every
+# GENERATED-AT-INSTALL-TIME value with your own random material first.
 ---
 apiVersion: v1
 kind: Namespace
@@ -185,8 +189,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
 type: Opaque
-data:
-  api-key: bmtrcDJ2Rm1hSHR6VE5uVXZWOUFjYllmZEJ4d3dPVDcwZEJvaUJHUmxYWHRnSGZi
+stringData:
+  api-key: generated at install time - replace before applying directly
 ---
 apiVersion: v1
 kind: Secret
@@ -199,8 +203,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
 type: Opaque
-data:
-  secret: U1FyTk1hRW9jT2t6U29xTTJad1g2d242dzQwYkE0enpzd21DVE9sUg==
+stringData:
+  secret: generated at install time - replace before applying directly
 ---
 apiVersion: v1
 kind: Secret
@@ -213,14 +217,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
 type: Opaque
-data:
-  db-password: WXRmYnJjQlRjMTRKUmY5a2JJd2FmaVNp
-  redis-password: dG84Vk13OVNwdVdHYml2ZEdiY2FEZ1dN
-  sandbox-jwt-secret: akhlOVlsNW9maGpKRFhFNEF5aElKejR4VldVNUkzeWR0cmkyakpNRlVncWhPWlho
-  storage-encryption-key: bFR4VVdhWUk4d0hCY2IyRQ==
-  storage-encryption-iv: SE00dVh1TURFbEJaQXQzWA==
-  minio-access-key: dGVhYmxlLXJkQ1F2ZGhS
-  minio-secret-key: WUVNMlNRZUxrYVNoZkNacU5xUmVEcDY0VGJVTG9MbkQ=
+stringData:
+  db-password: generated at install time - replace before applying directly
+  redis-password: generated at install time - replace before applying directly
+  sandbox-jwt-secret: generated at install time - replace before applying directly
+  storage-encryption-key: generated at install time - replace before applying directly
+  storage-encryption-iv: generated at install time - replace before applying directly
+  minio-access-key: generated at install time - replace before applying directly
+  minio-secret-key: generated at install time - replace before applying directly
 ---
 apiVersion: v1
 kind: ConfigMap
