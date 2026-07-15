@@ -1,6 +1,6 @@
-# Caddy with the Cloudflare DNS plugin built in (cloud only) -- wildcard certs need DNS-01 and the official image has no DNS plugins, so build one with xcaddy.
+# Caddy with the Cloudflare DNS plugin built in (server only) -- wildcard certs need DNS-01 and the official image has no DNS plugins, so build one with xcaddy.
 # Local compose.local.yaml uses the official caddy:2.9.1; no plugin needed.
-# To switch DNS providers: change the --with module below plus acme_dns in Caddyfile.cloud (catalog at https://caddyserver.com/download).
+# To switch DNS providers: change the --with module below plus acme_dns in Caddyfile.server (catalog at https://caddyserver.com/download).
 # NOTE: use 2.9.x: the caddy 2.8.x builder fails to compile via xcaddy due to zapslog.HandlerOptions dependency drift.
 FROM caddy:2.9.1-builder AS builder
 RUN xcaddy build --with github.com/caddy-dns/cloudflare

@@ -1,4 +1,5 @@
-# Cloud entrypoint: TLS termination + routing (imports shared caddy.snippets).
+# all-in-one server entrypoint: TLS termination + routing (imports shared caddy.snippets).
+# Difference from Caddyfile.server: the Teable main site is at TEABLE_HOST (default = root domain); the console is at INFRA_HOST (default infra.<domain>).
 # Wildcard certificates (*.app / *.sandbox) require DNS-01; the caddy-data volume must persist (stores certs, avoids re-issue rate limits).
 {
 	email {$ACME_EMAIL}
@@ -6,6 +7,17 @@
 }
 
 import caddy.snippets
+
+# Teable main site. Public-bucket paths forward to MinIO: under the minio provider the app builds public asset URLs
+# as <PUBLIC_ORIGIN>/<public-bucket>/..., so the entrypoint must hand that prefix to MinIO (path-style).
+{$TEABLE_HOST} {
+	handle /{$TEABLE_PUBLIC_BUCKET}/* {
+		reverse_proxy minio:9000
+	}
+	handle {
+		reverse_proxy teable:3000
+	}
+}
 
 # Console + Infra API + git smart-http + object storage + sandbox port-preview rewrite.
 # One host, one certificate: /git and the bucket path-prefixes ride the Infra domain,

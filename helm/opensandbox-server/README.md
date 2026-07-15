@@ -45,7 +45,7 @@ Optional: override gateway image, replicas, or resources (see `server.gateway.*`
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `server.image.repository` | Server image repository | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server` |
+| `server.image.repository` | Server image repository | `ghcr.io/teableio/opensandbox-server` |
 | `server.image.tag` | Server image tag | `v0.2.0-fix4` |
 | `server.replicaCount` | Server replicas | `2` |
 | `server.resources` | CPU/memory requests and limits | See values.yaml |

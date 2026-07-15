@@ -103,12 +103,17 @@ write_git_override() {
   } > "$override"
 }
 
-# Render opensandbox.generated.toml (injects registry + sandbox network name; api_key is not set here, compose env injects it). Args: REGISTRY SANDBOX_NET.
+# Render opensandbox.generated.toml (injects execd/egress image refs + sandbox network name; api_key is not set here, compose env injects it).
+# Args: EXECD_IMAGE EGRESS_IMAGE SANDBOX_NET [CA_BINDS_LINE] [CA_ENV_LINE] -- the last two are whole
+# TOML lines (or empty) built by apply.d/40-runtime.sh from SANDBOX_CA_CERT_FILE / SANDBOX_TLS_NO_VERIFY.
 render_toml() {
-  local registry="$1" sandbox_net="$2"
+  local execd_image="$1" egress_image="$2" sandbox_net="$3" ca_binds_line="${4:-}" ca_env_line="${5:-}"
   [ -f opensandbox.toml ] || { echo "[!] opensandbox.toml template missing, skipping render"; return 0; }
-  sed -e "s|__OPENSANDBOX_REGISTRY__|${registry}|g" \
+  sed -e "s|__EXECD_IMAGE__|${execd_image}|g" \
+      -e "s|__EGRESS_IMAGE__|${egress_image}|g" \
       -e "s|__SANDBOX_NETWORK__|${sandbox_net}|g" \
+      -e "s|__SANDBOX_CA_BINDS__|${ca_binds_line}|" \
+      -e "s|__SANDBOX_CA_ENV__|${ca_env_line}|" \
       opensandbox.toml > opensandbox.generated.toml
   echo "[ok] opensandbox.generated.toml"
 }

@@ -110,7 +110,7 @@ spec:
             - name: IMAGE_PREHEAT_REGISTRY_SECRET_NAME
               value: {{ .Values.infraService.imagePreheat.registrySecretName | default "opensandbox-preheater-registry" | quote }}
             - name: IMAGE_PREHEAT_HOLD_IMAGE
-              value: {{ .Values.infraService.imagePreheat.holdImage | default "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0" | quote }}
+              value: {{ .Values.infraService.imagePreheat.holdImage | default "ghcr.io/teableio/opensandbox-image-committer:v0.1.0" | quote }}
             - name: IMAGE_PREHEAT_NODE_SELECTOR_KEY
               value: {{ .Values.infraService.imagePreheat.nodeSelectorKey | default "kubernetes.io/os" | quote }}
             {{- /* Default targets all Linux nodes; substitute a dedicated sandbox node pool label if you have one. */}}

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Unified configuration entry point:
 #   ./apply.sh local               Fully automatic: fill secrets / derive addresses / render toml / write COMPOSE_FILE.
-#   ./apply.sh cloud               Validate required fields (BASE_DOMAIN/email/CF Token) + same as above.
-#   ./apply.sh local|cloud --with-app   Add Teable app + PG + Redis (all-in-one) on top of the Infra stack.
+#   ./apply.sh server               Validate required fields (BASE_DOMAIN/email/CF Token) + same as above.
+#   ./apply.sh local|server --with-app   Add Teable app + PG + Redis (all-in-one) on top of the Infra stack.
 # .env is the single source of truth; only blank secrets/derived values get filled (existing values are never touched), so it is safe to re-run.
 # Behavior is split in order under apply.d/ (one concern per file, sourced sequentially, sharing this shell's variables):
 #   10-env      .env initialization and loading
@@ -23,12 +23,12 @@ for arg in "$@"; do
   case "$arg" in
     --with-app) WITH_APP=1 ;;
     --dev) DEV=1 ;;   # --dev appends a compose.dev.yaml overlay if you create one (not shipped)
-    *) echo "Usage: ./apply.sh local|cloud [--with-app]"; exit 1 ;;
+    *) echo "Usage: ./apply.sh local|server [--with-app]"; exit 1 ;;
   esac
 done
 case "$MODE" in
-  local|cloud) ;;
-  *) echo "Usage: ./apply.sh local|cloud [--with-app]"; exit 1 ;;
+  local|server) ;;
+  *) echo "Usage: ./apply.sh local|server [--with-app]"; exit 1 ;;
 esac
 
 for step in apply.d/[0-9]*.sh; do

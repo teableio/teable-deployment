@@ -251,7 +251,7 @@ data:
 
     [runtime]
     type = "kubernetes"
-    execd_image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2"
+    execd_image = "ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2"
 
     [kubernetes]
     kubeconfig_path = ""
@@ -266,7 +266,7 @@ data:
     batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
 
     [egress]
-    image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
+    image = "ghcr.io/teableio/opensandbox-egress:v1.0.12"
     mode = "dns+nft"
 
     [ingress]
@@ -1387,7 +1387,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
   annotations:
-    teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"]'
+    teable.ai/preheat-images: '["ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2","ghcr.io/teableio/opensandbox-egress:v1.0.12"]'
 spec:
   selector:
     matchLabels:
@@ -1400,11 +1400,11 @@ spec:
         app.kubernetes.io/instance: teable
         app.kubernetes.io/part-of: opensandbox
       annotations:
-        teable.ai/preheat-images: '["registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2","registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"]'
+        teable.ai/preheat-images: '["ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2","ghcr.io/teableio/opensandbox-egress:v1.0.12"]'
     spec:
       containers:
       - name: preheater
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
+        image: ghcr.io/teableio/opensandbox-image-committer:v0.1.0
         imagePullPolicy: IfNotPresent
         command:
         - "/bin/sh"
@@ -1421,7 +1421,7 @@ spec:
 
           while true; do
             ok=1
-            image="registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2"
+            image="ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2"
             attempt=1
             pulled=0
             while [ "$attempt" -le 3 ]; do
@@ -1436,7 +1436,7 @@ spec:
             if [ "$pulled" != "1" ]; then
               ok=0
             fi
-            image="registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
+            image="ghcr.io/teableio/opensandbox-egress:v1.0.12"
             attempt=1
             pulled=0
             while [ "$attempt" -le 3 ]; do
@@ -1513,7 +1513,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: manager
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0
+        image: ghcr.io/teableio/opensandbox-controller:v0.2.0
         imagePullPolicy: IfNotPresent
         command:
         - "/workspace/server"
@@ -1523,7 +1523,7 @@ spec:
         - "--zap-log-level=info"
         - "--kube-client-qps=100"
         - "--kube-client-burst=200"
-        - "--image-committer-image=registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0"
+        - "--image-committer-image=ghcr.io/teableio/opensandbox-image-committer:v0.1.0"
         - "--commit-job-timeout=10m"
         ports:
         - name: health
@@ -1560,8 +1560,8 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-        volumeMounts:
-      volumes:
+        volumeMounts: 
+      volumes: 
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: apps/v1
@@ -1592,7 +1592,7 @@ spec:
       serviceAccountName: opensandbox-ingress-gateway
       containers:
       - name: main
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7
+        image: ghcr.io/teableio/opensandbox-ingress:v1.0.7
         imagePullPolicy: IfNotPresent
         args:
         - "--namespace=teable-sandbox"
@@ -1648,7 +1648,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: c117322ae39232a56bfdc158d63b850479c75821ddfc2391057e6047b493dd4c
+        checksum/config-toml: 021b7064c7a4f874b83e7da06d399c5cfa8971eab7cc715a02ecdec429751ef8
         checksum/batchsandbox-template: bf1caf1b588a88e298710c18206c85db07f5b5ea7f04662da8bb4ee76394cd33
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1658,7 +1658,7 @@ spec:
       serviceAccountName: opensandbox-server
       containers:
       - name: main
-        image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix5
+        image: ghcr.io/teableio/opensandbox-server:v0.2.0-fix6
         imagePullPolicy: IfNotPresent
         command:
         - "/bin/sh"
@@ -1752,7 +1752,7 @@ spec:
     spec:
       containers:
       - name: git-registry
-        image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
+        image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
         imagePullPolicy: IfNotPresent
         command:
         - node
@@ -1844,7 +1844,7 @@ spec:
       serviceAccountName: infra-service
       containers:
       - name: monitor
-        image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
+        image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -1913,7 +1913,7 @@ spec:
         - name: IMAGE_PREHEAT_REGISTRY_SECRET_NAME
           value: opensandbox-preheater-registry
         - name: IMAGE_PREHEAT_HOLD_IMAGE
-          value: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
+          value: ghcr.io/teableio/opensandbox-image-committer:v0.1.0
         - name: IMAGE_PREHEAT_NODE_SELECTOR_KEY
           value: kubernetes.io/os
         - name: IMAGE_PREHEAT_NODE_SELECTOR_VALUE
@@ -1929,7 +1929,7 @@ spec:
         - name: APP_RUNTIME_SERVICE_ACCOUNT_NAME
           value: teable-app-runtime
         - name: APP_RUNTIME_DEFAULT_IMAGE
-          value: ''
+          value: ghcr.io/teableio/teable-app-runtime:20260707T123051Z
         - name: APP_RUNTIME_REGISTRY_SECRET_NAME
           value: opensandbox-preheater-registry
         - name: APP_RUNTIME_DEFAULT_REPLICAS
@@ -2600,7 +2600,7 @@ metadata:
     app.kubernetes.io/instance: teable
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
-  annotations:
+  annotations: 
 spec:
   ingressClassName: nginx
   tls:
@@ -2785,7 +2785,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: generate
-        image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
+        image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
         env:
         - name: SECRET_NAME
           value: git-registry-jwt

@@ -6,4 +6,4 @@ opensandbox.generated.toml
 # Re-include the two templates: a parent .gitignore's `.env*` rule would otherwise
 # swallow them (child-directory negation overrides the parent rule).
 !.env.local.example
-!.env.cloud.example
+!.env.server.example

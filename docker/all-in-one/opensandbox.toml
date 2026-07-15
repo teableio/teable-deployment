@@ -1,5 +1,5 @@
 # OpenSandbox docker-mode config template (shared by both modes). Placeholders are rendered by apply.sh into opensandbox.generated.toml:
-#   __OPENSANDBOX_REGISTRY__ (execd/egress source) and __SANDBOX_NETWORK__ (sandbox network name) = the same-named .env entries.
+#   __EXECD_IMAGE__ / __EGRESS_IMAGE__ (full image references) and __SANDBOX_NETWORK__ (sandbox network name) = the same-named .env entries.
 # api_key is not in this file: compose injects it via env OPENSANDBOX_SERVER_API_KEY, so the rendered output contains no secrets.
 # Reference: https://github.com/alibaba/OpenSandbox/blob/main/server/configuration.md
 
@@ -11,7 +11,7 @@ max_sandbox_timeout_seconds = 86400
 
 [runtime]
 type = "docker"
-execd_image = "__OPENSANDBOX_REGISTRY__/execd:v1.0.18"   # injected by the server into every sandbox container
+execd_image = "__EXECD_IMAGE__"   # injected by the server into every sandbox container
 
 [store]
 type = "sqlite"
@@ -30,10 +30,14 @@ drop_capabilities = ["AUDIT_WRITE", "MKNOD", "NET_ADMIN", "NET_RAW", "SYS_ADMIN"
 # allow setuid privilege elevation inside sandboxes
 no_new_privileges = false
 pids_limit = 4096                            # guards against fork bombs
+# Private-CA trust for sandboxes (rendered from SANDBOX_CA_CERT_FILE / SANDBOX_TLS_NO_VERIFY
+# in .env; blank when unset). Needs opensandbox-server >= v0.2.0-fix6.
+__SANDBOX_CA_BINDS__
+__SANDBOX_CA_ENV__
 
 [ingress]
 mode = "direct"                              # docker mode only supports direct
 
 [egress]
-image = "__OPENSANDBOX_REGISTRY__/egress:v1.0.12"   # server starts an egress sidecar per sandbox on demand
+image = "__EGRESS_IMAGE__"   # server starts an egress sidecar per sandbox on demand
 mode = "dns"

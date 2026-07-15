@@ -69,11 +69,25 @@ global:
 #   infra.<baseDomain>      infra.<baseDomain>-tls   (also serves /git and the storage paths)
 #   *.app.<baseDomain>      app-wildcard-tls
 #   *.sandbox.<baseDomain>  sandbox.<baseDomain>-tls
+#
+# Certificates from a private/corporate CA? Sandboxes must trust it too, or
+# AI sessions and builds fail on the callback -- see helm/private-ca.md.
 
 # ── 3. Components ────────────────────────────────────────────────────────────
 # One block per component: image pins and storage sizes together. Sizes are the
 # chart defaults; raise them to match your workload. storageClassName blank =
 # cluster default. All data lives in PersistentVolumeClaims.
+#
+# China deployments: every ghcr.io/teableio/ image is mirrored with identical
+# tags at registry.cn-shenzhen.aliyuncs.com/teable/ -- swap the prefix in the
+# image keys (the full pinned list is in helm/examples/images.values.yaml).
+# Two more references hide inside `opensandbox-server.configToml` (execd_image
+# and [egress].image, injected into sandboxes at runtime): to mirror them, copy
+# the configToml block from helm/opensandbox-server/values.yaml into your
+# values and swap the prefixes there too, and keep `imagePreheater.images`
+# pointing at the same references. When you swap the app-runtime prefix, also
+# add it to `infraService.appRuntime.allowedImagePrefixes` (the allowlist must
+# contain the default image's prefix, or app deployment is rejected).
 
 teable:
   # Defaults to :latest so a first install just works. For production, pin the

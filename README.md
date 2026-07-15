@@ -38,7 +38,7 @@ where it runs.
 | Best for | first full deployment; everything on one machine | an existing cluster; production isolation and scaling |
 | Machine / cluster | 1 Docker machine (see `VERSIONS.md` for sizing) | a production K8s cluster (see `VERSIONS.md` for sizing) |
 | Sandbox node pool | not needed | recommended, isolates sandbox load |
-| Domain & DNS | local: none (`*.localhost`) · cloud: one managed domain | one managed domain with DNS control |
+| Domain & DNS | local: none (`*.localhost`) · server: one managed domain | one managed domain with DNS control |
 | **Start here** | [`docker/all-in-one/`](docker/all-in-one/README.md) | [`helm/`](helm/README.md) |
 
 The paths are independent: Docker users never need Kubernetes concepts, and

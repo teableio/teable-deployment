@@ -1,18 +1,18 @@
 # Domain/address derivation -- single-root-domain principle:
-#   cloud: the only domain concept is BASE_DOMAIN; every service is split from it (main site = root domain,
+#   server: the only domain concept is BASE_DOMAIN; every service is split from it (main site = root domain,
 #          infra. subdomain carrying /v1+git+storage paths, *.app/*.sandbox wildcards). To use separate domains, fill the matching
 #          *_HOST override in the .env "advanced" section (blank = derived).
 #   local: no domain concept at all; everything is *.localhost + LAN IP (attachment/artifact presigned URLs
 #          require the browser and the containers to reach the same address).
 
-if [ "$MODE" = "cloud" ]; then
+if [ "$MODE" = "server" ]; then
   # --- Required (non-secret) validation: only you can fill these; the script will not invent them ---
   miss=0
   for v in BASE_DOMAIN ACME_EMAIL CLOUDFLARE_API_TOKEN; do
     eval "val=\${$v:-}"
     [ -n "$val" ] || { echo "[x] .env is missing $v (fill it by hand)"; miss=1; }
   done
-  [ "$miss" = 0 ] || { echo "    Fill them in, then re-run ./apply.sh cloud."; exit 1; }
+  [ "$miss" = 0 ] || { echo "    Fill them in, then re-run ./apply.sh server."; exit 1; }
 
   if [ "$WITH_APP" = 1 ]; then
     # all-in-one: the Teable main site takes the root domain, the console yields to the infra subdomain (the two must never collide)
@@ -20,7 +20,7 @@ if [ "$MODE" = "cloud" ]; then
     set_if_blank TEABLE_HOST "${TEABLE_HOST_EFF}" "$ENV_FILE"
     set_if_blank INFRA_HOST "infra.${BASE_DOMAIN}" "$ENV_FILE"
     INFRA_HOST_EFF="$(grep -E '^INFRA_HOST=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
-    # Upgrading an existing infra-only cloud deploy: its auto-derived INFRA_HOST was the root domain,
+    # Upgrading an existing infra-only server deploy: its auto-derived INFRA_HOST was the root domain,
     # which now belongs to the Teable site -- migrate it to the infra. subdomain instead of erroring out.
     if [ "$INFRA_HOST_EFF" = "$BASE_DOMAIN" ] && [ "$TEABLE_HOST_EFF" = "$BASE_DOMAIN" ]; then
       set_kv INFRA_HOST "infra.${BASE_DOMAIN}" "$ENV_FILE"
@@ -64,7 +64,7 @@ if [ "$MODE" = "local" ]; then
     set_if_blank TEABLE_MINIO_USE_SSL "false" "$ENV_FILE"
     # Sandbox endpoint/preview domain: local always uses local domain names (zero external dependencies). Known limitation: AI chat's agent
     # connection cannot resolve local domains from inside containers yet (a sandbox-SDK improvement is planned); deploy/build flows are
-    # unaffected -- use cloud mode with a real domain for AI chat.
+    # unaffected -- use server mode with a real domain for AI chat.
     set_if_blank SANDBOX_PREVIEW_HOST "sandbox.localhost" "$ENV_FILE"
   fi
 fi

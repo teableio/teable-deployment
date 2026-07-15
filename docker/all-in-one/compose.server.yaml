@@ -1,6 +1,6 @@
-# Cloud host overlay: real domain + wildcard TLS (Caddy + Cloudflare DNS-01) + public-network hardening (only caddy publishes ports).
-#   cp .env.cloud.example .env   # fill in domain/email/token by hand (images are prefilled)
-#   ./apply.sh cloud && docker compose up -d
+# Server host overlay: real domain + wildcard TLS (Caddy + Cloudflare DNS-01) + public-network hardening (only caddy publishes ports).
+#   cp .env.server.example .env   # fill in domain/email/token by hand (images are prefilled)
+#   ./apply.sh server && docker compose up -d
 name: teable-sandbox-infra
 
 volumes:
@@ -8,15 +8,15 @@ volumes:
   caddy-config:
 
 services:
-  # opensandbox-server / the sandbox network are defined in the base; cloud needs no override. No backend service publishes host ports; all external traffic goes through caddy.
+  # opensandbox-server / the sandbox network are defined in the base; server needs no override. No backend service publishes host ports; all external traffic goes through caddy.
   infra-service:
     environment:
-      APP_RUNTIME_DOMAIN: app.${BASE_DOMAIN:?fill .env then run ./apply.sh cloud}   # apps run at {appId}.app.<domain>
+      APP_RUNTIME_DOMAIN: app.${BASE_DOMAIN:?fill .env then run ./apply.sh server}   # apps run at {appId}.app.<domain>
       APP_RUNTIME_PUBLIC_SCHEME: https
       OPENSANDBOX_PREVIEW_WILDCARD_DOMAIN: "*.sandbox.${BASE_DOMAIN}"
       # Presigned URLs ride the Infra host (bucket path-prefix routing): external clients go over the
       # public network, while infra-service reaches caddy via its teable-appnet alias (host identical on both sides).
-      APP_RUNTIME_ARTIFACT_S3_ENDPOINT: https://${INFRA_HOST:?fill .env then run ./apply.sh cloud}
+      APP_RUNTIME_ARTIFACT_S3_ENDPOINT: https://${INFRA_HOST:?fill .env then run ./apply.sh server}
       GIT_REGISTRY_PUBLIC_URL: https://${INFRA_HOST}/git                           # only for external/console manual clone
 
   # Shared-host git: /git prefix on the Infra domain (server strips it; root-path form stays for internal clients).
@@ -29,7 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.caddy
-    image: teable-infra/caddy-cloudflare:cloud
+    image: teable-infra/caddy-cloudflare:server
     container_name: caddy
     restart: unless-stopped
     networks:
@@ -41,16 +41,16 @@ services:
       - "443:443"
       - "443:443/udp"  # HTTP/3 (QUIC), optional
     volumes:
-      - ./Caddyfile.cloud:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile.server:/etc/caddy/Caddyfile:ro
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
       - caddy-data:/data
       - caddy-config:/config
     environment:
-      BASE_DOMAIN: ${BASE_DOMAIN:?fill .env then run ./apply.sh cloud}
-      INFRA_HOST: ${INFRA_HOST:?fill .env then run ./apply.sh cloud}
+      BASE_DOMAIN: ${BASE_DOMAIN:?fill .env then run ./apply.sh server}
+      INFRA_HOST: ${INFRA_HOST:?fill .env then run ./apply.sh server}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN in .env}
-      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh cloud}   # injected server-side by the sandbox preview block
+      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh server}   # injected server-side by the sandbox preview block
       SANDBOX_PREVIEW_HOST: sandbox.${BASE_DOMAIN}                                       # rewrite target for port previews (no scheme)
       # Bucket path prefixes routed to MinIO on the Infra host (parse-time placeholders in Caddyfile).
       S3_BUCKET: ${S3_BUCKET:-teable-app-artifacts}

@@ -73,7 +73,17 @@ images were previously swapped by hand.)
 
 Checks that every workload is ready, certificates are issued, and that the
 images running in the cluster still match what the Helm release installed —
-with the exact commands to reconcile if they drifted.
+with the exact commands to reconcile if they drifted. It also compares what is
+running against the platform release manifest (`versions.yaml`) and reports one
+of three states: compatible, upgrade the Teable app, or an unknown (unverified)
+component combination.
+
+## Private CA / self-signed certificates
+
+If your Teable hosts serve certificates from a private/corporate CA, sandboxes
+reject the callbacks (AI sessions fail to start, builds fail on `git push`)
+until they trust that CA — see [`private-ca.md`](private-ca.md) for the sandbox
+template override that mounts your root CA.
 
 ## When something fails
 

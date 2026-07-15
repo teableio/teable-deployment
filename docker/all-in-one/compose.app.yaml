@@ -1,8 +1,8 @@
 # Teable app overlay -- adds app + PG + Redis on top of the Infra base, forming the full-featured single-node stack (all-in-one).
 #   Local: ./apply.sh local --with-app && docker compose up -d
-#   Cloud: ./apply.sh cloud --with-app && docker compose up -d
+#   Server: ./apply.sh server --with-app && docker compose up -d
 # Mode-independent differences all go through .env (PUBLIC_ORIGIN / attachment endpoint derived per mode by apply.sh);
-# mode-specific structural differences (Caddyfile / preview domains) live in compose.app.{local,cloud}.yaml.
+# mode-specific structural differences (Caddyfile / preview domains) live in compose.app.{local,server}.yaml.
 # Every variable name here was verified against the app/infra source; do not rename from memory.
 
 networks:

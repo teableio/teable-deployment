@@ -32,8 +32,8 @@ server:
 
   # -- Server image configuration
   image:
-    repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server
-    tag: "v0.2.0-fix5"
+    repository: ghcr.io/teableio/opensandbox-server
+    tag: "v0.2.0-fix6"
 
   # -- Number of server replicas
   replicaCount: 2
@@ -101,7 +101,7 @@ server:
     host: ""
     gatewayRouteMode: "header"
     image:
-      repository: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress
+      repository: ghcr.io/teableio/opensandbox-ingress
       tag: "v1.0.7"
     replicaCount: 2
     port: 28888
@@ -152,7 +152,7 @@ configToml: |
 
   [runtime]
   type = "kubernetes"
-  execd_image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2"
+  execd_image = "ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2"
 
   [kubernetes]
   kubeconfig_path = ""
@@ -167,5 +167,5 @@ configToml: |
   batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
   
   [egress]
-  image = "registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12"
+  image = "ghcr.io/teableio/opensandbox-egress:v1.0.12"
   mode = "dns+nft"

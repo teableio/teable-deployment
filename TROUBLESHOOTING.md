@@ -98,17 +98,26 @@ kubectl logs deploy/<release>-teable -n opensandbox-system | tail -50
 A TLS verification error here means the infra certificate is not trusted by
 the Teable pod — see the certificates section above.
 
+### AI sessions fail right after starting: `self-signed certificate in certificate chain`
+
+The stack is healthy and the UI works, but sandboxes reject the callback to
+your Teable/infra hosts (`SELF_SIGNED_CERT_IN_CHAIN`,
+`UNABLE_TO_VERIFY_LEAF_SIGNATURE`, or builds failing on `git push` with
+`SSL certificate problem`). Your hosts serve certificates from a private CA
+that the sandboxes do not trust — mount the root CA into the sandbox template:
+see [`helm/private-ca.md`](helm/private-ca.md).
+
 ## Docker all-in-one
 
 `./doctor.sh` covers the mainline failures (entry routing, `/v1` split,
 storage, sandbox engine). Two frequent ones:
 
-### Browser preview URLs do not resolve (cloud)
+### Browser preview URLs do not resolve (server)
 
 The `*.sandbox.<BASE_DOMAIN>` and `*.app.<BASE_DOMAIN>` wildcard DNS records
 are missing — both must point at the machine, DNS-only (no proxy).
 
-### Certificate issuance fails on first start (cloud)
+### Certificate issuance fails on first start (server)
 
 `CLOUDFLARE_API_TOKEN` lacks the Zone/DNS edit permission, or the DNS records
 point somewhere else. Check `docker compose logs caddy` for the ACME error.

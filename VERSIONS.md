@@ -1,35 +1,85 @@
 # Versions
 
-> Transitional matrix, maintained by hand until the first formal Platform
-> Release (which will ship generated locks, digests and migration metadata).
-> Everything below is the combination actually verified together.
+> Generated for platform release **v2026.7.0** (2026-07-15T00:00:00Z) -- do not edit
+> by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
+> (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
-## Current verified combination (2026-07-14)
+Everything below was verified together as one combination. Upgrade the
+platform as a unit: pick a platform release, never mix component versions
+across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 
-| Component | Image | Notes |
-|---|---|---|
-| Teable app | `ghcr.io/teableio/teable:latest` | verified release: `release.2026-07-14T12-24-39Z.2228`; pin with `pin-image.sh` for production |
-| Infra Service / Git Registry | `ghcr.io/teableio/teable-infra-service:latest` | one image serves both |
-| Sandbox engine (server) | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix5` | includes the `/v1` proxy-endpoint fix (path-proxy mode needs >= fix5) |
-| Sandbox execd | `opensandbox/execd:v1.0.18` (engine-injected) | pulled from the public distribution registry |
-| Sandbox egress | `opensandbox/egress:v1.0.12` (engine-injected) | pulled from the public distribution registry |
-| Sandbox agent | paired by the Teable app | prefix only: the app appends its own release tag and preheats it |
-| App runtime base | `ghcr.io/teableio/teable-app-runtime:latest` | |
-| PostgreSQL / Redis / MinIO | `postgres:15.4` / `redis:7.2.4` / see values example | MinIO: pin the release noted in `helm/examples/values.example.yaml` |
-| Helm charts | `teable-infra` 0.1.0 (+ bundled sub-charts) | |
+## Component matrix
 
-China deployments: replace `ghcr.io/teableio/` with
-`registry.cn-shenzhen.aliyuncs.com/teable/` — every image above is mirrored
-there with identical tags.
+| Component | Image | Architectures | Notes |
+|---|---|---|---|
+| `teable` | `ghcr.io/teableio/teable:release.2026-07-15T03-54-01Z.2234` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
+| `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: the Teable app appends its own release tag when launching AI sessions and preheats that image through the Infra API. |
+| `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260707T123051Z` | amd64, arm64 |  |
+| `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260709T074407Z` | amd64, arm64 |  |
+| `opensandbox-server` | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix6` | amd64, arm64 | Patched build: adds the /v1 mount-prefix fix for proxied sandbox endpoints (path-proxy mode needs >= fix5) and docker-runtime sandbox_env/sandbox_binds for private-CA trust (>= fix6) |
+| `opensandbox-ingress` | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | amd64, arm64 |  |
+| `opensandbox-controller` | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | amd64, arm64 |  |
+| `opensandbox-image-committer` | `ghcr.io/teableio/opensandbox-image-committer:v0.1.0` | amd64, arm64 | Also runs the node image-preheater DaemonSet. |
+| `opensandbox-execd` | `ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2` | amd64, arm64 | Patched build: upstream v1.0.19 (the execd release matching server v0.2.0) plus the issue #1064 fix (owner/group on auto-created parent directories) |
+| `opensandbox-egress` | `ghcr.io/teableio/opensandbox-egress:v1.0.12` | amd64, arm64 | Per-sandbox egress sidecar, started by the server on demand. |
+| `postgres` | `postgres:15.4` | amd64, arm64 |  |
+| `redis` | `redis:7.2.4` | amd64, arm64 |  |
+| `minio` | `minio/minio:RELEASE.2025-04-22T22-12-26Z` | amd64, arm64 | Pinned by the Docker defaults and the Kubernetes values example |
+| `minio-mc` | `minio/mc:RELEASE.2025-04-16T18-13-26Z` | amd64, arm64 | Bucket-provisioning sidecar for MinIO |
 
-## What "verified" means here
+Digests for every reference are in [`versions.yaml`](versions.yaml).
 
-- **Docker all-in-one**: clean-machine install, full journey (app + sandbox
-  build + app deployment + preview + the three storage planes) on 2026-07-13.
-- **Kubernetes (Helm)**: bare `helm install` with only `global.baseDomain` set,
-  full stack up, sandbox create/preview/delete loop, backup/restore drill on
-  2026-07-14.
+## Channels and pinning
 
-Upgrades between transitional versions carry no migration guarantees yet;
-back up before upgrading (`docker/all-in-one/README.md` and
-`helm/examples/values.example.yaml` list what to back up).
+- **Teable app**: `:latest` is the stable channel and resolved to the release
+  tag above at release time; `:beta` is the rolling channel. Docker
+  deployments default to `:latest` and just work; for production, pin with
+  `docker/all-in-one/pin-image.sh` (Kubernetes: paste the resolved tag into
+  your values).
+- **Sandbox engine components** (server, ingress, controller,
+  image-committer, execd, egress) ship pinned everywhere at exactly the
+  versions above.
+- **Infra Service and the app runtime base** are pinned by the Helm chart;
+  the Docker path follows `:latest` (their stable channel), which resolved
+  to the versions above at release time.
+- **PostgreSQL / Redis / MinIO** ship pinned in the Docker defaults and the
+  Kubernetes values example (the bare chart default for MinIO floats -- pin
+  it in your values, see `helm/examples/values.example.yaml`).
+
+## China mirror
+
+Replace `ghcr.io/teableio/` with `registry.cn-shenzhen.aliyuncs.com/teable/` -- every
+first-party image is mirrored there with identical tags. Details and offline
+/ private-registry workflows: [`images/README.md`](images/README.md).
+
+## Teable app compatibility
+
+| | Release tag |
+|---|---|
+| Minimum supported | `release.2026-07-14T12-24-39Z.2228` |
+| Verified against | `release.2026-07-15T03-54-01Z.2234` |
+
+Older app releases cannot use this runtime's path-proxy sandbox mode; upgrade
+the app first (its data is untouched by app image upgrades).
+
+## Upgrading to this release
+
+This release is **hot-swappable** from the previous platform release -- no
+data migration required. Upgrade from this repository **checked out at the
+release tag** (sidecar pins are embedded in the compose/chart sources, not
+only in image references):
+
+- **Docker**: re-run `./apply.sh <mode> [--with-app]` (it re-renders the
+  engine config, whose sandbox sidecar pins change between releases), then
+  `docker compose pull && docker compose up -d`.
+- **Kubernetes**: `helm upgrade` with the chart from this checkout, applying
+  `helm/examples/images.values.yaml` (see its header).
+
+## What "verified" means
+
+- **Docker all-in-one** (2026-07-13): clean-machine install, full
+  journey -- app, sandbox build, app deployment, preview, and the three
+  storage planes.
+- **Kubernetes (Helm)** (2026-07-14): bare `helm install` with
+  only `global.baseDomain` set, full stack up, sandbox create/preview/delete
+  loop, plus a backup/restore drill (2026-07-14).

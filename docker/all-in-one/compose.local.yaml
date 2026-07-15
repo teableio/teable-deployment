@@ -5,7 +5,7 @@ name: teable-sandbox-infra
 services:
   opensandbox-server:
     ports:
-      - "8090:8090"          # curl the engine directly for local verification (not published in cloud)
+      - "8090:8090"          # curl the engine directly for local verification (not published in server)
 
   infra-service:
     ports:

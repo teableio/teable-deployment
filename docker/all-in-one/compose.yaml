@@ -1,7 +1,7 @@
 # Teable full docker-backend stack -- base layer (the 5 backend services shared by both modes + volumes + shared env).
 #   Local: docker compose -f compose.yaml -f compose.local.yaml up -d
-#   Cloud: docker compose -f compose.yaml -f compose.cloud.yaml up -d
-# apply.sh writes COMPOSE_FILE into .env; after that plain `docker compose up -d` works (first run pulls images automatically; cloud mode also builds the Caddy image from Dockerfile.caddy).
+#   Server: docker compose -f compose.yaml -f compose.server.yaml up -d
+# apply.sh writes COMPOSE_FILE into .env; after that plain `docker compose up -d` works (first run pulls images automatically; server mode also builds the Caddy image from Dockerfile.caddy).
 # The entrypoint (Caddy) and project name are set in the overlays; dynamic app/sandbox containers are launched on the host dockerd by the services on demand.
 
 networks:

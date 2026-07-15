@@ -10,7 +10,7 @@ opensandbox-controller:
     replicaCount: 1
     snapshot:
       # DockerHub: opensandbox/image-committer:v0.1.0
-      imageCommitterImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
+      imageCommitterImage: ghcr.io/teableio/opensandbox-image-committer:v0.1.0
       commitJobTimeout: 10m
       registry: ""
       registryInsecure: false
@@ -121,7 +121,7 @@ imagePreheater:
   # default-on: pre-pulls sandbox images on every node so first sandbox start is fast
   enabled: true
   namespaceOverride: opensandbox-system
-  image: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
+  image: ghcr.io/teableio/opensandbox-image-committer:v0.1.0
   imagePullPolicy: IfNotPresent
   containerdSocketPath: /run/containerd/containerd.sock
   containerdNamespace: k8s.io
@@ -136,8 +136,8 @@ imagePreheater:
   # agent image is NOT listed here: the Teable app preheats its own agent image through
   # the Infra API on startup (prefix + its own release tag).
   images:
-    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-execd:v1.0.19-fix2
-    - registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-egress:v1.0.12
+    - ghcr.io/teableio/opensandbox-execd:v1.0.19-fix2
+    - ghcr.io/teableio/opensandbox-egress:v1.0.12
 
 # Sandbox dataplane namespace (where BatchSandbox pods run). Must match the
 # opensandbox-server [kubernetes].namespace config, the gateway dataplaneNamespace
@@ -296,7 +296,7 @@ infraService:
     create: true
   namespaceOverride: opensandbox-system
   # Public delivery image so a bare install is turnkey; override with your own build if needed.
-  image: ghcr.io/teableio/teable-infra-service:20260625T042613Z
+  image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
   imagePullPolicy: IfNotPresent
   # Image pull secrets for the infra-service deployment. Each entry: {name: <secret-name>}.
   # imagePullSecrets: []
@@ -395,7 +395,7 @@ infraService:
     namespace: opensandbox-system
     apiKeySecretName: opensandbox-api-key
     registrySecretName: opensandbox-preheater-registry
-    holdImage: registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0
+    holdImage: ghcr.io/teableio/opensandbox-image-committer:v0.1.0
     # Preheat node selector. The default targets all Linux nodes; substitute a dedicated
     # sandbox node pool label (key/value) if you have one.
     nodeSelectorKey: kubernetes.io/os
@@ -409,7 +409,8 @@ infraService:
     publicScheme: https
     ingressMode: dynamic
     serviceAccountName: teable-app-runtime
-    defaultImage: ""
+    # App base image users deploy on; blank would leave app deployment disabled.
+    defaultImage: ghcr.io/teableio/teable-app-runtime:20260707T123051Z
     registrySecretName: opensandbox-preheater-registry
     defaultReplicas: 1
     defaultCpuRequest: 25m

@@ -67,7 +67,7 @@ kubectl delete crd sandboxsnapshots.sandbox.opensandbox.io
 
 | Name | Description | Value |
 |------|-------------|-------|
-| `controller.image.repository` | Controller image repository | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller` |
+| `controller.image.repository` | Controller image repository | `ghcr.io/teableio/opensandbox-controller` |
 | `controller.image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `controller.image.tag` | Image tag (falls back to the chart appVersion when empty) | `v0.2.0-amd64` |
 | `controller.replicaCount` | Number of controller replicas | `1` |
@@ -78,7 +78,7 @@ kubectl delete crd sandboxsnapshots.sandbox.opensandbox.io
 | `controller.logLevel` | Can be one of 'debug', 'info', 'error' | `info` |
 | `controller.kubeClient.qps` | QPS for Kubernetes client rate limiter | `100` |
 | `controller.kubeClient.burst` | Burst for Kubernetes client rate limiter | `200` |
-| `controller.snapshot.imageCommitterImage` | Image used by snapshot commit Jobs | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-image-committer:v0.1.0-amd64` |
+| `controller.snapshot.imageCommitterImage` | Image used by snapshot commit Jobs | `ghcr.io/teableio/opensandbox-image-committer:v0.1.0` |
 | `controller.snapshot.commitJobTimeout` | Timeout duration for snapshot commit Jobs | `10m` |
 | `controller.snapshot.registry` | OCI registry prefix used for snapshot images | `""` |
 | `controller.snapshot.registryInsecure` | Use insecure registry mode for snapshot pushes | `false` |
