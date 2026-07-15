@@ -4,6 +4,25 @@ User-visible changes to this deployment, grouped by platform release
 (see [`VERSIONS.md`](VERSIONS.md) for what each release pins). Entries say
 what changed and what, if anything, you must do.
 
+## Unreleased
+
+### Added
+
+- **Extra workload metadata for generated app Deployments**: new Helm values
+  `infraService.appRuntime.workloadLabels` / `workloadAnnotations` (env
+  `APP_RUNTIME_WORKLOAD_LABELS` / `APP_RUNTIME_WORKLOAD_ANNOTATIONS`) stamp
+  additional labels/annotations on every app Deployment the Infra Service
+  creates, on both the Deployment and its Pod template metadata. Use this when
+  a cluster admission policy requires specific workload metadata (for example
+  policies mandating `app`/`app-component`/`application` labels). Internal
+  `teable.ai/*` and `app.kubernetes.io/name` keys are reserved; invalid JSON,
+  invalid key names, or invalid label values fail configuration loading
+  immediately (deploys fail loudly) instead of being silently ignored. The
+  immutable `spec.selector` is never touched; existing app Deployments pick
+  the metadata up on their next deploy, and keys you later remove from the
+  values are also removed from the workload on its next deploy. No action
+  needed if you leave the new values empty.
+
 ## v2026.7.2 - 2026-07-15
 
 ### Changed

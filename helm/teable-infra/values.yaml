@@ -457,6 +457,13 @@ infraService:
       forcePathStyle: true
     nodeSelector: {}
     tolerations: []
+    # Extra labels/annotations stamped on every generated app Deployment, on both the
+    # Deployment and its Pod template metadata (never the immutable spec.selector).
+    # Use these to satisfy cluster admission policies that require workload metadata.
+    # Keys under teable.ai/ and app.kubernetes.io/name are reserved; invalid keys or
+    # values are rejected as soon as the configuration is loaded.
+    workloadLabels: {}
+    workloadAnnotations: {}
     # Image prefixes users may deploy through App Runtime; add your private registry prefixes here.
     allowedImagePrefixes:
       - ghcr.io/teableio/

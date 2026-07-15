@@ -1988,6 +1988,10 @@ spec:
           value: "{}"
         - name: APP_RUNTIME_TOLERATIONS
           value: "[]"
+        - name: APP_RUNTIME_WORKLOAD_LABELS
+          value: "{}"
+        - name: APP_RUNTIME_WORKLOAD_ANNOTATIONS
+          value: "{}"
         - name: APP_RUNTIME_ALLOWED_IMAGE_PREFIXES
           value: ghcr.io/teableio/
         - name: GIT_REGISTRY_ENABLED
