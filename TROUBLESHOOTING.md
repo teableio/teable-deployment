@@ -121,3 +121,25 @@ are missing — both must point at the machine, DNS-only (no proxy).
 
 `CLOUDFLARE_API_TOKEN` lacks the Zone/DNS edit permission, or the DNS records
 point somewhere else. Check `docker compose logs caddy` for the ACME error.
+
+### doctor entry checks return `000` on the machine itself (server)
+
+Cloud VMs usually cannot reach their own public IP (GCP, for example, does not
+hairpin NAT), so every `https://<your-domain>` check fails with `000` when run
+on the machine -- while the deployment is perfectly reachable from outside.
+In-stack traffic is unaffected (containers reach the entry through an internal
+network alias). Either verify from your workstation, or point the two
+non-wildcard hosts at the local entry and re-run:
+
+```bash
+echo "127.0.0.1 <BASE_DOMAIN> infra.<BASE_DOMAIN>" | sudo tee -a /etc/hosts
+./doctor.sh
+```
+
+### S3 tools cannot connect through `infra.<BASE_DOMAIN>`
+
+The entry proxies **object paths only** (`/<bucket>/…` -- exactly what
+presigned upload/download URLs use, which is all the platform needs). The
+bucket-management API (list buckets, etc.) is not routed, so `mc alias set`
+and similar clients fail against the entry; point them at MinIO directly
+(SSH tunnel) for admin tasks.

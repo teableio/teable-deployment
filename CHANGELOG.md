@@ -4,6 +4,21 @@ User-visible changes to this deployment, grouped by platform release
 (see [`VERSIONS.md`](VERSIONS.md) for what each release pins). Entries say
 what changed and what, if anything, you must do.
 
+## Unreleased
+
+### Changed
+
+- **Docker verification refreshed (2026-07-15)**: full real-domain,
+  server-mode verification on a clean VM deployed from the `v2026.7.0` tag --
+  DNS-01 wildcard certificates, `/git` path routing, presigned upload/download
+  over the entry bucket paths, `*.sandbox` wildcard previews, and the engine
+  `v0.2.0-fix6` + execd `v1.0.19-fix2` sandbox chain. `versions.yaml` carries
+  the new verification date. No action needed; hot-swappable.
+- **Troubleshooting additions**: doctor entry checks returning `000` when run
+  on a cloud VM itself (no hairpin NAT to the machine's own public IP, with
+  the `/etc/hosts` workaround), and why S3 management clients cannot connect
+  through the entry (object paths only -- by design).
+
 ## v2026.7.0 - 2026-07-15
 
 The first platform release: everything below ships together as one verified
