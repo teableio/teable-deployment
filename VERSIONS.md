@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.7.0** (2026-07-15T06:38:06Z) -- do not edit
+> Generated for platform release **v2026.7.1** (2026-07-15T08:31:56Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -77,7 +77,7 @@ only in image references):
 
 ## What "verified" means
 
-- **Docker all-in-one** (2026-07-13): clean-machine install, full
+- **Docker all-in-one** (2026-07-15): clean-machine install, full
   journey -- app, sandbox build, app deployment, preview, and the three
   storage planes.
 - **Kubernetes (Helm)** (2026-07-14): bare `helm install` with
