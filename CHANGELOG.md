@@ -4,7 +4,7 @@ User-visible changes to this deployment, grouped by platform release
 (see [`VERSIONS.md`](VERSIONS.md) for what each release pins). Entries say
 what changed and what, if anything, you must do.
 
-## Unreleased
+## v2026.7.2 - 2026-07-15
 
 ### Changed
 

@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.7.1** (2026-07-15T08:31:56Z) -- do not edit
+> Generated for platform release **v2026.7.2** (2026-07-15T09:37:30Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -80,6 +80,6 @@ only in image references):
 - **Docker all-in-one** (2026-07-15): clean-machine install, full
   journey -- app, sandbox build, app deployment, preview, and the three
   storage planes.
-- **Kubernetes (Helm)** (2026-07-14): bare `helm install` with
+- **Kubernetes (Helm)** (2026-07-15): bare `helm install` with
   only `global.baseDomain` set, full stack up, sandbox create/preview/delete
   loop, plus a backup/restore drill (2026-07-14).
