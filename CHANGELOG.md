@@ -4,6 +4,23 @@ User-visible changes to this deployment, grouped by platform release
 (see [`VERSIONS.md`](VERSIONS.md) for what each release pins). Entries say
 what changed and what, if anything, you must do.
 
+## Unreleased
+
+### Changed
+
+- **Kubernetes verification refreshed (2026-07-15)**: real-domain bare install
+  (only `global.baseDomain` set) on a clean cluster from the `v2026.7.0` tag --
+  DNS-01 certificates, `/git` path routing, presigned upload/download over the
+  bucket-path ingress, sandbox chain with `*.sandbox` wildcard previews, and
+  the doctor release check live against the shipped `versions.yaml`.
+  No action needed; hot-swappable.
+- **Quick start no longer uses `helm install --wait`**: Helm runs post-install
+  hooks only after `--wait` returns, while Teable cannot become ready without
+  the buckets that hook creates -- on a first install `--wait` deadlocks until
+  the timeout. Install plainly and let the doctor confirm readiness; a
+  troubleshooting entry covers recovering an already-failed `--wait` install
+  (replay the hooks, then clean them up).
+
 ## v2026.7.1 - 2026-07-15
 
 ### Changed

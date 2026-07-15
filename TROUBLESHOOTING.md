@@ -40,6 +40,26 @@ Create the issuer (section 2 of `helm/examples/values.example.yaml`) or point
 `certificate.issuerName` at yours. Two hosts are wildcards (`*.app`,
 `*.sandbox`), so the issuer must use a DNS-01 solver.
 
+### Teable crashloops with `NoSuchBucket` after `helm install --wait` timed out
+
+The storage buckets are created by a post-install hook, and Helm runs hooks
+only *after* `--wait` returns -- while Teable cannot become ready *without*
+the buckets. On a first install `--wait` therefore deadlocks until the
+timeout, the release is marked failed, the hook never runs, and Teable
+restarts with `NoSuchBucket: teable-public`. Install without `--wait` (see
+the quick start note).
+
+To recover an already-failed install, run the hooks once and clean them up
+(they are replayed outside of Helm, so Helm's hook cleanup does not apply --
+the delete removes the finished hook Jobs and their temporary RBAC, keeping
+what they produced):
+
+```bash
+helm get hooks <release> -n opensandbox-system | kubectl apply -f -
+kubectl wait --for=condition=complete job/<release>-minio-init -n opensandbox-system --timeout=5m
+helm get hooks <release> -n opensandbox-system | kubectl delete -f - --ignore-not-found
+```
+
 ### `opensandbox-server` in `CrashLoopBackOff`: `BatchSandbox template file not found`
 
 Your values override `configToml` (which references

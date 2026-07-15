@@ -19,12 +19,16 @@ cluster, driven by one umbrella chart.
 cp helm/examples/values.example.yaml my-values.yaml   # set global.baseDomain, read the TLS section
 helm dependency build helm/teable-infra
 helm install teable helm/teable-infra -n opensandbox-system --create-namespace \
-  -f my-values.yaml --wait --timeout 15m
+  -f my-values.yaml
 ./helm/doctor.sh          # all green = deployed
 ```
 
-`--wait` holds until every workload is ready — the first install pulls images
-and runs database migrations, so give it a few minutes.
+The first install pulls images, issues certificates and runs database
+migrations — give it a few minutes (`kubectl get pods -n opensandbox-system -w`
+to watch). Do **not** add `--wait`: the storage buckets are created by a
+post-install hook, which Helm only runs *after* `--wait` would return, while
+the app cannot become ready *without* them — `--wait` deadlocks and times out
+on a first install.
 
 Open `https://<baseDomain>` and register the first account (it becomes the
 admin). The infra console is at `https://infra.<baseDomain>`.
