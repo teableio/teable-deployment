@@ -6,7 +6,7 @@
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
 platformRelease: v2026.7.0
-releasedAt: '2026-07-15T00:00:00Z'
+releasedAt: '2026-07-15T06:38:06Z'
 components:
   teable:
     image: ghcr.io/teableio/teable:release.2026-07-15T03-54-01Z.2234

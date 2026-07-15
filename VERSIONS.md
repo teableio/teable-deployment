@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.7.0** (2026-07-15T00:00:00Z) -- do not edit
+> Generated for platform release **v2026.7.0** (2026-07-15T06:38:06Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 

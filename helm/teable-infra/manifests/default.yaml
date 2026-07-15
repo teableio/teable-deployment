@@ -1560,8 +1560,8 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-        volumeMounts: 
-      volumes: 
+        volumeMounts:
+      volumes:
       terminationGracePeriodSeconds: 10
 ---
 apiVersion: apps/v1
@@ -2600,7 +2600,7 @@ metadata:
     app.kubernetes.io/instance: teable
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: opensandbox
-  annotations: 
+  annotations:
 spec:
   ingressClassName: nginx
   tls:
