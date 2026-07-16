@@ -1752,7 +1752,7 @@ spec:
     spec:
       containers:
       - name: git-registry
-        image: ghcr.io/teableio/teable-infra-service:20260716T154009Z
+        image: ghcr.io/teableio/teable-infra-service:20260716T161436Z
         imagePullPolicy: IfNotPresent
         command:
         - node
@@ -1844,7 +1844,7 @@ spec:
       serviceAccountName: infra-service
       containers:
       - name: monitor
-        image: ghcr.io/teableio/teable-infra-service:20260716T154009Z
+        image: ghcr.io/teableio/teable-infra-service:20260716T161436Z
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -2789,7 +2789,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: generate
-        image: ghcr.io/teableio/teable-infra-service:20260716T154009Z
+        image: ghcr.io/teableio/teable-infra-service:20260716T161436Z
         env:
         - name: SECRET_NAME
           value: git-registry-jwt

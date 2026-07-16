@@ -26,7 +26,7 @@ minio:
   image: minio/minio:latest
   mcImage: minio/mc:latest
 infraService:
-  image: ghcr.io/teableio/teable-infra-service:20260716T154009Z
+  image: ghcr.io/teableio/teable-infra-service:20260716T161436Z
   appRuntime:
     defaultImage: ghcr.io/teableio/teable-app-runtime:20260716T154009Z
     allowedImagePrefixes:
