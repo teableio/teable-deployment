@@ -13,7 +13,7 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 | Component | Image | Architectures | Notes |
 |---|---|---|---|
 | `teable` | `ghcr.io/teableio/teable:release.2026-07-15T10-14-28Z.2238` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
-| `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: at runtime the app pulls `<prefix>:<its own release tag>`, so sandbox hosts need registry access. China: use the Shenzhen mirror prefix; air-gapped: mirror the tag matching your app release into your own registry and point the prefix at it. |
+| `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: at runtime the app pulls `<prefix>:<its own release tag>`, so sandbox hosts need registry access; air-gapped installs mirror the tag matching their app release and point the prefix at it. |
 | `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260707T123051Z` | amd64, arm64 |  |
 | `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260709T074407Z` | amd64, arm64 |  |
 | `opensandbox-server` | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix6` | amd64, arm64 | Patched build: adds the /v1 mount-prefix fix for proxied sandbox endpoints (path-proxy mode needs >= fix5) and docker-runtime sandbox_env/sandbox_binds for private-CA trust (>= fix6) |

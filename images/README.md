@@ -83,22 +83,13 @@ bundled image-preheater DaemonSet pre-pulls them on every node; on Docker,
 `ghcr.io/teableio/teable-sandbox-agent` is a **prefix without a tag**: the Teable app launches AI
 sessions with `<prefix>:<its own release tag>`, so the agent always matches
 the app version. The image is **pulled at runtime** (the app preheats it
-through the Infra API on startup) -- it is not installed with the platform.
-Per environment:
-
-- **Internet access**: nothing to do -- sandbox hosts pull from ghcr.io on
-  demand.
-- **China, with internet**: swap the prefix to the mirror
-  (`registry.cn-shenzhen.aliyuncs.com/teable/teable-sandbox-agent`) --
-  identical tags per release, see the mirror table above.
-- **Air-gapped / private registry**: mirror
-  `teable-sandbox-agent:<the release tag of the Teable app you run>` into
-  your own registry first, then point the prefix at it:
-  `SANDBOX_OPENSANDBOX_IMAGE` in `.env` (Docker) or
-  `teable.sandboxAgentImagePrefix` (Helm). Mirror the matching agent tag
-  before every app upgrade.
-
-For this release's verified app tag the pairing resolves to
+through the Infra API on startup) -- it is not installed with the platform,
+so sandbox hosts need registry access. Without it (air-gapped / private
+registry), mirror `teable-sandbox-agent:<the release tag of the Teable app
+you run>` into your own registry first and point the prefix at it
+(`SANDBOX_OPENSANDBOX_IMAGE` in `.env`, `teable.sandboxAgentImagePrefix` in
+Helm) -- and mirror the matching agent tag before every app upgrade. For
+this release's verified app tag the pairing resolves to
 `ghcr.io/teableio/teable-sandbox-agent:release.2026-07-15T10-14-28Z.2238` (asserted available on both registries at release time).
 
 ## Verify availability without credentials
