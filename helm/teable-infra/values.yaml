@@ -296,7 +296,7 @@ infraService:
     create: true
   namespaceOverride: opensandbox-system
   # Public delivery image so a bare install is turnkey; override with your own build if needed.
-  image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
+  image: ghcr.io/teableio/teable-infra-service:20260716T101134Z
   imagePullPolicy: IfNotPresent
   # Image pull secrets for the infra-service deployment. Each entry: {name: <secret-name>}.
   # imagePullSecrets: []
