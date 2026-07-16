@@ -64,6 +64,7 @@ services:
       # --- Sandbox engine ---
       OPENSANDBOX_RUNTIME_URL: http://opensandbox-server:8090
       SANDBOX_OPENSANDBOX_IMAGE: ${SANDBOX_OPENSANDBOX_IMAGE:?set in .env}
+      OPENSANDBOX_SERVER_IMAGE: ${OPENSANDBOX_SERVER_IMAGE:-}   # /api/meta reports the engine version from this tag (same var the server container runs)
       # --- app-runtime docker backend (DOMAIN/SCHEME/S3_ENDPOINT/GIT_PUBLIC set in overlays) ---
       APP_RUNTIME_DOCKER_SOCKET_PATH: /var/run/docker.sock
       APP_RUNTIME_DOCKER_NETWORK: ${APP_RUNTIME_DOCKER_NETWORK:-teable-appnet}

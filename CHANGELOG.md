@@ -4,6 +4,36 @@ User-visible changes to this deployment, grouped by platform release
 (see [`VERSIONS.md`](VERSIONS.md) for what each release pins). Entries say
 what changed and what, if anything, you must do.
 
+## Unreleased
+
+### Added
+
+- **Infra Service capability handshake (`GET /api/meta`)**: the Infra Service
+  now reports its build version, the OpenSandbox engine version, and
+  append-only capability tokens (for example `opensandbox.v1`,
+  `image-preheat.v1`, `app-runtime.gateway.v1`). Newer Teable app releases
+  call this once at boot to surface infra/app compatibility in the admin
+  sandbox settings and to gate the admin live test; older apps never call it,
+  and an older Infra Service answering 404 is reported by the app as "infra
+  too old to report capabilities", not as an outage. Compose deployments gain
+  an optional `OPENSANDBOX_SERVER_IMAGE` pass-through on the Infra Service so
+  `/api/meta` can report the engine version from the same tag the server
+  container runs. No action needed; hot-swappable.
+
+### Changed
+
+- **Migration guide: the Vercel sandbox provider is hard-removed, and the
+  upgrade order matters**: as of Teable `release.2026-07-01T11-07-52Z.2082`
+  the Vercel sandbox provider code is gone from the app, and a leftover
+  `SANDBOX_PROVIDER=vercel` makes the app container fail at boot with
+  `Unknown sandbox provider type: vercel`. The migration guide now leads with
+  this warning (change the environment first, then upgrade the image), notes
+  that sandbox snapshots were removed in the same release (historical AI
+  session workspaces migrate automatically), and adds the boot failure to the
+  troubleshooting table. Action needed only if you still have
+  `SANDBOX_PROVIDER=vercel` set: switch it to `opensandbox` (or remove it)
+  before upgrading past that release.
+
 ## v2026.7.3 - 2026-07-15
 
 ### Added

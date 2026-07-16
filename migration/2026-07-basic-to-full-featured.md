@@ -98,6 +98,15 @@ Once verification passes, write the environment variables from step 3 into your 
 
 ## Migrating from the Vercel providers
 
+> **Warning -- the Vercel sandbox provider is hard-removed, and the order matters.**
+> As of `release.2026-07-01T11-07-52Z.2082`, the Vercel sandbox provider code
+> is removed from the Teable app. **Before upgrading to that release or any
+> newer one**, set `SANDBOX_PROVIDER` to `opensandbox` (or remove the variable
+> entirely); otherwise the app container fails to start with
+> `Unknown sandbox provider type: vercel` -- the provider is validated at
+> boot, not when an AI session starts. Change the environment first, then
+> upgrade the image.
+
 If your Teable currently uses the Vercel sandbox and/or Vercel app-deployment
 providers, the switch is configuration-only and existing deployments keep
 running while you migrate:
@@ -111,7 +120,12 @@ running while you migrate:
    | `APP_DEPLOY_PROVIDER` | `vercel` (default) | `docker-runtime` |
 
 3. **Sandboxes**: nothing to migrate -- sandboxes are ephemeral sessions. Every
-   session started after the restart runs on your own runtime.
+   session started after the restart runs on your own runtime. The sandbox
+   snapshot feature was removed in the same release as the Vercel provider;
+   no snapshot data carries over or needs to. Historical AI session
+   workspaces are migrated automatically by the app (a one-shot
+   legacy-compatibility import when the next session starts) -- users do
+   not need to do anything.
 4. **App deployments**: each deployment record remembers the provider it was
    created with, so **existing Vercel-deployed apps keep running and stay
    manageable** (status, stop) after the switch. Every *new* deploy or redeploy
@@ -131,6 +145,7 @@ running while you migrate:
 
 | Symptom | First place to look |
 |---|---|
+| App container exits on boot with `Unknown sandbox provider type: vercel` | A leftover `SANDBOX_PROVIDER=vercel`; set it to `opensandbox` (or remove it) before upgrading |
 | `operation not permitted` when creating a sandbox/App | `SANDBOX_OPENSANDBOX_RUNTIME=docker` is missing |
 | Sandbox creation fails with `Create sandbox failed` | `TEABLE_INFRA_API_URL` points to the Infra Service container directly; it should point to the entry proxy |
 | AI / App Builder entry does not appear | Version requirement not met, or license conditions not satisfied (see the product documentation) |
