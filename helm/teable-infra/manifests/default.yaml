@@ -1929,7 +1929,7 @@ spec:
         - name: APP_RUNTIME_SERVICE_ACCOUNT_NAME
           value: teable-app-runtime
         - name: APP_RUNTIME_DEFAULT_IMAGE
-          value: ghcr.io/teableio/teable-app-runtime:20260716T045643Z
+          value: ghcr.io/teableio/teable-app-runtime:20260716T154009Z
         - name: APP_RUNTIME_REGISTRY_SECRET_NAME
           value: opensandbox-preheater-registry
         - name: APP_RUNTIME_DEFAULT_REPLICAS

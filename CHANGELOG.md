@@ -8,7 +8,8 @@ and what you must do — most entries need no action.
 
 ### Changed
 
-- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-16T10-16-45Z.2254`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+- **Teable stable** is now `release.2026-07-16T10-16-45Z.2254`. No action needed.
+- **App Runtime default image** pinned to `20260716T154009Z`. No action needed.
 
 ## v2026.7.4 - 2026-07-16
 
