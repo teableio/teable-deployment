@@ -5,12 +5,12 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.7.3
-releasedAt: '2026-07-15T11:54:56Z'
+platformRelease: v2026.7.4
+releasedAt: '2026-07-16T15:34:49Z'
 components:
   teable:
-    image: ghcr.io/teableio/teable:release.2026-07-15T10-14-28Z.2238
-    digest: sha256:b290110bee352c42204891dd3466c0982fa91ed7153397b0bfa17a029fcde1eb
+    image: ghcr.io/teableio/teable:release.2026-07-16T10-16-45Z.2254
+    digest: sha256:975e3d7f9003e25f0b126c3f50357b1949a486d3eb62326f5c1694c1b9c1e75d
     architectures:
     - amd64
     - arm64
@@ -22,14 +22,14 @@ components:
       tag>`, so sandbox hosts need registry access; air-gapped installs mirror the
       tag matching their app release and point the prefix at it.'
   teable-app-runtime:
-    image: ghcr.io/teableio/teable-app-runtime:20260707T123051Z
-    digest: sha256:0543124fe54f4c33ff80bef32d659f0199d623ed6a8d24243cdabe55b85b7470
+    image: ghcr.io/teableio/teable-app-runtime:20260716T045643Z
+    digest: sha256:e498cc5693d045bab049c71acdab4066011d263f767a0af17391b88d4b2f5d05
     architectures:
     - amd64
     - arm64
   teable-infra-service:
-    image: ghcr.io/teableio/teable-infra-service:20260709T074407Z
-    digest: sha256:f5154b0ecedf2def8eac4a1118e629db2c2a74b4df13439ae46de019680634d2
+    image: ghcr.io/teableio/teable-infra-service:20260716T101134Z
+    digest: sha256:ee8156fe774288d49fcebae09c2783abe3cffcbec6e86e674dc36037425e610f
     architectures:
     - amd64
     - arm64
@@ -106,7 +106,7 @@ components:
     note: Bucket-provisioning sidecar for MinIO; pinned alongside it.
 teableCompatibility:
   minRelease: release.2026-07-14T12-24-39Z.2228
-  verifiedRelease: release.2026-07-15T10-14-28Z.2238
+  verifiedRelease: release.2026-07-16T10-16-45Z.2254
 requiredMigrations: []
 hotSwap: true
 verified:

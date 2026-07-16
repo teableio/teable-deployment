@@ -1,6 +1,6 @@
 # Images
 
-> Generated for platform release **v2026.7.3** -- do not edit by hand.
+> Generated for platform release **v2026.7.4** -- do not edit by hand.
 > The authoritative pin list (with digests) is [`../versions.yaml`](../versions.yaml).
 
 All first-party images are published multi-arch (amd64 + arm64) and
@@ -12,9 +12,9 @@ Every first-party image is mirrored with **identical tags**:
 
 | Canonical (ghcr.io) | Mirror (Aliyun Shenzhen) |
 |---|---|
-| `ghcr.io/teableio/teable:release.2026-07-15T10-14-28Z.2238` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-07-15T10-14-28Z.2238` |
-| `ghcr.io/teableio/teable-app-runtime:20260707T123051Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20260707T123051Z` |
-| `ghcr.io/teableio/teable-infra-service:20260709T074407Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20260709T074407Z` |
+| `ghcr.io/teableio/teable:release.2026-07-16T10-16-45Z.2254` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-07-16T10-16-45Z.2254` |
+| `ghcr.io/teableio/teable-app-runtime:20260716T045643Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20260716T045643Z` |
+| `ghcr.io/teableio/teable-infra-service:20260716T101134Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20260716T101134Z` |
 | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix6` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix6` |
 | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7` |
 | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0` |
@@ -41,9 +41,9 @@ Mirror the full set into your own registry, keeping the tags:
 ```bash
 REGISTRY=registry.example.com/teable   # your prefix
 for img in \
-    ghcr.io/teableio/teable:release.2026-07-15T10-14-28Z.2238 \
-    ghcr.io/teableio/teable-app-runtime:20260707T123051Z \
-    ghcr.io/teableio/teable-infra-service:20260709T074407Z \
+    ghcr.io/teableio/teable:release.2026-07-16T10-16-45Z.2254 \
+    ghcr.io/teableio/teable-app-runtime:20260716T045643Z \
+    ghcr.io/teableio/teable-infra-service:20260716T101134Z \
     ghcr.io/teableio/opensandbox-server:v0.2.0-fix6 \
     ghcr.io/teableio/opensandbox-ingress:v1.0.7 \
     ghcr.io/teableio/opensandbox-controller:v0.2.0 \
@@ -54,7 +54,7 @@ for img in \
     redis:7.2.4 \
     minio/minio:RELEASE.2025-04-22T22-12-26Z \
     minio/mc:RELEASE.2025-04-16T18-13-26Z \
-    ghcr.io/teableio/teable-sandbox-agent:release.2026-07-15T10-14-28Z.2238; do
+    ghcr.io/teableio/teable-sandbox-agent:release.2026-07-16T10-16-45Z.2254; do
   docker pull "$img"
   docker tag "$img" "$REGISTRY/${img##*/}"
   docker push "$REGISTRY/${img##*/}"
@@ -90,7 +90,7 @@ you run>` into your own registry first and point the prefix at it
 (`SANDBOX_OPENSANDBOX_IMAGE` in `.env`, `teable.sandboxAgentImagePrefix` in
 Helm) -- and mirror the matching agent tag before every app upgrade. For
 this release's verified app tag the pairing resolves to
-`ghcr.io/teableio/teable-sandbox-agent:release.2026-07-15T10-14-28Z.2238` (asserted available on both registries at release time).
+`ghcr.io/teableio/teable-sandbox-agent:release.2026-07-16T10-16-45Z.2254` (asserted available on both registries at release time).
 
 ## Verify availability without credentials
 
