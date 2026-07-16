@@ -11,6 +11,10 @@ and what you must do — most entries need no action.
 - **Teable stable** is now `release.2026-07-16T10-16-45Z.2254`. No action needed.
 - **App Runtime default image** pinned to `20260716T154009Z`. No action needed.
 
+- **App Runtime removes legacy Knative migration behavior**: generated apps continue
+  to use native Kubernetes resources. Before upgrading from Knative, delete its
+  remaining app resources and conflicting `ExternalName` Services; fresh installs need no action.
+
 ## v2026.7.4 - 2026-07-16
 
 ### Added

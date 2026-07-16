@@ -159,6 +159,7 @@ rules:
   - apiGroups: [""]
     resources: ["services", "configmaps", "secrets"]
     verbs: ["create", "update", "patch", "delete"]
+  # Keep this for one release so old Infra Service pods can finish a rolling upgrade safely.
   - apiGroups: ["serving.knative.dev"]
     resources: ["services", "routes"]
     verbs: ["get", "delete"]
