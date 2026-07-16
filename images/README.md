@@ -1,6 +1,6 @@
 # Images
 
-> Generated for platform release **v2026.7.4** -- do not edit by hand.
+> Generated for platform release **v2026.7.5** -- do not edit by hand.
 > The authoritative pin list (with digests) is [`../versions.yaml`](../versions.yaml).
 
 All first-party images are published multi-arch (amd64 + arm64) and
@@ -13,8 +13,8 @@ Every first-party image is mirrored with **identical tags**:
 | Canonical (ghcr.io) | Mirror (Aliyun Shenzhen) |
 |---|---|
 | `ghcr.io/teableio/teable:release.2026-07-16T10-16-45Z.2254` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-07-16T10-16-45Z.2254` |
-| `ghcr.io/teableio/teable-app-runtime:20260716T045643Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20260716T045643Z` |
-| `ghcr.io/teableio/teable-infra-service:20260716T101134Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20260716T101134Z` |
+| `ghcr.io/teableio/teable-app-runtime:20260716T154009Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20260716T154009Z` |
+| `ghcr.io/teableio/teable-infra-service:20260716T161436Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20260716T161436Z` |
 | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix6` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix6` |
 | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7` |
 | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0` |
@@ -42,8 +42,8 @@ Mirror the full set into your own registry, keeping the tags:
 REGISTRY=registry.example.com/teable   # your prefix
 for img in \
     ghcr.io/teableio/teable:release.2026-07-16T10-16-45Z.2254 \
-    ghcr.io/teableio/teable-app-runtime:20260716T045643Z \
-    ghcr.io/teableio/teable-infra-service:20260716T101134Z \
+    ghcr.io/teableio/teable-app-runtime:20260716T154009Z \
+    ghcr.io/teableio/teable-infra-service:20260716T161436Z \
     ghcr.io/teableio/opensandbox-server:v0.2.0-fix6 \
     ghcr.io/teableio/opensandbox-ingress:v1.0.7 \
     ghcr.io/teableio/opensandbox-controller:v0.2.0 \

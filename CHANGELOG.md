@@ -4,7 +4,7 @@ User-visible changes, grouped by platform release (component pins for each
 release live in [`VERSIONS.md`](VERSIONS.md)). Each entry says what changed
 and what you must do — most entries need no action.
 
-## Unreleased
+## v2026.7.5 - 2026-07-16
 
 ### Changed
 
