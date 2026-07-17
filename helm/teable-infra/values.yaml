@@ -296,7 +296,7 @@ infraService:
     create: true
   namespaceOverride: opensandbox-system
   # Public delivery image so a bare install is turnkey; override with your own build if needed.
-  image: ghcr.io/teableio/teable-infra-service:20260717T025434Z
+  image: ghcr.io/teableio/teable-infra-service:20260717T031520Z
   imagePullPolicy: IfNotPresent
   # Image pull secrets for the infra-service deployment. Each entry: {name: <secret-name>}.
   # imagePullSecrets: []
@@ -410,7 +410,7 @@ infraService:
     ingressMode: dynamic
     serviceAccountName: teable-app-runtime
     # App base image users deploy on; blank would leave app deployment disabled.
-    defaultImage: ghcr.io/teableio/teable-app-runtime:20260717T025434Z
+    defaultImage: ghcr.io/teableio/teable-app-runtime:20260717T031520Z
     registrySecretName: opensandbox-preheater-registry
     defaultReplicas: 1
     defaultCpuRequest: 25m
