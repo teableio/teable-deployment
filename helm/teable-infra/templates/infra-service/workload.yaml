@@ -248,6 +248,12 @@ spec:
               value: {{ .Values.infraService.appRuntime.workloadLabels | default dict | toJson | quote }}
             - name: APP_RUNTIME_WORKLOAD_ANNOTATIONS
               value: {{ .Values.infraService.appRuntime.workloadAnnotations | default dict | toJson | quote }}
+            - name: APP_RUNTIME_POD_SECURITY_CONTEXT
+              value: {{ .Values.infraService.appRuntime.podSecurityContext | default dict | toJson | quote }}
+            - name: APP_RUNTIME_CONTAINER_SECURITY_CONTEXT
+              value: {{ .Values.infraService.appRuntime.containerSecurityContext | default dict | toJson | quote }}
+            - name: APP_RUNTIME_APP_DIR
+              value: {{ .Values.infraService.appRuntime.appDir | quote }}
             - name: APP_RUNTIME_ALLOWED_IMAGE_PREFIXES
               value: {{ join "," .Values.infraService.appRuntime.allowedImagePrefixes | quote }}
             {{- if .Values.gitRegistry.enabled }}

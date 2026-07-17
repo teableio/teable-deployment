@@ -464,6 +464,25 @@ infraService:
     # values are rejected as soon as the configuration is loaded.
     workloadLabels: {}
     workloadAnnotations: {}
+    # Security baseline injected into every generated app Deployment, compliant
+    # with PodSecurity / Kyverno "restricted". Set {} to stop injecting; changes
+    # only apply to Deployments (re)built afterwards.
+    podSecurityContext:
+      runAsNonRoot: true
+      # Older runtime images have no numeric USER; an explicit UID keeps
+      # runAsNonRoot verifiable and re-deploys of pinned old images working.
+      runAsUser: 1001
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    # Directory the runtime unpacks apps into (injected as a default APP_DIR env;
+    # app-provided env wins). /tmp/app is writable for current and older runtime
+    # images alike. Empty string disables the injection.
+    appDir: /tmp/app
     # Image prefixes users may deploy through App Runtime; add your private registry prefixes here.
     allowedImagePrefixes:
       - ghcr.io/teableio/

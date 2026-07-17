@@ -1992,6 +1992,12 @@ spec:
           value: "{}"
         - name: APP_RUNTIME_WORKLOAD_ANNOTATIONS
           value: "{}"
+        - name: APP_RUNTIME_POD_SECURITY_CONTEXT
+          value: '{"runAsNonRoot":true,"runAsUser":1001,"seccompProfile":{"type":"RuntimeDefault"}}'
+        - name: APP_RUNTIME_CONTAINER_SECURITY_CONTEXT
+          value: '{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true}'
+        - name: APP_RUNTIME_APP_DIR
+          value: "/tmp/app"
         - name: APP_RUNTIME_ALLOWED_IMAGE_PREFIXES
           value: ghcr.io/teableio/
         - name: GIT_REGISTRY_ENABLED

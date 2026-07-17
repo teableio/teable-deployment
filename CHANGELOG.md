@@ -4,6 +4,20 @@ User-visible changes, grouped by platform release (component pins for each
 release live in [`VERSIONS.md`](VERSIONS.md)). Each entry says what changed
 and what you must do — most entries need no action.
 
+## Unreleased
+
+### Changed
+
+- **App Deployments now run non-root with a restricted-compliant security
+  context**: generated pods set `runAsNonRoot` / `runAsUser: 1001` / seccomp
+  `RuntimeDefault`, containers drop all capabilities and forbid privilege
+  escalation, the app-runtime image itself runs as UID 1001, and apps unpack
+  into `/tmp/app` so redeploys pinned to older runtime images keep working on
+  clusters that enforce PodSecurity/Kyverno `restricted`. Override or disable
+  via `infraService.appRuntime.podSecurityContext` / `containerSecurityContext`
+  / `appDir` (Helm) or the matching `APP_RUNTIME_*` envs (`{}` disables).
+  No action needed.
+
 ## v2026.7.5 - 2026-07-16
 
 ### Changed
