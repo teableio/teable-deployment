@@ -17,6 +17,7 @@ and what you must do — most entries need no action.
   via `infraService.appRuntime.podSecurityContext` / `containerSecurityContext`
   / `appDir` (Helm) or the matching `APP_RUNTIME_*` envs (`{}` disables).
   No action needed.
+- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T03-42-04Z.2260`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
 
 ## v2026.7.5 - 2026-07-16
 
