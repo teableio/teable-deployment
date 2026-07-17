@@ -4,6 +4,12 @@ User-visible changes, grouped by platform release (component pins for each
 release live in [`VERSIONS.md`](VERSIONS.md)). Each entry says what changed
 and what you must do — most entries need no action.
 
+## Unreleased
+
+### Changed
+
+- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T08-32-22Z.2269`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+
 ## v2026.7.6 - 2026-07-17
 
 ### Changed
