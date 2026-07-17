@@ -1752,7 +1752,7 @@ spec:
     spec:
       containers:
       - name: git-registry
-        image: ghcr.io/teableio/teable-infra-service:20260717T031520Z
+        image: ghcr.io/teableio/teable-infra-service:20260717T042653Z
         imagePullPolicy: IfNotPresent
         command:
         - node
@@ -1844,7 +1844,7 @@ spec:
       serviceAccountName: infra-service
       containers:
       - name: monitor
-        image: ghcr.io/teableio/teable-infra-service:20260717T031520Z
+        image: ghcr.io/teableio/teable-infra-service:20260717T042653Z
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -1929,7 +1929,7 @@ spec:
         - name: APP_RUNTIME_SERVICE_ACCOUNT_NAME
           value: teable-app-runtime
         - name: APP_RUNTIME_DEFAULT_IMAGE
-          value: ghcr.io/teableio/teable-app-runtime:20260717T031520Z
+          value: ghcr.io/teableio/teable-app-runtime:20260717T042653Z
         - name: APP_RUNTIME_REGISTRY_SECRET_NAME
           value: opensandbox-preheater-registry
         - name: APP_RUNTIME_DEFAULT_REPLICAS
@@ -2795,7 +2795,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: generate
-        image: ghcr.io/teableio/teable-infra-service:20260717T031520Z
+        image: ghcr.io/teableio/teable-infra-service:20260717T042653Z
         env:
         - name: SECRET_NAME
           value: git-registry-jwt
