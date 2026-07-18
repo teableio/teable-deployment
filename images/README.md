@@ -1,6 +1,6 @@
 # Images
 
-> Generated for platform release **v2026.7.7** -- do not edit by hand.
+> Generated for platform release **v2026.7.8** -- do not edit by hand.
 > The authoritative pin list (with digests) is [`../versions.yaml`](../versions.yaml).
 
 All first-party images are published multi-arch (amd64 + arm64) and
@@ -12,7 +12,7 @@ Every first-party image is mirrored with **identical tags**:
 
 | Canonical (ghcr.io) | Mirror (Aliyun Shenzhen) |
 |---|---|
-| `ghcr.io/teableio/teable:release.2026-07-17T08-32-22Z.2269` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-07-17T08-32-22Z.2269` |
+| `ghcr.io/teableio/teable:release.2026-07-17T14-54-52Z.2273` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-07-17T14-54-52Z.2273` |
 | `ghcr.io/teableio/teable-app-runtime:20260717T042653Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20260717T042653Z` |
 | `ghcr.io/teableio/teable-infra-service:20260717T042653Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20260717T042653Z` |
 | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix6` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix6` |
@@ -41,7 +41,7 @@ Mirror the full set into your own registry, keeping the tags:
 ```bash
 REGISTRY=registry.example.com/teable   # your prefix
 for img in \
-    ghcr.io/teableio/teable:release.2026-07-17T08-32-22Z.2269 \
+    ghcr.io/teableio/teable:release.2026-07-17T14-54-52Z.2273 \
     ghcr.io/teableio/teable-app-runtime:20260717T042653Z \
     ghcr.io/teableio/teable-infra-service:20260717T042653Z \
     ghcr.io/teableio/opensandbox-server:v0.2.0-fix6 \
@@ -54,7 +54,7 @@ for img in \
     redis:7.2.4 \
     minio/minio:RELEASE.2025-04-22T22-12-26Z \
     minio/mc:RELEASE.2025-04-16T18-13-26Z \
-    ghcr.io/teableio/teable-sandbox-agent:release.2026-07-17T08-32-22Z.2269; do
+    ghcr.io/teableio/teable-sandbox-agent:release.2026-07-17T14-54-52Z.2273; do
   docker pull "$img"
   docker tag "$img" "$REGISTRY/${img##*/}"
   docker push "$REGISTRY/${img##*/}"
@@ -90,7 +90,7 @@ you run>` into your own registry first and point the prefix at it
 (`SANDBOX_OPENSANDBOX_IMAGE` in `.env`, `teable.sandboxAgentImagePrefix` in
 Helm) -- and mirror the matching agent tag before every app upgrade. For
 this release's verified app tag the pairing resolves to
-`ghcr.io/teableio/teable-sandbox-agent:release.2026-07-17T08-32-22Z.2269` (asserted available on both registries at release time).
+`ghcr.io/teableio/teable-sandbox-agent:release.2026-07-17T14-54-52Z.2273` (asserted available on both registries at release time).
 
 ## Verify availability without credentials
 
