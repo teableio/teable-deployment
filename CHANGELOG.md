@@ -4,6 +4,11 @@ User-visible changes, grouped by platform release (component pins for each
 release live in [`VERSIONS.md`](VERSIONS.md)). Each entry says what changed
 and what you must do — most entries need no action.
 
+"Teable `release.*`" sections record the app releases picked up by the stable
+channel, with their release notes synced in. Docker installs follow `latest`
+directly; Kubernetes installs receive the refreshed pin via that platform
+release's `versions.yaml`. Hot-swappable; no action needed.
+
 ## Unreleased
 
 ### Changed
