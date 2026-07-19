@@ -11,21 +11,23 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## v2026.7.9 - 2026-07-19
 
-### Changed
+### Teable release.2026-07-18T09-45-26Z.2275
 
-- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-18T09-45-26Z.2275`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+- Added a visible calculation activity status for computed fields, including formulas, lookups, and rollups, so users can more clearly see when table values are still being calculated.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-18T09-45-26Z.2275)
 
 ## v2026.7.8 - 2026-07-18
 
-### Changed
+### Teable release.2026-07-17T14-54-52Z.2273
 
-- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T14-54-52Z.2273`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T14-54-52Z.2273`.
 
 ## v2026.7.7 - 2026-07-17
 
-### Changed
+### Teable release.2026-07-17T08-32-22Z.2269
 
-- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T08-32-22Z.2269`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T08-32-22Z.2269`.
 
 ## v2026.7.6 - 2026-07-17
 
@@ -40,18 +42,51 @@ release's `versions.yaml`. Hot-swappable; no action needed.
   via `infraService.appRuntime.podSecurityContext` / `containerSecurityContext`
   / `appDir` (Helm) or the matching `APP_RUNTIME_*` envs (`{}` disables).
   No action needed.
-- **Teable stable channel promoted**: `ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T03-42-04Z.2260`. Docker installs already follow `latest`; Kubernetes installs pick the refreshed pin up via this release's `versions.yaml`. No action needed; hot-swappable.
+
+### Teable release.2026-07-17T03-42-04Z.2260
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-17T03-42-04Z.2260`.
+
+### Teable release.2026-07-17T05-20-38Z.2264
+
+#### Fixes & Improvements
+
+* **Fixed select option editing**: Clicking existing **Single select** or **Multiple select** options now opens the dropdown reliably.
+
+* **Improved formula field stability**: Fixed failures in nested **Lookup** and **IF** formulas with certain numeric results.
+
+* **Improved many-to-many link stability**: Fixed reverse link fields not updating promptly after large-scale background update failures.
+
+* **Improved high-volume link field handling**: High-cardinality Link fields now calculate and display more reliably.
+
+* **Improved formula and lookup update speed**: Multi-stage linked record updates now refresh calculations and cascades faster.
+
+* **Improved calculation task stability**: Paused calculation tasks are no longer repeatedly awakened, reducing invalid scheduling.
+
+* **Fixed table recycle bin menu issues**: Recycled tables now only show relevant actions like restore and delete.
+
+* **Fixed deleted table restoration issues**: Restoring a table now only restores fields and views from that deletion.
+
+* **Improved AI response performance**: AI Proxy SSE and streaming responses now reduce unnecessary caching and parsing.
+
+* **Improved high-frequency background paths**: Settings reads, tracking, data cleanup, and session lookups are now lighter.
+
+* **Enhanced session file matching checks**: Session file lookups now use stricter ID validation to reduce mismatches.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-17T05-20-38Z.2264)
 
 ## v2026.7.5 - 2026-07-16
 
 ### Changed
 
-- **Teable stable** is now `release.2026-07-16T10-16-45Z.2254`. No action needed.
 - **App Runtime default image** pinned to `20260716T154009Z`. No action needed.
-
 - **App Runtime removes legacy Knative migration behavior**: generated apps continue
   to use native Kubernetes resources. Before upgrading from Knative, delete its
   remaining app resources and conflicting `ExternalName` Services; fresh installs need no action.
+
+### Teable release.2026-07-16T10-16-45Z.2254
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-07-16T10-16-45Z.2254`.
 
 ## v2026.7.4 - 2026-07-16
 
