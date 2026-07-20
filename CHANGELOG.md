@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-07-20T06-51-40Z.2282
+
+- Improved table search performance for large, high-traffic datasets, with stronger validation and safeguards for more reliable search behavior.
+- Added admin controls, status visibility, and field-level usage analysis to help evaluate, enable, and manage table search optimization.
+- Added bring-your-own-database (BYODB) health triage to help teams assess database-related issues more quickly and consistently.
+- Added a dedicated BYODB admin page for viewing connection summaries, creating new BYODB spaces, and binding existing spaces.
+- Improved BYODB migration accuracy and reliability by eliminating misleading catch-up progress and reducing write-freeze time during busy migrations.
+- Improved automation email polling reliability by recovering from idle mailbox connection failures and safely discarding outdated polling results.
+- Improved admin failure monitoring by grouping repeated anomalies by root cause, surfacing recent failed jobs, and providing clearer, privacy-conscious error diagnostics.
+- Improved analytics attribution for signed-out, newly registered, logged-out, and returning users to prevent activity from being associated with the wrong user.
+- Expanded analytics coverage for App Builder chat starts and space activity, including app and base creation, views, workflows, shares, invitations, and invitation acceptance.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-20T06-51-40Z.2282)
+
 ## v2026.7.10 - 2026-07-20
 
 ### Changed
