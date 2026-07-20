@@ -9,6 +9,20 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Changed
+
+- **DB Pool instances can now carry a human-readable space name**: set it in
+  the create dialog or via the new "set name" action on the instance detail
+  page. The name shows in the instance list/detail and is propagated as a
+  sanitized `teable.io/space-name` pod label, so monitoring dashboards can
+  label series by space instead of the derived `dbt-*` id. Tenant Postgres
+  pods also expose the CNPG metrics exporter (port 9187) via
+  `prometheus.io/scrape` annotations, adding direct-connection backend counts
+  to the metrics stack. Existing instances pick up the label and annotations
+  in place, without a restart. No action needed.
+
 ## v2026.7.9 - 2026-07-19
 
 ### Teable release.2026-07-18T09-45-26Z.2275
