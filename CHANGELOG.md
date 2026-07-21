@@ -25,6 +25,17 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 [Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-20T06-51-40Z.2282)
 
+### Teable release.2026-07-21T00-26-02Z.2300
+
+- Airtable imports from chat now provide clearer visible feedback by navigating to the imported table in the current base and returning links for imports into other bases.
+- Improved Airtable migration reliability so stalled attachment transfers, expired downloads, interrupted API responses, and slow-but-active record reads fail or retry safely instead of leaving imports hanging.
+- Personal access tokens can now use Airtable import endpoints when the target permissions and required integration scopes are valid.
+
+- Fixed an issue where users could see “Failed to create user record” on their first OAuth sign-in to generated apps with domain or open login enabled.
+- Improved the app login flow so new users are created through the app API path consistently, while existing app-token write behavior remains unaffected.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-21T00-26-02Z.2300)
+
 ## v2026.7.10 - 2026-07-20
 
 ### Changed
