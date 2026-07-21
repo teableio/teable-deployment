@@ -9,6 +9,17 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-07-21T04-38-35Z.2304
+
+- Updated the README with a cover image and an improved community layout, making the project overview clearer and easier to navigate.
+- Reordering columns no longer triggers a full record refresh, reducing unnecessary loading states, flickering, and duplicate requests.
+- When only column metadata changes, record data now remains available from the cache, improving table responsiveness during layout adjustments.
+- This also resolves related skeleton screen issues when moving columns.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-21T04-38-35Z.2304)
+
 ## v2026.7.11 - 2026-07-21
 
 ### Teable release.2026-07-20T06-51-40Z.2282
