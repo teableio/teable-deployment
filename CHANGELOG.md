@@ -25,6 +25,26 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 [Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-21T04-38-35Z.2304)
 
+### Teable release.2026-07-22T11-07-01Z.2343
+
+#### Feature Updates
+- Improved the field calculation status experience with clearer progress and status changes, a simplified activity panel, and additional translations.
+- Improved loading responsiveness for tables with many columns.
+- Added support for path-style presigned URLs for S3-compatible storage via `BACKEND_STORAGE_S3_FORCE_PATH_STYLE`, with separate internal addressing configuration available through `BACKEND_STORAGE_S3_INTERNAL_FORCE_PATH_STYLE`.
+- Teable Chat can now use authorized and @mentioned Apps as context, enabling AI assistance based on the App's code, structure, and configuration while excluding sensitive runtime configuration.
+
+#### Bug Fixes & Improvements
+- Fixed manual sorting to ensure row order remains consistent after real-time updates and page reloads.
+- Fixed the self-link record selector to display only fields visible in the current connection and return complete record content.
+- Reduced the maximum width of table descriptions to keep view tabs easily accessible and improve header layout.
+- When updating `visibleFieldIds` via the API, link fields and link sharing configurations now always keep the linked table's primary field visible, consistent with UI behavior.
+- Improved the reliability of attachment and import requests from trusted origins in runtime configuration environments.
+- Fixed an issue where saving a shared Base as a copy failed when it contained plugin panels outside the sharing scope. Copies now include only shared tables and panels, and safely skip invalid panel mappings in legacy archives.
+- Fixed views getting stuck in the "Calculating" state and improved recovery for formula- and Lookup-related calculations.
+- Fixed formula-based Lookup fields to ensure they remain editable and convertible, and improved the reliability of loading, saving, display settings, and error handling.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-22T11-07-01Z.2343)
+
 ## v2026.7.11 - 2026-07-21
 
 ### Teable release.2026-07-20T06-51-40Z.2282
