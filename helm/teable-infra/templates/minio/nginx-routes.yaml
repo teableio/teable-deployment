@@ -1,0 +1,25 @@
+{{- /* External-entry route fragment for the bundled MinIO S3 endpoint: path-style
+       buckets plus the health endpoint on the shared Infra host, mirroring
+       minio/ingress.yaml. Assembled by templates/nginx-routes.yaml. Bucket paths
+       must take precedence over the infra-service catch-all "/". */}}
+{{- define "teable-infra.nginxRoute.minio" -}}
+{{- if .Values.minio.enabled }}
+      - host: {{ include "teable-infra.s3Host" . | quote }}
+        serviceName: {{ .Release.Name }}-minio
+        serviceNamespace: {{ .Values.infraService.namespaceOverride | default .Release.Namespace }}
+        servicePort: 9000
+        paths:
+          {{- range $b := (values .Values.minio.buckets | sortAlpha) }}
+          - {{ printf "/%s" $b | quote }}
+          {{- end }}
+          - /minio/health
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: false
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
+{{- end }}

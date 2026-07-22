@@ -73,3 +73,10 @@ https://{{ include "teable-infra.infraHost" . }}{{ .Values.gitRegistry.basePath 
 {{- define "teable-infra.s3Url" -}}
 https://{{ include "teable-infra.s3Host" . }}
 {{- end -}}
+
+{{- /* Non-empty ("true") when global.entry.mode=external-nginx: an external gateway
+       terminates TLS and routes to Services, so no Ingress/Certificate objects are
+       rendered; templates/nginx-routes.yaml declares the routing contract instead. */}}
+{{- define "teable-infra.externalEntry" -}}
+{{- if eq ((((.Values.global).entry).mode) | toString) "external-nginx" -}}true{{- end -}}
+{{- end }}

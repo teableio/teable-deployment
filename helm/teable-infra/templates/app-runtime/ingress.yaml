@@ -1,9 +1,12 @@
 {{- /* App Runtime external surface: wildcard certificate + fixed Ingress for gateway mode (dynamic mode Ingresses are created on the fly by infra-service). */}}
-{{- if .Values.appRuntime.enabled }}
+{{- if and .Values.appRuntime.enabled (not (include "teable-infra.externalEntry" .)) }}
 {{- $runtime := .Values.appRuntime }}
 {{- $namespace := $runtime.namespace | default "app-deploy" }}
-{{- $deployerNamespace := $runtime.deployer.serviceAccountNamespace | default (.Values.imagePreheater.namespaceOverride | default .Release.Namespace) }}
-{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+{{- /* Gateway-mode entry objects must live in the infra-service namespace: the Ingress
+       backend is the infra-service Service and Ingress backends are same-namespace only
+       (equals the deployer SA namespace in every stock profile). */}}
+{{- $infraNamespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $ingressMode := $.Values.infraService.appRuntime.ingressMode | default $runtime.ingress.mode | default "dynamic" }}
 {{- $tlsSecretName := "app-wildcard-tls" }}
 {{- if hasKey $runtime.ingress.tls "secretName" }}
 {{- $tlsSecretName = $runtime.ingress.tls.secretName }}
@@ -13,7 +16,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: {{ $runtime.ingress.tls.certificate.name | default "app-wildcard" | quote }}
-  namespace: {{ ternary $deployerNamespace $namespace (eq $ingressMode "gateway") | quote }}
+  namespace: {{ ternary $infraNamespace $namespace (eq $ingressMode "gateway") | quote }}
   labels:
     app.kubernetes.io/name: teable-app-runtime
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -33,7 +36,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: teable-app-runtime-gateway
-  namespace: {{ $deployerNamespace | quote }}
+  namespace: {{ $infraNamespace | quote }}
   labels:
     app.kubernetes.io/name: teable-app-runtime-gateway
     app.kubernetes.io/instance: {{ .Release.Name }}

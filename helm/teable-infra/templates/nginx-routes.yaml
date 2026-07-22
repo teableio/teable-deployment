@@ -1,0 +1,52 @@
+{{- /* External-entry routing contract (global.entry.mode=external-nginx): the single
+       ConfigMap the customer's nginx/SLB team configures from. Each component declares
+       its own routes in a nginx-routes.yaml fragment next to its ingress.yaml (same
+       per-component layout as the Ingress objects this mode replaces); this file only
+       assembles them. One ConfigMap because the external gateway has no in-cluster
+       controller to merge distributed declarations.
+       The ConfigMap changes nothing by itself: the entry operator reads it and
+       provisions the external gateway. */}}
+{{- if include "teable-infra.externalEntry" . }}
+{{- /* Effective runtime mode: same chain the infra-service Deployment env uses, so the
+       guard validates what actually runs (infraService.appRuntime.ingressMode wins when set). */}}
+{{- $appMode := .Values.infraService.appRuntime.ingressMode | default .Values.appRuntime.ingress.mode | default "dynamic" }}
+{{- if and .Values.appRuntime.enabled (ne $appMode "gateway") }}
+{{- fail "global.entry.mode=external-nginx requires the effective app-runtime ingress mode to be gateway (appRuntime.ingress.mode, or infraService.appRuntime.ingressMode when explicitly set): dynamic mode creates per-app Ingress objects at runtime, which nothing serves without an ingress controller" }}
+{{- end }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- /* Known asymmetry (pre-dates this file): the opensandbox-server sub-chart derives
+       its own /v1 Ingress host and cannot see infraService.ingress.host, so overriding
+       the shared host requires setting server.ingress.host too - in ingress mode as
+       well. This route follows the real infra host, which is the /v1 contract. */}}
+{{- $infraHost := .Values.infraService.ingress.host | default (include "teable-infra.infraHost" .) }}
+{{- $server := index .Values "opensandbox-server" }}
+{{- /* Sub-chart Services live in the sub-chart namespace (opensandbox-server.namespaceOverride,
+       falling back to the sub-chart default), which may differ from the infra namespace. */}}
+{{- $serverNamespace := $server.namespaceOverride | default "opensandbox-system" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-nginx-routes
+  namespace: {{ $namespace }}
+  labels:
+    app.kubernetes.io/name: nginx-routes
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+data:
+  # Entry requirements: preserve the original Host, never rewrite paths, HTTP to
+  # the backends, WebSocket and long-lived connections supported. Path matching
+  # is longest-prefix-wins (e.g. /v1, /git and the bucket paths beat the /
+  # catch-all) - route order in this list carries no meaning.
+  routes.yaml: |
+    routes:
+{{- include "opensandbox-server.nginxRoute.server" (dict "host" $infraHost "namespace" $serverNamespace "path" ($server.server.ingress.path | default "/v1")) }}
+{{- include "teable-infra.nginxRoute.git-registry" . }}
+{{- include "teable-infra.nginxRoute.infra-service" . }}
+{{- if $server.server.gateway.enabled }}
+{{- include "opensandbox-server.nginxRoute.gateway" (dict "host" ($server.server.gateway.host | default (include "teable-infra.sandboxWildcard" .)) "namespace" $serverNamespace) }}
+{{- end }}
+{{- include "teable-infra.nginxRoute.app-runtime" . }}
+{{- include "teable-infra.nginxRoute.teable" . }}
+{{- include "teable-infra.nginxRoute.minio" . }}
+{{- end }}

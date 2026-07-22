@@ -4,11 +4,16 @@
 {{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
 {{- $victoriaMetrics := .Values.infraService.victoriaMetrics }}
 {{- if $victoriaMetrics.enabled }}
+{{- $pvc := $victoriaMetrics.persistentVolumeClaim }}
+{{- if not $pvc.existingClaim }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ .Release.Name }}-victoria-metrics
   namespace: {{ $namespace }}
+  annotations:
+    # Keep metrics history across helm uninstall; delete the PVC explicitly to discard it.
+    helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: opensandbox-victoria-metrics
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -16,12 +21,19 @@ metadata:
     app.kubernetes.io/part-of: opensandbox
 spec:
   accessModes:
-    - ReadWriteOnce
+    {{- toYaml ($pvc.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
   resources:
     requests:
-      storage: {{ $victoriaMetrics.persistentVolumeClaim.storage | default "50Gi" | quote }}
-  storageClassName: {{ $victoriaMetrics.persistentVolumeClaim.storageClassName | default "standard-rwo" | quote }}
+      storage: {{ $pvc.storage | default "50Gi" | quote }}
+  {{- /* When bound to a specific PV, keep storageClassName as-is (an explicit "" disables dynamic provisioning); when both are blank, omit the key so the cluster default StorageClass applies. */}}
+  {{- if or $pvc.volumeName $pvc.storageClassName }}
+  storageClassName: {{ $pvc.storageClassName | quote }}
+  {{- end }}
+  {{- with $pvc.volumeName }}
+  volumeName: {{ . | quote }}
+  {{- end }}
 ---
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -86,7 +98,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-victoria-metrics
+            claimName: {{ $pvc.existingClaim | default (printf "%s-victoria-metrics" .Release.Name) }}
 ---
 apiVersion: v1
 kind: Service

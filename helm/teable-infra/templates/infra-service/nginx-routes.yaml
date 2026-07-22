@@ -1,0 +1,21 @@
+{{- /* External-entry route fragment for infra-service (console/API: everything on the
+       infra host not matched by /v1 and /git). Assembled into the <release>-nginx-routes
+       ConfigMap by templates/nginx-routes.yaml, mirroring infra-service/ingress.yaml. */}}
+{{- define "teable-infra.nginxRoute.infra-service" -}}
+{{- if .Values.infraService.enabled }}
+      - host: {{ .Values.infraService.ingress.host | default (include "teable-infra.infraHost" .) | quote }}
+        serviceName: {{ .Release.Name }}-infra-service
+        serviceNamespace: {{ .Values.infraService.namespaceOverride | default .Release.Namespace }}
+        servicePort: 80
+        paths:
+          {{- toYaml (.Values.infraService.ingress.paths | default (list "/")) | nindent 10 }}
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
+{{- end }}

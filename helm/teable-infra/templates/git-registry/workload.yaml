@@ -4,11 +4,16 @@
 {{- $gitRegistry := .Values.gitRegistry }}
 {{- $image := $gitRegistry.image | default .Values.infraService.image }}
 {{- $serviceName := printf "%s-git-registry" .Release.Name }}
+{{- $persistence := $gitRegistry.persistence }}
+{{- if not $persistence.existingClaim }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ $serviceName }}-data
   namespace: {{ $namespace }}
+  annotations:
+    # Keep repository data across helm uninstall; delete the PVC explicitly to discard it.
+    helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: git-registry
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -16,14 +21,19 @@ metadata:
     app.kubernetes.io/part-of: opensandbox
 spec:
   accessModes:
-    - ReadWriteOnce
+    {{- toYaml ($persistence.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
   resources:
     requests:
-      storage: {{ $gitRegistry.persistence.size | default "100Gi" | quote }}
-  {{- with $gitRegistry.persistence.storageClassName }}
-  storageClassName: {{ . | quote }}
+      storage: {{ $persistence.size | default "100Gi" | quote }}
+  {{- /* When bound to a specific PV, keep storageClassName as-is (an explicit "" disables dynamic provisioning); when both are blank, omit the key so the cluster default StorageClass applies. */}}
+  {{- if or $persistence.volumeName $persistence.storageClassName }}
+  storageClassName: {{ $persistence.storageClassName | quote }}
+  {{- end }}
+  {{- with $persistence.volumeName }}
+  volumeName: {{ . | quote }}
   {{- end }}
 ---
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -123,7 +133,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ $serviceName }}-data
+            claimName: {{ $persistence.existingClaim | default (printf "%s-data" $serviceName) }}
 ---
 apiVersion: v1
 kind: Service

@@ -109,6 +109,14 @@ global:
   # root domain; when set, per-service hostnames are derived from it (infra./sandbox./app./git.).
   # Leave blank to keep example.com placeholders.
   baseDomain: ""
+  # Entry mode. Blank (default): in-cluster Ingress objects, governed by the
+  # per-component ingress.* flags. "external-nginx": an external gateway
+  # (SLB/nginx) terminates TLS and forwards HTTP to Services directly - no
+  # Ingress/Certificate objects are rendered anywhere (this chart and
+  # sub-charts), and templates/nginx-routes.yaml renders a ConfigMap declaring
+  # the routing contract for the entry operator.
+  entry:
+    mode: ""
   # GKE-specific keys consumed by infra-service (all optional; leave unset on other platforms):
   # projectId: my-gcp-project    # GCP project ID
   # gkeLocation: us-central1     # GKE cluster location
@@ -256,8 +264,19 @@ gitRegistry:
   trashRetentionDays: 7
   gcUtcHour: 19
   persistence:
+    # Reuse a pre-created PVC and skip creating one (PVC lifecycle owned outside
+    # the chart, e.g. restricted deploy accounts with admin-provisioned storage).
+    # Blank: the chart creates <release>-git-registry-data.
+    existingClaim: ""
     size: 100Gi
+    # Blank: cluster default StorageClass (key omitted from the PVC). With
+    # volumeName set the value is emitted as-is - an explicit "" disables
+    # dynamic provisioning for static PV binding.
     storageClassName: ""
+    # Bind to a specific pre-provisioned PV (static binding). Blank: dynamic provisioning.
+    volumeName: ""
+    accessModes:
+      - ReadWriteOnce
   resources:
     requests:
       cpu: 250m
@@ -294,6 +313,21 @@ infraService:
   # RBAC group toggle: set false when RBAC is managed cluster-wide (you must provide an SA matching serviceAccountName with equivalent permissions).
   rbac:
     create: true
+    # Cluster-scoped half only (ClusterRole/ClusterRoleBinding). Set create=false
+    # for restricted deploy accounts: a cluster admin pre-provisions the
+    # cluster-scoped RBAC while the deploy account still installs the
+    # ServiceAccount/Role/RoleBinding half.
+    clusterScope:
+      create: true
+    # Namespace-scoped half (ServiceAccount/Role/RoleBinding). Set create=false
+    # to render only the cluster-scoped half - the admin bundle a cluster admin
+    # applies while a restricted deploy account installs everything else.
+    namespaceScope:
+      create: true
+    # Temporary Knative cleanup grant inside the app-runtime Role (kept for one
+    # release for rolling upgrades). Set false if the deploy account cannot
+    # grant serving.knative.dev permissions.
+    knativeCompat: true
   namespaceOverride: opensandbox-system
   # Public delivery image so a bare install is turnkey; override with your own build if needed.
   image: ghcr.io/teableio/teable-infra-service:20260717T042653Z
@@ -407,7 +441,10 @@ infraService:
     hostMatchMode: suffix
     hostPrefix: ""
     publicScheme: https
-    ingressMode: dynamic
+    # Blank: inherit appRuntime.ingress.mode, keeping one effective mode for the
+    # runtime deployer, the entry objects and the external routing contract.
+    # Set explicitly only to intentionally diverge from appRuntime.ingress.mode.
+    ingressMode: ""
     serviceAccountName: teable-app-runtime
     # App base image users deploy on; blank would leave app deployment disabled.
     defaultImage: ghcr.io/teableio/teable-app-runtime:20260717T042653Z
@@ -494,9 +531,19 @@ infraService:
     retentionPeriod: 30d
     storageDataPath: /victoria-metrics-data
     persistentVolumeClaim:
+      # Reuse a pre-created PVC and skip creating one (PVC lifecycle owned outside
+      # the chart). Blank: the chart creates <release>-victoria-metrics.
+      existingClaim: ""
       storage: 50Gi
       # Environment-specific default: standard-rwo is the GKE default StorageClass; override on other platforms.
+      # Blank: cluster default StorageClass (key omitted from the PVC). With
+      # volumeName set the value is emitted as-is - an explicit "" disables
+      # dynamic provisioning for static PV binding.
       storageClassName: standard-rwo
+      # Bind to a specific pre-provisioned PV (static binding). Blank: dynamic provisioning.
+      volumeName: ""
+      accessModes:
+        - ReadWriteOnce
     resources:
       requests:
         cpu: 50m
@@ -577,6 +624,15 @@ storageAutoscaler:
 # Service and a data PVC, a registry auth Secret (.dockerconfigjson), and the target namespace.
 registryGc:
   enabled: false
+  # Cluster-scoped RBAC half (ClusterRole/ClusterRoleBinding for the in-use image
+  # scan). Set create=false for restricted deploy accounts; a cluster admin
+  # pre-provisions it. The ServiceAccount is still created.
+  rbac:
+    clusterScope:
+      create: true
+    # ServiceAccount half; set create=false when rendering the admin bundle only.
+    namespaceScope:
+      create: true
   # Both images are required when registryGc.enabled=true.
   pruneImage: ""  # image with Node.js for the tag prune step
   gcImage: ""     # docker-registry (distribution) image providing /bin/registry garbage-collect

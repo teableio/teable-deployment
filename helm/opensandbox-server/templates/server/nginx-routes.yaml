@@ -1,0 +1,20 @@
+{{- /* External-entry route fragment for the /v1 sandbox engine API. Rendered into the
+       umbrella <release>-nginx-routes ConfigMap; params: host, namespace, path (the
+       umbrella assembler passes them because this define runs outside sub-chart value
+       scope; path mirrors server.ingress.path so both entry modes stay in sync). */}}
+{{- define "opensandbox-server.nginxRoute.server" }}
+      - host: {{ .host | quote }}
+        serviceName: opensandbox-server
+        serviceNamespace: {{ .namespace }}
+        servicePort: 80
+        paths:
+          - {{ .path }}
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}

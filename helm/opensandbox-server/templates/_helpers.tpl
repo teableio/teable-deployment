@@ -195,3 +195,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "opensandbox-server.gatewayIngressTlsSecret" -}}
 {{- .Values.server.gateway.ingress.tls.secretName | default (printf "%s-tls" (include "opensandbox-server.gatewayIngressHost" . | trimPrefix "*.")) }}
 {{- end }}
+
+{{- /* Non-empty ("true") when global.entry.mode=external-nginx: the umbrella-level
+       external gateway terminates TLS, so this chart renders no Ingress/Certificate. */}}
+{{- define "opensandbox-server.externalEntry" -}}
+{{- if eq ((((.Values.global).entry).mode) | toString) "external-nginx" -}}true{{- end -}}
+{{- end }}

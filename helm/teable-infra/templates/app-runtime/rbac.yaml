@@ -6,7 +6,7 @@
 {{- $deployerName := $runtime.deployer.serviceAccountName | default "teable-app-deployer" }}
 {{- $runtimeServiceAccountName := $runtime.runtimeServiceAccountName | default "teable-app-runtime" }}
 {{- $imagePullSecrets := default (.Values.imagePreheater.imagePullSecrets | default list) ($runtime.imagePullSecrets | default list) }}
-{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+{{- $ingressMode := $.Values.infraService.appRuntime.ingressMode | default $runtime.ingress.mode | default "dynamic" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

@@ -1,5 +1,5 @@
 {{- /* MinIO S3 external entry point: browsers hit presigned attachment URLs on this host, so it must be publicly reachable. Ingress + cert-manager Certificate (each toggled independently). */}}
-{{- if .Values.minio.enabled }}
+{{- if and .Values.minio.enabled (not (include "teable-infra.externalEntry" .)) }}
 {{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
 {{- $minio := .Values.minio }}
 {{- $serviceName := printf "%s-minio" .Release.Name }}

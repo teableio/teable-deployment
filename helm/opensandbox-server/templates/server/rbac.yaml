@@ -1,6 +1,7 @@
 {{- if (.Values.server.rbac).create -}}
 # Copyright 2026 Alibaba Group Holding Ltd.
 # Server RBAC: ServiceAccount, ClusterRole, ClusterRoleBinding.
+{{- if ((.Values.server.rbac).namespaceScope).create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -13,6 +14,8 @@ metadata:
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
 {{- end }}
+{{- end }}
+{{- if ((.Values.server.rbac).clusterScope).create }}
 ---
 apiVersion: {{ include "opensandbox-server.rbac.apiVersion" . }}
 kind: ClusterRole
@@ -57,4 +60,5 @@ subjects:
   - kind: ServiceAccount
     name: {{ include "opensandbox-server.serviceAccountName" . }}
     namespace: {{ include "opensandbox-server.namespace" . }}
+{{- end }}
 {{- end }}

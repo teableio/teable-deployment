@@ -1,4 +1,4 @@
-{{- if .Values.server.ingress.certificate.enabled }}
+{{- if and .Values.server.ingress.certificate.enabled (not (include "opensandbox-server.externalEntry" .)) }}
 {{- $host := include "opensandbox-server.serverIngressHost" . }}
 {{- if not .Values.server.ingress.certificate.issuerName }}
 {{- fail "server.ingress.certificate.issuerName is required when server.ingress.certificate.enabled=true" }}
@@ -23,7 +23,7 @@ spec:
     {{- end }}
 ---
 {{- end }}
-{{- if and .Values.server.gateway.enabled .Values.server.gateway.ingress.certificate.enabled }}
+{{- if and .Values.server.gateway.enabled .Values.server.gateway.ingress.certificate.enabled (not (include "opensandbox-server.externalEntry" .)) }}
 {{- $host := include "opensandbox-server.gatewayIngressHost" . }}
 {{- if not .Values.server.gateway.ingress.certificate.issuerName }}
 {{- fail "server.gateway.ingress.certificate.issuerName is required when server.gateway.ingress.certificate.enabled=true" }}

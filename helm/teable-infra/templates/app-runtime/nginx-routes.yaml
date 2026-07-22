@@ -1,0 +1,21 @@
+{{- /* External-entry route fragment for the app wildcard (gateway mode: infra-service
+       proxies *.app traffic to the per-app Services). Assembled by
+       templates/nginx-routes.yaml, mirroring app-runtime/ingress.yaml. */}}
+{{- define "teable-infra.nginxRoute.app-runtime" -}}
+{{- if and .Values.appRuntime.enabled (eq (.Values.infraService.appRuntime.ingressMode | default .Values.appRuntime.ingress.mode | default "dynamic") "gateway") }}
+      - host: {{ .Values.appRuntime.ingress.wildcardDomain | default (include "teable-infra.appWildcard" .) | quote }}
+        serviceName: {{ .Release.Name }}-infra-service
+        serviceNamespace: {{ .Values.infraService.namespaceOverride | default .Release.Namespace }}
+        servicePort: 80
+        paths:
+          - /
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
+{{- end }}

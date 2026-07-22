@@ -322,6 +322,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: teable-git-registry-data
   namespace: opensandbox-system
+  annotations:
+    helm.sh/resource-policy: keep
   labels:
     app.kubernetes.io/name: git-registry
     app.kubernetes.io/instance: teable

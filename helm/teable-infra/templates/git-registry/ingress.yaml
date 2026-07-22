@@ -1,5 +1,5 @@
 {{- /* git-registry external entry point: Ingress + cert-manager Certificate (each toggled independently). */}}
-{{- if .Values.gitRegistry.enabled }}
+{{- if and .Values.gitRegistry.enabled (not (include "teable-infra.externalEntry" .)) }}
 {{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
 {{- $gitRegistry := .Values.gitRegistry }}
 {{- $serviceName := printf "%s-git-registry" .Release.Name }}

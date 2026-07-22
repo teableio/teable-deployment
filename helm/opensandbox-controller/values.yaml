@@ -140,6 +140,14 @@ serviceAccount:
 rbac:
   # -- Specifies whether RBAC resources should be created
   create: true
+  # -- Cluster-scoped half only (ClusterRole/ClusterRoleBinding): set create=false
+  # for restricted deploy accounts; a cluster admin pre-provisions it.
+  clusterScope:
+    create: true
+  # -- Namespace-scoped half (leader-election Role/RoleBinding): set create=false
+  # to render only the cluster half (admin bundle).
+  namespaceScope:
+    create: true
 
 # CRD configuration
 crds:

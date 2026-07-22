@@ -1,4 +1,5 @@
 {{- if .Values.rbac.create -}}
+{{- if ((.Values.rbac).namespaceScope).create }}
 ---
 # Leader election role binding
 apiVersion: {{ include "opensandbox.rbac.apiVersion" . }}
@@ -18,6 +19,8 @@ subjects:
   name: {{ include "opensandbox.serviceAccountName" . }}
   namespace: {{ include "opensandbox.namespace" . }}
 
+{{- end }}
+{{- if ((.Values.rbac).clusterScope).create }}
 ---
 # Manager role binding
 apiVersion: {{ include "opensandbox.rbac.apiVersion" . }}
@@ -36,4 +39,5 @@ subjects:
   name: {{ include "opensandbox.serviceAccountName" . }}
   namespace: {{ include "opensandbox.namespace" . }}
 
+{{- end }}
 {{- end }}

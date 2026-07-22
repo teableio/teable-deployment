@@ -1,0 +1,55 @@
+{{- /* External-entry route fragment for git-registry, mirroring git-registry/ingress.yaml:
+       with a basePath it rides the Infra host under that prefix; with an explicitly
+       blank basePath it serves the root paths the Ingress exposes in that mode
+       (/apps prefix + exact /healthz). Assembled by templates/nginx-routes.yaml. */}}
+{{- define "teable-infra.nginxRoute.git-registry" -}}
+{{- if .Values.gitRegistry.enabled }}
+{{- $host := .Values.gitRegistry.ingress.host | default (include "teable-infra.infraHost" .) }}
+{{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- if .Values.gitRegistry.basePath }}
+      - host: {{ $host | quote }}
+        serviceName: {{ .Release.Name }}-git-registry
+        serviceNamespace: {{ $namespace }}
+        servicePort: 80
+        paths:
+          - {{ .Values.gitRegistry.basePath }}
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 600s
+        proxySendTimeout: 600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: 64m
+{{- else }}
+      - host: {{ $host | quote }}
+        serviceName: {{ .Release.Name }}-git-registry
+        serviceNamespace: {{ $namespace }}
+        servicePort: 80
+        paths:
+          - /apps
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 600s
+        proxySendTimeout: 600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: 64m
+      - host: {{ $host | quote }}
+        serviceName: {{ .Release.Name }}-git-registry
+        serviceNamespace: {{ $namespace }}
+        servicePort: 80
+        paths:
+          - /healthz
+        pathType: Exact
+        preserveHost: true
+        rewritePath: false
+        websocket: false
+        proxyReadTimeout: 600s
+        proxySendTimeout: 600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: 64m
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,39 @@
+{{- /* External-entry route fragment for the bundled Teable app. Assembled by
+       templates/nginx-routes.yaml, mirroring teable/ingress.yaml - including the
+       public-bucket rule: the app builds public asset URLs as <origin>/<bucket>/...,
+       so the Teable host must route that prefix to MinIO or avatars/attachments 404
+       (longest prefix beats the / catch-all). */}}
+{{- define "teable-infra.nginxRoute.teable" -}}
+{{- if .Values.teable.enabled }}
+{{- if .Values.minio.enabled }}
+      - host: {{ include "teable-infra.teableHost" . | quote }}
+        serviceName: {{ .Release.Name }}-minio
+        serviceNamespace: {{ .Values.infraService.namespaceOverride | default .Release.Namespace }}
+        servicePort: 9000
+        paths:
+          - {{ printf "/%s" .Values.minio.buckets.public | quote }}
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: false
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
+      - host: {{ include "teable-infra.teableHost" . | quote }}
+        serviceName: {{ .Release.Name }}-teable
+        serviceNamespace: {{ .Values.infraService.namespaceOverride | default .Release.Namespace }}
+        servicePort: 3000
+        paths:
+          - /
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
+{{- end }}

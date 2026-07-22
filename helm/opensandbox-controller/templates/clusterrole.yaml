@@ -1,4 +1,5 @@
 {{- if .Values.rbac.create -}}
+{{- if ((.Values.rbac).namespaceScope).create }}
 ---
 # Leader election role
 apiVersion: {{ include "opensandbox.rbac.apiVersion" . }}
@@ -42,6 +43,8 @@ rules:
   - create
   - patch
 
+{{- end }}
+{{- if ((.Values.rbac).clusterScope).create }}
 ---
 # Manager ClusterRole
 apiVersion: {{ include "opensandbox.rbac.apiVersion" . }}
@@ -142,4 +145,5 @@ rules:
   - patch
   - update
 
+{{- end }}
 {{- end }}

@@ -2,7 +2,7 @@
        Host and TLS secret derive from global.baseDomain when left blank; the derived
        secret name (<host>-tls) matches the opensandbox-server /v1 ingress default so
        both ingresses on the shared host reuse one certificate. */}}
-{{- if and .Values.infraService.enabled .Values.infraService.ingress.enabled }}
+{{- if and .Values.infraService.enabled .Values.infraService.ingress.enabled (not (include "teable-infra.externalEntry" .)) }}
 {{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
 {{- $monitorServiceName := printf "%s-infra-service" .Release.Name }}
 {{- $host := .Values.infraService.ingress.host | default (include "teable-infra.infraHost" .) }}

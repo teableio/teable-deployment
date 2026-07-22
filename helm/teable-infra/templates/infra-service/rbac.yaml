@@ -1,7 +1,11 @@
 {{- /* RBAC for infra-service: SA + cluster-wide read-only ClusterRole + three cross-namespace Roles (engine key rotation / app-runtime management / image preheating).
-     With rbac.create=false the whole group is skipped (for clusters managing RBAC centrally; bring your own identically named SA and grants). */}}
+     With rbac.create=false the whole group is skipped (for clusters managing RBAC centrally; bring your own identically named SA and grants).
+     With rbac.clusterScope.create=false only the ClusterRole/ClusterRoleBinding are skipped: a restricted deploy account installs the
+     namespace-scoped half while a cluster admin pre-provisions the cluster-scoped half. */}}
 {{- if and .Values.infraService.enabled (.Values.infraService.rbac).create }}
+{{- $rbac := .Values.infraService.rbac }}
 {{- $namespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- if ($rbac.namespaceScope).create }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -16,6 +20,8 @@ metadata:
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+{{- end }}
+{{- if ($rbac.clusterScope).create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -77,6 +83,8 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.infraService.serviceAccountName | quote }}
     namespace: {{ $namespace }}
+{{- end }}
+{{- if ($rbac.namespaceScope).create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -159,10 +167,13 @@ rules:
   - apiGroups: [""]
     resources: ["services", "configmaps", "secrets"]
     verbs: ["create", "update", "patch", "delete"]
+  {{- /* knativeCompat=false drops this grant for deploy accounts that cannot grant serving.knative.dev. */}}
+  {{- if $rbac.knativeCompat }}
   # Keep this for one release so old Infra Service pods can finish a rolling upgrade safely.
   - apiGroups: ["serving.knative.dev"]
     resources: ["services", "routes"]
     verbs: ["get", "delete"]
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -227,4 +238,5 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.infraService.serviceAccountName | quote }}
     namespace: {{ $namespace }}
+{{- end }}
 {{- end }}

@@ -10,6 +10,7 @@ Manual trigger: kubectl create job -n registry-system --from=cronjob/docker-regi
 */ -}}
 {{- if and .Values.registryGc .Values.registryGc.enabled }}
 {{- $ns := .Values.registryGc.namespace | default "registry-system" }}
+{{- if ((.Values.registryGc.rbac).namespaceScope).create }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -21,6 +22,8 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: opensandbox
+{{- end }}
+{{- if ((.Values.registryGc.rbac).clusterScope).create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -60,6 +63,7 @@ subjects:
   - kind: ServiceAccount
     name: docker-registry-gc
     namespace: {{ $ns }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

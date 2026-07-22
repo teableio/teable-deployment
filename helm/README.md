@@ -69,6 +69,104 @@ keeps the Helm release in sync, so the next upgrade will not silently roll
 your images back. (On Helm 4 add `--server-side=true --force-conflicts` if
 images were previously swapped by hand.)
 
+## Storage
+
+The git-registry and VictoriaMetrics data PVCs support three modes, per
+component (`gitRegistry.persistence` / `infraService.victoriaMetrics.persistentVolumeClaim`):
+
+- **Dynamic (default):** leave `volumeName` and `existingClaim` blank; set
+  `storageClassName` or leave it blank for the cluster default StorageClass.
+- **Static PV binding:** set `volumeName` to a pre-provisioned PV and keep
+  `storageClassName: ""` — the empty string is emitted on the PVC so the
+  dynamic provisioner stays out of the way. Adjust `accessModes` to match the PV.
+- **Bring your own PVC:** set `existingClaim` to a PVC you created beforehand;
+  the chart then creates no PVC at all. Use this when PVC lifecycle is owned by
+  a storage/cluster admin rather than the deploy account.
+
+Both PVCs carry `helm.sh/resource-policy: keep`, so `helm uninstall` leaves
+the data in place; delete the PVC explicitly to discard it.
+
+## External gateway entry (no ingress controller)
+
+If an external SLB/nginx terminates TLS in front of the cluster, set:
+
+```yaml
+global:
+  entry:
+    mode: external-nginx
+```
+
+The chart then renders no Ingress or Certificate objects (the ingress-nginx
+and cert-manager prerequisites no longer apply) and renders a
+`<release>-nginx-routes` ConfigMap instead — the host/path → Service routing
+contract for your gateway team, including the entry requirements (preserve
+Host, no path rewrite, longest-prefix path matching, WebSocket, long
+timeouts). The ConfigMap declares routes; it does not configure the external
+gateway by itself.
+
+This mode requires `appRuntime.ingress.mode: gateway` and the chart refuses
+to render otherwise: the default `dynamic` mode creates per-app Ingress
+objects at runtime, which nothing would serve without an ingress controller.
+
+## Restricted deploy accounts
+
+If your deploy account only holds namespace-scoped permissions, have a cluster
+admin apply the pre-rendered cluster half first:
+
+```bash
+kubectl apply -f helm/teable-infra/manifests/crds.yaml
+kubectl apply -f helm/teable-infra/manifests/cluster-rbac.yaml
+```
+
+(Both are pre-rendered from the default profile for release name `teable` in
+namespace `opensandbox-system` — the quick-start defaults. Installing under a
+different release name or namespace, or enabling components that are off by
+default (e.g. `registryGc`)? Re-render the cluster half from the chart with
+`rbac.namespaceScope.create: false` set on infra-service and
+opensandbox-server, and apply the resulting ClusterRole/ClusterRoleBinding
+documents.)
+
+Then install as the deploy account with:
+
+```yaml
+# Namespaces are cluster-scoped: have the admin create the release namespace
+# plus the two runtime namespaces below, and keep the chart from rendering them.
+sandboxNamespace:
+  create: false      # admin pre-creates teable-sandbox
+appRuntime:
+  createNamespace: false   # admin pre-creates the app-deploy namespace
+infraService:
+  rbac:
+    clusterScope:
+      create: false   # cluster admin pre-provisioned the ClusterRole/Binding
+    knativeCompat: false   # only if the account cannot grant serving.knative.dev
+registryGc:
+  rbac:
+    clusterScope:
+      create: false
+opensandbox-server:
+  server:
+    rbac:
+      clusterScope:
+        create: false
+    gateway:
+      rbac:
+        clusterScope:
+          create: false
+opensandbox-controller:
+  rbac:
+    clusterScope:
+      create: false   # keeps the namespaced leader-election Role/RoleBinding
+  crds:
+    install: false
+```
+
+The chart then renders only namespace-scoped RBAC (ServiceAccounts, Roles,
+RoleBindings) alongside the workloads; the workloads keep referencing the same
+ServiceAccount names either way. Combine with the Storage section
+(`existingClaim` against admin-provisioned PVs) and the external gateway entry
+mode above when those restrictions apply too.
+
 ## Health and drift
 
 ```bash

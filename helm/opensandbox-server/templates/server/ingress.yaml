@@ -1,4 +1,4 @@
-{{- if .Values.server.ingress.enabled }}
+{{- if and .Values.server.ingress.enabled (not (include "opensandbox-server.externalEntry" .)) }}
 {{- $host := include "opensandbox-server.serverIngressHost" . }}
 {{- if not $host }}
 {{- fail "server.ingress.host is required when server.ingress.enabled=true" }}

@@ -19,6 +19,14 @@ server:
     # -- Set false when cluster RBAC is centrally managed; bring your own SA + bindings.
     # Workloads keep referencing the same ServiceAccount name either way.
     create: true
+    # -- Cluster-scoped half only (ClusterRole/ClusterRoleBinding): set create=false
+    # for restricted deploy accounts; the ServiceAccount is still created.
+    clusterScope:
+      create: true
+    # -- Namespace-scoped half (the ServiceAccount): set create=false to render
+    # only the cluster-scoped half (admin bundle).
+    namespaceScope:
+      create: true
 
   # -- Additional environment variables for the server container.
   env: []
@@ -96,6 +104,14 @@ server:
       # -- Set false when cluster RBAC is centrally managed; bring your own SA + bindings.
       # The gateway workload keeps referencing the same ServiceAccount name either way.
       create: true
+      # -- Cluster-scoped half only (ClusterRole/ClusterRoleBinding): set create=false
+      # for restricted deploy accounts; the ServiceAccount is still created.
+      clusterScope:
+        create: true
+      # -- Namespace-scoped half (the ServiceAccount): set create=false to render
+      # only the cluster-scoped half (admin bundle).
+      namespaceScope:
+        create: true
     # Public host sandbox previews are served on. Blank: derived from global.baseDomain
     # (*.sandbox.<base>); falls back to the opensandbox.example.com placeholder.
     host: ""

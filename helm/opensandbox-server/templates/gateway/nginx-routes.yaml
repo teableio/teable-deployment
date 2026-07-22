@@ -1,0 +1,19 @@
+{{- /* External-entry route fragment for the sandbox preview wildcard (the ingress
+       gateway proxies *.sandbox traffic to sandbox Pods). Params: host, namespace -
+       see server/nginx-routes.yaml for why. */}}
+{{- define "opensandbox-server.nginxRoute.gateway" }}
+      - host: {{ .host | quote }}
+        serviceName: opensandbox-ingress-gateway
+        serviceNamespace: {{ .namespace }}
+        servicePort: 80
+        paths:
+          - /
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}

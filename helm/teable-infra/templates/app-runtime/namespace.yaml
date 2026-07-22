@@ -2,7 +2,7 @@
 {{- if .Values.appRuntime.enabled }}
 {{- $runtime := .Values.appRuntime }}
 {{- $namespace := $runtime.namespace | default "app-deploy" }}
-{{- $ingressMode := $runtime.ingress.mode | default "dynamic" }}
+{{- $ingressMode := $.Values.infraService.appRuntime.ingressMode | default $runtime.ingress.mode | default "dynamic" }}
 {{- $tlsSecretName := "app-wildcard-tls" }}
 {{- if hasKey $runtime.ingress.tls "secretName" }}
 {{- $tlsSecretName = $runtime.ingress.tls.secretName }}
