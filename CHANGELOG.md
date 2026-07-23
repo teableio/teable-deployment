@@ -45,6 +45,19 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 [Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-22T11-07-01Z.2343)
 
+### Teable release.2026-07-23T08-40-34Z.2355
+
+#### Feature Updates
+- Added multiple ways to close the Kanban “Stack by” dialog: press Esc, click outside the dialog, or select “Done”.
+- Added a refresh action to Audit Log and improved the display of long operator, space, and Base names.
+
+#### Bug Fixes & Improvements
+- Improved publishing consistency, ensuring that when editing, generation, and publishing operations overlap, the published app remains consistent with the latest preview without missing or overwriting newer changes.
+- Optimized invitation limit handling to prevent subscribed organizations from being deactivated during legitimate bulk invitations. The hourly automatic deactivation policy no longer applies to Community Edition.
+- Fixed a crash when opening “Record History” from the sidebar tree menu and clarified the meanings of the “Record History” and “Recycle Bin” labels.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-23T08-40-34Z.2355)
+
 ## v2026.7.11 - 2026-07-21
 
 ### Teable release.2026-07-20T06-51-40Z.2282
