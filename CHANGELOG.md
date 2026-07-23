@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.7.12 - 2026-07-23
 
 - **Helm: external gateway entry mode.** Set `global.entry.mode: external-nginx` when an external SLB/nginx terminates TLS and forwards HTTP to Services: the chart then renders no Ingress or Certificate objects anywhere (umbrella and sub-charts) and instead renders a `<release>-nginx-routes` ConfigMap declaring every host/path → Service route for your gateway team, derived from the same values as the rest of the deployment. Requires `appRuntime.ingress.mode: gateway` (the render fails otherwise, because dynamic per-app Ingresses would have nothing serving them). Default unchanged (in-cluster Ingress, per-component flags); no action needed.
 - **Helm: bring-your-own PVC and static PV binding for git-registry and VictoriaMetrics.** `gitRegistry.persistence` and `infraService.victoriaMetrics.persistentVolumeClaim` now accept `existingClaim` (reuse a pre-created PVC, chart creates none), `volumeName` (bind to a specific pre-provisioned PV; an explicit empty `storageClassName` is now emitted to disable dynamic provisioning), and `accessModes`. Edge case: an explicitly empty VictoriaMetrics `storageClassName` used to fall back to `standard-rwo` and now means the cluster default StorageClass — set `standard-rwo` explicitly if you relied on that. No action needed otherwise.
