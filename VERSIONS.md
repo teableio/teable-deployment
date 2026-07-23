@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.7.12** (2026-07-23T10:16:27Z) -- do not edit
+> Generated for platform release **v2026.7.13** (2026-07-23T14:07:44Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -12,7 +12,7 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 
 | Component | Image | Architectures | Notes |
 |---|---|---|---|
-| `teable` | `ghcr.io/teableio/teable:release.2026-07-23T08-40-34Z.2355` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
+| `teable` | `ghcr.io/teableio/teable:release.2026-07-23T12-32-52Z.2361` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
 | `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: at runtime the app pulls `<prefix>:<its own release tag>`, so sandbox hosts need registry access |
 | `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260717T042653Z` | amd64, arm64 |  |
 | `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260717T042653Z` | amd64, arm64 |  |
@@ -57,7 +57,7 @@ first-party image is mirrored there with identical tags. Details and offline
 | | Release tag |
 |---|---|
 | Minimum supported | `release.2026-07-14T12-24-39Z.2228` |
-| Verified against | `release.2026-07-23T08-40-34Z.2355` |
+| Verified against | `release.2026-07-23T12-32-52Z.2361` |
 
 Older app releases cannot use this runtime's path-proxy sandbox mode; upgrade
 the app first (its data is untouched by app image upgrades).
