@@ -9,6 +9,21 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-07-23T12-32-52Z.2361
+
+#### Feature Updates
+- Added in-app notifications for Space and Base invitations, with direct links to the relevant destination and improved notification accuracy.
+- Updated the welcome video on the new base page with the latest onboarding guidance.
+
+#### Bug Fixes & Improvements
+- Improved table navigation reliability by automatically opening the last-used or default view and preventing loading screens from becoming stuck when switching tables.
+- Improved computed-field responsiveness and reliability, particularly for lookups, linked records, repointing, and large fanout updates under concurrent load.
+- Updated CN in-app subscription pricing to match the CN website: ¥70 per seat/month for Professional and ¥140 per seat/month for Business.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-07-23T12-32-52Z.2361)
+
 ## v2026.7.12 - 2026-07-23
 
 - **Helm: external gateway entry mode.** Set `global.entry.mode: external-nginx` when an external SLB/nginx terminates TLS and forwards HTTP to Services: the chart then renders no Ingress or Certificate objects anywhere (umbrella and sub-charts) and instead renders a `<release>-nginx-routes` ConfigMap declaring every host/path → Service route for your gateway team, derived from the same values as the rest of the deployment. Requires `appRuntime.ingress.mode: gateway` (the render fails otherwise, because dynamic per-app Ingresses would have nothing serving them). Default unchanged (in-cluster Ingress, per-component flags); no action needed.
