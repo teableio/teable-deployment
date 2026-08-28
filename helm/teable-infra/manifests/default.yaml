@@ -1901,6 +1901,12 @@ spec:
           value: '21600'
         - name: APP_RUNTIME_CLEANUP_INTERVAL_SECONDS
           value: '900'
+        - name: APP_RUNTIME_SCALE_TO_ZERO_ENABLED
+          value: 'true'
+        - name: APP_RUNTIME_IDLE_SCALE_TO_ZERO_SECONDS
+          value: '604800'
+        - name: APP_RUNTIME_SCALE_TO_ZERO_INTERVAL_SECONDS
+          value: '600'
         - name: APP_RUNTIME_ARTIFACT_S3_ENDPOINT
           value: https://infra.teable.example.org
         - name: APP_RUNTIME_ARTIFACT_S3_REGION

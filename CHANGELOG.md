@@ -9,6 +9,13 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Added `infraService.appRuntime.scaleToZero` (teable-infra 0.9.0).** Tune or
+  disable app idle scale-to-zero: `enabled`, `idleSeconds`, `intervalSeconds`.
+  Blank values inherit the built-in defaults (enabled, 7 days idle, 600s scan),
+  so existing installs behave exactly as before. No action needed.
+
 ## v2026.8.49 - 2026-08-28
 
 ### Teable release.2026-08-27T15-42-00Z.2838

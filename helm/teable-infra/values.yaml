@@ -639,6 +639,14 @@ infraService:
     artifactMaxBytes: 268435456
     unhealthyTtlSeconds: 21600
     cleanupIntervalSeconds: 900
+    # App idle scale-to-zero: after idleSeconds with no traffic the app's replicas are
+    # scaled to 0; the gateway wakes it on demand when a request hits a sleeping app.
+    # Blank values inherit the infra-service built-in defaults (enabled, 7d idle,
+    # 600s scan). Set enabled to false explicitly to disable.
+    scaleToZero:
+      enabled: ""
+      idleSeconds: ""
+      intervalSeconds: ""
     artifactOss:
       endpoint: ""
       region: ""

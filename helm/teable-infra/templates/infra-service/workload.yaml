@@ -227,6 +227,13 @@ spec:
               value: {{ .Values.infraService.appRuntime.unhealthyTtlSeconds | default 21600 | quote }}
             - name: APP_RUNTIME_CLEANUP_INTERVAL_SECONDS
               value: {{ .Values.infraService.appRuntime.cleanupIntervalSeconds | default 900 | quote }}
+            {{- /* enabled must not use `default true` (an explicit false would be swallowed); compare against "false" explicitly */}}
+            - name: APP_RUNTIME_SCALE_TO_ZERO_ENABLED
+              value: {{ ternary "false" "true" (eq (toString .Values.infraService.appRuntime.scaleToZero.enabled) "false") | quote }}
+            - name: APP_RUNTIME_IDLE_SCALE_TO_ZERO_SECONDS
+              value: {{ .Values.infraService.appRuntime.scaleToZero.idleSeconds | default 604800 | int64 | quote }}
+            - name: APP_RUNTIME_SCALE_TO_ZERO_INTERVAL_SECONDS
+              value: {{ .Values.infraService.appRuntime.scaleToZero.intervalSeconds | default 600 | quote }}
             {{- if eq $artifactProvider "oss" }}
             - name: APP_RUNTIME_ARTIFACT_OSS_ENDPOINT
               value: {{ required "infraService.appRuntime.artifactOss.endpoint is required when artifactStoreProvider=oss" $artifactOss.endpoint | quote }}
