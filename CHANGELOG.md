@@ -9,6 +9,12 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-08-28T05-16-40Z.2847
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-08-28T05-16-40Z.2847`.
+
 ## v2026.8.50 - 2026-08-28
 
 - **Added `infraService.appRuntime.scaleToZero` (teable-infra 0.9.0).** Tune or
