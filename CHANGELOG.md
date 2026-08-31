@@ -9,6 +9,25 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-08-31T02-56-18Z.2853
+
+#### Feature Updates
+
+- Added full Hebrew UI support in the Community and Enterprise editions, covering language selection, locale detection, preferences, calendars, announcements, static pages, and the SDK.
+- Added search optimization analysis for administrators, providing one actionable recommendation for broad substring searches while identifying existing search paths and avoiding duplicate recommendations.
+
+#### Bug Fixes & Improvements
+
+- Improved right-to-left rendering in Arabic and Hebrew interfaces, including direction icons, editable fields, panels, forms, menus, selectors, gradients, and keyboard navigation.
+- Added missing Arabic translations that previously appeared in English on relevant pages and controls.
+- Updated text input in Arabic and Hebrew interfaces to follow the interface direction while preserving automatic direction detection for displayed content, improving the mixed-language editing experience.
+- Improved the mobile layout of the self-hosted license page, making credentials easier to view and manage on smaller screens.
+- Improved relationship graph accuracy by displaying only relevant relationships and preventing unrelated parent trees from appearing in the admin view.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-08-31T02-56-18Z.2853)
+
 ## v2026.8.51 - 2026-08-28
 
 ### Teable release.2026-08-28T05-16-40Z.2847
