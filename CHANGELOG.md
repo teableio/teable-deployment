@@ -9,6 +9,16 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **`doctor.sh` now checks the AI Agent skills storage contract.** With
+  `infraService.s3Compat.enabled` on, the Helm doctor probes the
+  `/s3/teable-agent` endpoint end to end, verifies both claims, and -- when a
+  sandbox pod is running -- proves the control-plane and sandbox volumes are
+  one shared filesystem (the failure that is otherwise silent). The all-in-one
+  doctor probes the endpoint through the entry. Installs with the default
+  (off) just see an informational skip. No action needed.
+
 ## v2026.8.52 - 2026-08-31
 
 ### Teable release.2026-08-31T02-56-18Z.2853

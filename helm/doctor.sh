@@ -404,6 +404,183 @@ if kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then
   fi
 fi
 
+# --- 5. AI Agent skills storage (checked only when s3Compat is on) -------------
+# Skills are files: the app writes them through the /s3 object API on the
+# fileBrowser volume, and sandboxes read them back from the teable-agent-juicefs
+# claim in the sandbox namespace. Both claims must resolve to ONE shared
+# filesystem (README.md here, "AI Agent skills") -- and getting that wrong is
+# silent at runtime: the skill saves, the sandbox directory stays empty.
+
+# The literal value the rendered manifest sets for an infra-service env var.
+manifest_env() {
+  awk -v n="$1" '$0 ~ ("- name: " n "$") { getline; sub(/^ *value: /, ""); gsub(/"/, ""); print; exit }' "${manifest}"
+}
+
+if [ "$(manifest_env S3_COMPAT_ENABLED)" != "true" ]; then
+  say ""
+  say "[..] AI Agent skills: s3Compat is off (the chart default) -- skipping the"
+  say "     skills storage checks. Enabling it requires the shared-volume setup in"
+  say "     helm/README.md, \"AI Agent skills\"; the switch alone is not enough."
+else
+  say ""
+  # s3Compat serves off the fileBrowser volume: with fileBrowser off every skill save 404s.
+  if [ "$(manifest_env FILE_BROWSER_ENABLED)" != "true" ]; then
+    bad "skills: s3Compat is on but fileBrowser is off (infraService.fileBrowser.enabled) -- every skill save 404s"
+  fi
+
+  infra_ref="$(kubectl get deploy -A \
+    -l app.kubernetes.io/name=infra-service,app.kubernetes.io/instance="${RELEASE}" \
+    -o jsonpath='{range .items[*]}{.metadata.namespace}{"|"}{.metadata.name}{"\n"}{end}' 2>/dev/null | head -1 || true)"
+  INFRA_NS="${infra_ref%%|*}"; INFRA_DEPLOY="${infra_ref#*|}"
+  if [ -z "${INFRA_DEPLOY}" ]; then
+    bad "skills: infra-service deployment not found (label app.kubernetes.io/instance=${RELEASE})"
+  else
+    # Sandbox dataplane namespace: the opensandbox-server config.toml in the manifest.
+    sbx_ns="$(awk '/\[kubernetes\]/{k=1; next} k && /^ *\[/{k=0} k && /namespace = /{sub(/.*= *"/, ""); sub(/".*/, ""); print; exit}' "${manifest}")"
+    sbx_ns="${sbx_ns:-teable-sandbox}"
+    SBX_CLAIM="teable-agent-juicefs"   # fixed by the app; see README "One share, two PV/PVC pairs"
+
+    # The bucket's directory prefix on the volume (S3_COMPAT_BUCKETS, default /teable).
+    bucket_prefix="$(manifest_env S3_COMPAT_BUCKETS | sed -n 's/.*teable-agent[^:]*:[^A-Za-z0-9._/-]*\/*\([A-Za-z0-9._-]*\).*/\1/p')"
+    bucket_prefix="${bucket_prefix:-teable}"
+
+    pvc_state() { kubectl get pvc "$2" -n "$1" -o jsonpath='{.status.phase}{"|"}{.spec.volumeName}' 2>/dev/null || true; }
+
+    cp_claim="$(kubectl get deploy "${INFRA_DEPLOY}" -n "${INFRA_NS}" \
+      -o jsonpath='{.spec.template.spec.volumes[?(@.name=="juicefs")].persistentVolumeClaim.claimName}' 2>/dev/null || true)"
+    cp_pv=""
+    if [ -z "${cp_claim}" ]; then
+      bad "skills: infra-service has no fileBrowser volume (volume 'juicefs' missing on the deployment)"
+    else
+      st="$(pvc_state "${INFRA_NS}" "${cp_claim}")"
+      if [ -z "${st}" ]; then
+        bad "skills: control-plane claim ${INFRA_NS}/${cp_claim} not found"
+      elif [ "${st%%|*}" != "Bound" ]; then
+        bad "skills: control-plane claim ${cp_claim} is ${st%%|*}, not Bound"
+      else
+        cp_pv="${st#*|}"
+        ok "skills: control-plane claim ${cp_claim} bound (${cp_pv})"
+      fi
+    fi
+    sb_pv=""
+    st="$(pvc_state "${sbx_ns}" "${SBX_CLAIM}")"
+    if [ -z "${st}" ]; then
+      bad "skills: sandbox claim ${sbx_ns}/${SBX_CLAIM} not found -- pre-create it; the engine would otherwise provision its own disk under that name and skills would silently never reach the agent"
+    elif [ "${st%%|*}" != "Bound" ]; then
+      bad "skills: sandbox claim ${sbx_ns}/${SBX_CLAIM} is ${st%%|*}, not Bound"
+    else
+      sb_pv="${st#*|}"
+      ok "skills: sandbox claim ${sbx_ns}/${SBX_CLAIM} bound (${sb_pv})"
+    fi
+
+    # Endpoint probe: PUT/GET/DELETE a nonce through /s3 from inside the pod
+    # (localhost, same Bearer key the app uses). Catches env drift, a read-only
+    # fileBrowser (write 500s) and volume permission problems.
+    api_secret="$(manifest_env OPENSANDBOX_API_KEY_SECRET_NAME)"; api_secret="${api_secret:-opensandbox-api-key}"
+    osb_ns="$(manifest_env OPENSANDBOX_NAMESPACE)"; osb_ns="${osb_ns:-${NAMESPACE}}"
+    api_key="$(kubectl get secret "${api_secret}" -n "${osb_ns}" -o jsonpath='{.data.api-key}' 2>/dev/null | base64 --decode 2>/dev/null || true)"
+    s3req() { # s3req METHOD KEY [BODY] -> "<status>|<body>" ("ERR|" on transport failure)
+      kubectl exec -n "${INFRA_NS}" "deploy/${INFRA_DEPLOY}" -c monitor -- node -e '
+        const [m, u, k, b] = process.argv.slice(1);
+        fetch(u, { method: m, headers: { authorization: "Bearer " + k }, body: b || undefined })
+          .then((r) => r.text().then((t) => console.log(r.status + "|" + t)))
+          .catch(() => console.log("ERR|"));
+      ' "$1" "http://localhost:8080/s3/teable-agent/$2" "${api_key}" "${3:-}" 2>/dev/null | tail -1 || true
+    }
+    s3_write_ok=0
+    if [ -z "${api_key}" ]; then
+      warn "skills: cannot read the Infra API key (secret ${osb_ns}/${api_secret}); skipping the /s3 endpoint probe"
+    else
+      nonce="doctor-$$-${RANDOM}"
+      res="$(s3req PUT ".doctor/${nonce}" "${nonce}")"
+      case "${res%%|*}" in
+        200)
+          s3_write_ok=1
+          res="$(s3req GET ".doctor/${nonce}")"
+          if [ "${res}" = "200|${nonce}" ]; then
+            ok "skills: object API /s3/teable-agent write/read"
+          else
+            bad "skills: object API wrote but read back '${res}' (expected 200|${nonce})"
+          fi
+          res="$(s3req DELETE ".doctor/${nonce}")"
+          [ "${res%%|*}" = "204" ] || warn "skills: probe cleanup DELETE returned ${res%%|*}"
+          ;;
+        401) bad "skills: /s3 PUT -> 401 -- the key in ${osb_ns}/${api_secret} is not what infra-service verifies against" ;;
+        404) bad "skills: /s3 PUT -> 404 -- bucket teable-agent not served (s3Compat/fileBrowser env drift; was the pod restarted after the values change?)" ;;
+        500) bad "skills: /s3 PUT -> 500 -- volume not writable (infraService.fileBrowser.readOnly, or volume permissions)" ;;
+        *)   bad "skills: /s3 PUT -> ${res%%|*} (kubectl exec into ${INFRA_DEPLOY} failed, or infra-service is not listening on 8080)" ;;
+      esac
+    fi
+
+    # Same-filesystem verdict. Conclusive when a sandbox pod is running: write a
+    # nonce through /s3 into a directory that pod mounts (subPath of the sandbox
+    # claim) and read it back through the pod. Without a pod, fall back to
+    # comparing the two PVs.
+    verified=""
+    if [ "${s3_write_ok}" = 1 ]; then
+      while IFS= read -r pod; do
+        [ -n "${pod}" ] || continue
+        # First container mount backed by the sandbox claim whose subPath sits
+        # under the bucket prefix; prefer non-skills dirs so a probe file never
+        # sits in a skills directory even transiently.
+        sel="$(kubectl get pod "${pod}" -n "${sbx_ns}" -o jsonpath='{range .spec.volumes[?(@.persistentVolumeClaim.claimName=="teable-agent-juicefs")]}{.name}{"\n"}{end}{range .spec.containers[*]}{.name}{"\t"}{range .volumeMounts[*]}{.name}{"|"}{.mountPath}{"|"}{.subPath}{";"}{end}{"\n"}{end}' 2>/dev/null \
+          | awk -F'\t' -v pfx="${bucket_prefix}/" '
+              NF==1 && $1 != "" && v == "" { v=$1; next }
+              NF==2 && v != "" {
+                n=split($2, a, ";")
+                for (i=1; i<=n; i++) {
+                  if (split(a[i], f, "|") < 3 || f[1] != v || f[3] == "" || index(f[3], pfx) != 1) continue
+                  line=$1 "|" f[2] "|" f[3]
+                  if (f[3] ~ /\/skills($|\/)/) { if (alt == "") alt=line } else { best=line; exit }
+                }
+              }
+              END { if (best != "") print best; else if (alt != "") print alt }' || true)"
+        [ -n "${sel}" ] || continue
+        ctr="${sel%%|*}"; rest="${sel#*|}"; mnt="${rest%%|*}"; subp="${rest#*|}"
+        fs_key="${subp#"${bucket_prefix}"/}"
+        nonce="doctor-fs-$$-${RANDOM}"
+        res="$(s3req PUT "${fs_key}/.${nonce}" "${nonce}")"
+        [ "${res%%|*}" = "200" ] || continue   # cannot address this pod's dir through the bucket; try the next pod
+        seen=""
+        for _try in 1 2 3; do
+          seen="$(kubectl exec -n "${sbx_ns}" "${pod}" -c "${ctr}" -- cat "${mnt}/.${nonce}" 2>/dev/null || true)"
+          [ "${seen}" = "${nonce}" ] && break
+          sleep 2
+        done
+        s3req DELETE "${fs_key}/.${nonce}" >/dev/null 2>&1 || true
+        if [ "${seen}" = "${nonce}" ]; then
+          ok "skills: control-plane and sandbox volumes are one filesystem (verified through pod ${pod})"
+          verified=same
+        else
+          bad "skills: a file written through /s3 is NOT visible in sandbox pod ${pod} (${mnt}) -- the two claims do not resolve to one shared filesystem; skills save but never reach the agent (README.md, \"AI Agent skills\")"
+          verified=diff
+        fi
+        break
+      done < <(kubectl get pods -n "${sbx_ns}" --field-selector=status.phase=Running -o name 2>/dev/null | sed 's|pod/||' | head -10 || true)
+    fi
+    if [ -z "${verified}" ] && [ -n "${cp_pv}" ] && [ -n "${sb_pv}" ]; then
+      pv_prov() { kubectl get pv "$1" -o jsonpath='{.metadata.annotations.pv\.kubernetes\.io/provisioned-by}' 2>/dev/null || true; }
+      pv_src()  { kubectl get pv "$1" -o jsonpath='{.spec.nfs.server}{"|"}{.spec.nfs.path}{"|"}{.spec.csi.driver}{"|"}{.spec.csi.volumeHandle}' 2>/dev/null || true; }
+      cp_prov="$(pv_prov "${cp_pv}")"; sb_prov="$(pv_prov "${sb_pv}")"
+      if [ -n "${cp_prov}" ] || [ -n "${sb_prov}" ]; then
+        bad "skills: dynamically provisioned volume behind ${cp_prov:+${cp_claim} }${sb_prov:+${SBX_CLAIM} }-- dynamic provisioning gives each claim its own volume or subdirectory, so the two sides can never share files; bind both claims to static PVs on one share (README.md, \"One share, two PV/PVC pairs\")"
+      else
+        IFS='|' read -r cp_srv cp_path cp_drv cp_hdl <<< "$(pv_src "${cp_pv}")"
+        IFS='|' read -r sb_srv sb_path sb_drv sb_hdl <<< "$(pv_src "${sb_pv}")"
+        if [ -n "${cp_srv}" ] && [ "${cp_srv}|${cp_path}" = "${sb_srv}|${sb_path}" ]; then
+          ok "skills: both claims bind static NFS PVs on the same export (${cp_srv}:${cp_path})"
+        elif [ -n "${cp_drv}" ] && [ "${cp_drv}|${cp_hdl}" = "${sb_drv}|${sb_hdl}" ]; then
+          ok "skills: both claims bind static PVs on the same CSI volume (${cp_drv})"
+        else
+          warn "skills: cannot statically prove both claims resolve to one share (PVs ${cp_pv} / ${sb_pv});"
+          say "      start any AI session (so a sandbox pod is running) and re-run doctor for a"
+          say "      conclusive check, or follow the verify steps in README.md, \"AI Agent skills\""
+        fi
+      fi
+    fi
+  fi
+fi
+
 say ""
 if [ "${fail}" = 1 ]; then
   say "[x] doctor found problems -- see the [x] lines above."

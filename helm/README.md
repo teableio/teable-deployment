@@ -452,6 +452,10 @@ kubectl exec <sandbox-pod> -n teable-sandbox -- \
   ls /home/agent/.teable/skills/user         # the same skill, read-only
 ```
 
+`doctor.sh` in this directory probes the same contract automatically whenever
+`s3Compat.enabled` is on: the `/s3` endpoint end to end, both claims, and --
+when a sandbox pod is running -- the shared-filesystem property itself.
+
 A shared volume also brings the directory-ownership handling described under
 [Shared sandbox volumes](#shared-sandbox-volumes) into play once you turn on the
 non-root sandbox switches.

@@ -265,6 +265,31 @@ for b in "${S3_BUCKET:-teable-app-artifacts}" $( [ "$APP_MODE" = 1 ] && echo "${
 done
 rw="$($DOCKER exec infra-service sh -c 'echo doctor > /mnt/juicefs/.doctor-probe && cat /mnt/juicefs/.doctor-probe && rm -f /mnt/juicefs/.doctor-probe' 2>/dev/null)"
 [ "$rw" = "doctor" ] && ok "AI/Sandbox data plane read/write (/mnt/juicefs)" || bad "AI/Sandbox data plane read/write failed" "teable-agent-juicefs volume not mounted (apply.sh pre-creates it)"
+# Skills storage plane: the app saves AI Agent skills via PUT /s3/teable-agent/* on the
+# Infra entry (same Bearer key as the rest of the Infra API) and sandboxes read them from
+# the same teable-agent-juicefs volume. Both mounts come from one docker volume here, so
+# what can actually break is env drift (S3_COMPAT_ENABLED) and the entry not routing /s3
+# -- probe end to end: PUT via the entry, confirm on the volume, GET, DELETE.
+S3_NONCE="doctor-$$-$RANDOM"
+S3_PROBE_URL="${INFRA_URL}/s3/teable-agent/.doctor/${S3_NONCE}"
+code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 -X PUT ${INFRA_HOSTHDR:+-H "Host: $INFRA_HOSTHDR"} -H "Authorization: Bearer ${OPENSANDBOX_API_KEY:-}" --data-binary "$S3_NONCE" "$S3_PROBE_URL")
+case "$code" in
+  200)
+    landed="$($DOCKER exec infra-service cat "/mnt/juicefs/teable/.doctor/${S3_NONCE}" 2>/dev/null)"
+    got="$(curl -s -m 20 ${INFRA_HOSTHDR:+-H "Host: $INFRA_HOSTHDR"} -H "Authorization: Bearer ${OPENSANDBOX_API_KEY:-}" "$S3_PROBE_URL")"
+    del=$(curl -s -o /dev/null -w '%{http_code}' -m 20 -X DELETE ${INFRA_HOSTHDR:+-H "Host: $INFRA_HOSTHDR"} -H "Authorization: Bearer ${OPENSANDBOX_API_KEY:-}" "$S3_PROBE_URL")
+    if [ "$landed" = "$S3_NONCE" ] && [ "$got" = "$S3_NONCE" ] && [ "$del" = 204 ]; then
+      ok "skills object API /s3/teable-agent write -> volume -> read -> delete"
+    elif [ "$landed" != "$S3_NONCE" ]; then
+      bad "skills object API wrote, but the object is not at /mnt/juicefs/teable on the shared volume" "FILE_BROWSER_ROOT / volume mounts on infra-service (compose.yaml)"
+    else
+      bad "skills object API: write ok, read/delete broken (read: '$(printf '%s' "$got" | head -c 40)', delete: $del)" "docker compose logs infra-service"
+    fi
+    ;;
+  401) bad "skills object API PUT /s3/teable-agent -> 401" "OPENSANDBOX_API_KEY differs between .env and the running infra-service (docker compose up -d infra-service)" ;;
+  404) bad "skills object API PUT /s3/teable-agent -> 404" "S3_COMPAT_ENABLED/FILE_BROWSER_ENABLED were turned off on the running container (compose sets both; recreate infra-service)" ;;
+  *)   bad "skills object API PUT /s3/teable-agent -> $code" "entry routing of /s3 to infra-service, or infra-service down (docker compose logs infra-service caddy)" ;;
+esac
 
 # ---------- Sandbox chain ----------
 sec "Sandbox chain"
