@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.8.53 - 2026-08-31
 
 - **`doctor.sh` now checks the AI Agent skills storage contract.** With
   `infraService.s3Compat.enabled` on, the Helm doctor probes the
