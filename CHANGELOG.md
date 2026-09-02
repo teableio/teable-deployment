@@ -9,6 +9,26 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-02T10-18-27Z.2908
+
+#### Feature Updates
+- Webhook automation triggers can return configurable synchronous responses, enabling URL verification flows for platforms such as Feishu/Lark, Slack, WeCom, and DingTalk. Existing automations retain the default acknowledgement unless configured otherwise.
+- Attachment previews now let users delete files directly and automatically move to a neighboring attachment after deletion.
+- Chat agents can discover and work with multiple accessible bases in the chat’s space, with per-command base targeting.
+
+#### Bug Fixes & Improvements
+- Improved table update reliability during connection timeouts, reducing failed schema operations and the need for manual recovery after completed rollbacks.
+- Webhook tests now show the incoming request instead of trigger configuration, and partial configuration edits preserve existing authorization and response settings.
+- Compacted linked-record rollups now return visible title strings instead of linked-record objects, preserve duplicate titles, and remain consistent across the UI and API. Integrations expecting object-shaped values may require updates.
+- Attachment thumbnails and previews now fall back to file icons when an image cannot be rendered.
+- Conditional rollup filters now preserve nested groups after saving and reopening, including in narrow settings panels, and lookup-number results remain consistent with API-configured filters.
+- Improved base discovery for chat users with base-level access and prevented base-specific context from carrying across shared workspaces or resumed sessions.
+- Fixed table update and computed-field backfill failures involving multi-value lookup or linked-record rollups, including formulas such as `max`, `min`, `and`, and `or`.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-02T10-18-27Z.2908)
+
 ## v2026.9.0 - 2026-09-02
 
 ### Teable release.2026-09-02T03-16-51Z.2899
