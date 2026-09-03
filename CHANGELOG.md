@@ -9,6 +9,29 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-03T13-21-49Z.2922
+
+#### Feature Updates
+- Updated computed-field pause behavior: bounded pauses can continue accepting writes within safe limits, while blocking pauses return HTTP 409 with `COMPUTE_PAUSED_WRITE_BLOCKED` and a `retryAt` time instead of a generic 503 error.
+- Updated Secrets manager terminology, using “Name” for secret identifiers and “Secret” for secret values across supported languages.
+
+#### Bug Fixes & Improvements
+- Computed fields, formulas, and rollups now retry after temporary recalculation timeouts, reducing stale values after source data changes.
+- Improved schema repair handling for missing columns, reducing misleading rollback errors and unnecessary computed-field fallback work.
+- Fixed the API Access page getting stuck when opening a table from the app sidebar and corrected the Advanced tab to use the selected table.
+- Fixed record context menus not opening from referenced long text fields while preserving the browser context menu for selected read-only text.
+- Improved Field AI cancellation messages for provider billing, quota, authentication, and account issues, including clearer errors for image generation failures.
+- Fixed CLI artifact operations using personal access or OAuth tokens, while consistently respecting configured scopes and space or base restrictions.
+- Kept artifacts aligned with their base when it moves between spaces, preserving applicable access and sharing rules.
+- Improved App Builder chat recovery so messages do not remain stuck in “recovering” after interrupted generation, and improved rich-content rendering stability and security.
+- Improved the settings page layout and navigation on mobile devices.
+- Fixed failed formula field creation temporarily making the affected table unavailable.
+- Improved record query performance for wide tables when requesting a limited selection of fields, reducing unnecessary data loading and CPU usage.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-03T13-21-49Z.2922)
+
 ## v2026.9.1 - 2026-09-02
 
 ### Teable release.2026-09-02T10-18-27Z.2908
