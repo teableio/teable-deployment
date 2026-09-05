@@ -9,6 +9,17 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-05T15-06-03Z.2943
+
+#### Feature Updates
+
+#### Bug Fixes & Improvements
+- Improved error handling for collaboration and shared document loading, returning clearer permission-related errors when activity replay fails.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-05T15-06-03Z.2943)
+
 ## v2026.9.6 - 2026-09-05
 
 ### Teable release.2026-09-05T12-11-06Z.2942
