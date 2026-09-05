@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-05T12-11-06Z.2942
+
+#### Feature Updates
+
+#### Bug Fixes & Improvements
+
+- Improved computed-field reliability by keeping unresolved calculation errors visible until recovery is verified.
+- Improved formula performance by avoiding unnecessary recompilation and downstream updates, with more efficient processing for large updates and backfills.
+- Improved full-field search reliability and performance for large tables across list, count, group, and aggregation queries, including better coverage for numeric fields, rounded values, and short search terms.
+- Statistical queries now stop processing when users change or cancel searches.
+- Fixed repeated retries for computed-field work associated with deleted or missing Bases.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-05T12-11-06Z.2942)
+
 ## v2026.9.5 - 2026-09-05
 
 ### Teable release.2026-09-05T08-43-19Z.2938
