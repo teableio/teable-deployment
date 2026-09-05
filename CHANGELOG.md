@@ -9,6 +9,28 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-05T08-43-19Z.2938
+
+#### Feature Updates
+
+- Lookup fields can now remove duplicate values from multiple linked records for cleaner, easier-to-read results.
+- Mobile sign-in now uses the system browser, allowing users to reuse existing browser sessions through a safer, user-confirmed flow. Older servers continue to use the previous embedded login experience.
+- The native mobile app now shares authenticated sessions across app content, while embedded pages load more consistently and avoid duplicate navigation.
+- Mobile chat history can now group and link general, agent, and app-generation conversations more accurately.
+
+#### Bug Fixes & Improvements
+
+- Improved full-field search performance and reliability for large tables, including list, count, grouping, aggregation, shared-view, and concurrent search requests.
+- Improved cancellation of statistical queries to reduce unnecessary work when searches are changed or canceled.
+- Fixed an error that could prevent rollup fields from being changed from “unique array” to “count all.”
+- Improved rollup conversions by validating formatting against the new result type.
+- Improved the stability and performance of nested formulas that repeatedly check whether attachment, user, or lookup fields are empty, reducing the risk of timeouts during computed field updates.
+- Fixed “contains any of → current user” filters on lookup fields that reference member fields.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-05T08-43-19Z.2938)
+
 ## v2026.9.4 - 2026-09-04
 
 ### Teable release.2026-09-04T10-30-33Z.2931
