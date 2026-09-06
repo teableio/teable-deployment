@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-06T12-49-30Z.2949
+
+#### Feature Updates
+#### Bug Fixes & Improvements
+- Fixed missing or stale downstream formula values in multi-step lookup and computed-field recalculations.
+- Improved computed-field update performance by skipping unnecessary work when no records require recalculation.
+- Improved computed-field reliability for deployments using non-default PostgreSQL schemas.
+- Fixed AI settings crashes when provider data is missing and allowed administrators to save an empty custom provider configuration.
+- Improved AI model selection so Spaces can use their own models and credentials without requiring administrator-level AI configuration.
+- Fixed false calculation-sync warnings for tables without calculated fields and clarified empty calculation task states while preserving genuine error visibility.
+- Improved the admin search path setup flow with clearer explanations when a recommended option cannot be enabled.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-06T12-49-30Z.2949)
+
 ## v2026.9.7 - 2026-09-05
 
 ### Teable release.2026-09-05T15-06-03Z.2943
