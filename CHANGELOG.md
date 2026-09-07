@@ -9,6 +9,18 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-07T06-05-47Z.2955
+
+#### Feature Updates
+
+#### Bug Fixes & Improvements
+- Improved compute activity reliability by displaying errors within the activity panel and preserving cached status when supplemental checks fail or time out.
+- Improved computed field updates to avoid unnecessary recalculation of linked lookups and rollups when formula results remain unchanged, while keeping dependent values accurate.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-07T06-05-47Z.2955)
+
 ## v2026.9.10 - 2026-09-07
 
 ### Teable release.2026-09-07T03-18-00Z.2953
