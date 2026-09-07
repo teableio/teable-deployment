@@ -9,6 +9,25 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-07T09-32-29Z.2963
+
+#### Feature Updates
+- Personal API keys and third-party connections are now managed as reusable credentials in Settings › Integrations, with per-resource access controls and clear usage visibility.
+- Apps, automations, and copied or imported resources retain credential placeholders instead of secret values, allowing collaborators to securely bind their own credentials. Resources can also use credentials from multiple users under separate aliases.
+- AI-assisted building now requires confirmation before using credentials and masks secrets in test output.
+- Added a Scraper option to the chat “+” menu for curated datasets, with localized prompts and access based on permissions and scraper settings.
+- Expanded scraper support beyond the curated catalog, including natural-language dataset discovery and clearer required input details.
+
+#### Bug Fixes & Improvements
+- Fixed idle tables remaining stuck on “checking calculation status” when unrelated tables had queued calculations.
+- Fixed text searches failing or being skipped when records contained inconsistent or unsupported date values.
+- Fixed credential usage summaries to count only hidden resources and improved truncation for long resource names and aliases.
+- Improved scraper reliability by preventing unavailable posts from being treated as verification failures and reducing premature LinkedIn timeouts.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-07T09-32-29Z.2963)
+
 ## v2026.9.11 - 2026-09-07
 
 ### Teable release.2026-09-07T06-05-47Z.2955
