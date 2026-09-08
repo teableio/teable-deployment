@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.9.17 - 2026-09-08
 
 - **Docker server mode accepts your own certificate.** Fill `TLS_CERT_FILE` /
   `TLS_KEY_FILE` in `.env` instead of the Cloudflare token. Existing installs:

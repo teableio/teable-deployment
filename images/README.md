@@ -1,6 +1,6 @@
 # Images
 
-> Generated for platform release **v2026.9.16** -- do not edit by hand.
+> Generated for platform release **v2026.9.17** -- do not edit by hand.
 > The authoritative pin list (with digests) is [`../versions.yaml`](../versions.yaml).
 
 All first-party images are published multi-arch (amd64 + arm64) and
@@ -33,6 +33,7 @@ by us:
 - `redis:7.2.4` (redis)
 - `minio/minio:RELEASE.2025-04-22T22-12-26Z` (minio)
 - `minio/mc:RELEASE.2025-04-16T18-13-26Z` (minio-mc)
+- `caddy:2.9.1` (caddy)
 
 ## Air-gapped / private registry
 
@@ -54,6 +55,7 @@ for img in \
     redis:7.2.4 \
     minio/minio:RELEASE.2025-04-22T22-12-26Z \
     minio/mc:RELEASE.2025-04-16T18-13-26Z \
+    caddy:2.9.1 \
     ghcr.io/teableio/teable-sandbox-agent:release.2026-09-08T06-17-32Z.2983; do
   docker pull "$img"
   docker tag "$img" "$REGISTRY/${img##*/}"

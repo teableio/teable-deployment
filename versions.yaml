@@ -5,8 +5,8 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.9.16
-releasedAt: '2026-09-08T06:50:17Z'
+platformRelease: v2026.9.17
+releasedAt: '2026-09-08T07:24:41Z'
 components:
   teable:
     image: ghcr.io/teableio/teable:release.2026-09-08T06-17-32Z.2983
@@ -111,6 +111,16 @@ components:
     - amd64
     - arm64
     note: Bucket-provisioning sidecar for MinIO; pinned alongside it.
+  caddy:
+    image: caddy:2.9.1
+    digest: sha256:748016f285ed8c43a9ce6e3aed6d92d3009d90ca41157950880f40beaf3ff62b
+    architectures:
+    - amd64
+    - arm64
+    note: 'Docker entry proxy (official image): used as-is by local mode and by server
+      mode with your own certificate (TLS_MODE=static, CADDY_STATIC_IMAGE in .env);
+      the automatic-certificate mode builds a Cloudflare DNS-plugin variant on top
+      of it locally. Not used on Kubernetes.'
 teableCompatibility:
   minRelease: release.2026-07-14T12-24-39Z.2228
   verifiedRelease: release.2026-09-08T06-17-32Z.2983

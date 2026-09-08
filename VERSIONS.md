@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.9.16** (2026-09-08T06:50:17Z) -- do not edit
+> Generated for platform release **v2026.9.17** (2026-09-08T07:24:41Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -26,6 +26,7 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 | `redis` | `redis:7.2.4` | amd64, arm64 |  |
 | `minio` | `minio/minio:RELEASE.2025-04-22T22-12-26Z` | amd64, arm64 | Pinned by the Docker defaults and the Kubernetes values example |
 | `minio-mc` | `minio/mc:RELEASE.2025-04-16T18-13-26Z` | amd64, arm64 | Bucket-provisioning sidecar for MinIO |
+| `caddy` | `caddy:2.9.1` | amd64, arm64 | Docker entry proxy (official image): used as-is by local mode and by server mode with your own certificate (TLS_MODE=static, CADDY_STATIC_IMAGE in .env) |
 
 Digests for every reference are in [`versions.yaml`](versions.yaml).
 
