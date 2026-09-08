@@ -120,10 +120,11 @@ the Teable pod — see the certificates section above.
 
 ### Creating or importing a skill fails
 
-Skills are stored as files through the Infra object API: `s3Compat.enabled`
-(off by default) served on top of `fileBrowser.enabled` (on by default), both
-under `infraService` -- see [`helm/README.md`](helm/README.md), "AI Agent
-skills". Ask the app pod what the API answers:
+Skills are stored as files through the Infra object API, which is enabled by
+the `s3Compat.enabled` switch (off by default) served on top of
+`fileBrowser.enabled` (on by default), both under `infraService` -- see
+[`helm/README.md`](helm/README.md), "AI Agent skills". Ask the app pod what
+the API answers:
 
 ```bash
 kubectl exec deploy/<release>-teable -n opensandbox-system -- node -e '
