@@ -9,6 +9,28 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-07T15-08-33Z.2973
+
+#### Feature Updates
+- URLs in text-based fields are now automatically detected and rendered as clickable links in grid cells, expanded records, formulas, summaries, and long text, with improved support for CJK text, punctuation, mixed content, and touch interactions.
+- AI-created website and URL columns now use plain-text fields with automatic link detection. The previous URL display options are no longer available for new configurations; existing configurations remain valid and use automatic linking.
+- Full-field search now always uses the configured search index coverage. Newly added fields become searchable after the index is reconfigured; if no index is configured, ILIKE search is limited to 20 eligible fields.
+- Admin tools now display the search provider and indexed field coverage for each table, making search configurations easier to diagnose and manage.
+- The compute task timeline now provides clearer labels and lineage relationships, covering the entire process from source updates through processing and completion.
+
+#### Bug Fixes & Improvements
+- Improved the reliability of V2 table queries by applying sensible defaults when query options are omitted.
+- Improved the responsiveness of the Table Query Ops admin overview by limiting the default view to recent data.
+- Improved the performance and responsiveness of computed fields and conditional aggregations, especially under higher workloads.
+- Improved the reliability of real-time table activity during load spikes or when compute activity data cannot be loaded promptly, reducing connection errors and retry loops.
+- Shared and bulk data requests now ignore private activity data that users are not authorized to access instead of causing the entire request to fail.
+- Fixed OAuth-based app builder integrations to ensure authorization prompts are always displayed correctly, and resolved an issue where Google Sheets selection remained stuck after authorization.
+- Improved consistency for supported OAuth services across app builder chat, general chat, the app builder sandbox, and related CLI commands.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-07T15-08-33Z.2973)
+
 ## v2026.9.12 - 2026-09-07
 
 ### Teable release.2026-09-07T09-32-29Z.2963
