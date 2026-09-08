@@ -9,6 +9,30 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Docker server mode accepts your own certificate.** Fill `TLS_CERT_FILE` /
+  `TLS_KEY_FILE` in `.env` instead of the Cloudflare token. Existing installs:
+  re-run `./apply.sh server [--with-app]` after pulling, then `docker compose up -d`.
+- **`PRIVATE_CA_FILE` makes the whole Docker stack trust a corporate CA** --
+  the Teable app, the Infra Service and every sandbox. Set it in `.env`, re-run
+  `apply.sh`, then `docker compose up -d`. No action needed otherwise.
+- **A replaced certificate, CA file or engine config is applied by
+  `docker compose up -d`** after `apply.sh` -- no `--force-recreate` or engine
+  restart needed anymore. No action needed.
+- **`SANDBOX_EXTRA_BINDS` mounts extra host files into every sandbox.** No
+  action needed.
+- **`CADDY_STATIC_IMAGE` points the entry at a mirrored Caddy image** for
+  air-gapped hosts using their own certificate. No action needed unless offline.
+- **`doctor.sh` (server) checks the served certificate names, wildcard DNS from
+  inside a container and private-CA trust.** No action needed.
+- **New private-network guide** at `docker/all-in-one/private-network.md`, with
+  matching troubleshooting entries. No action needed.
+- **Docker sandboxes exit with `sudo: a password is required`** on Teable
+  images from 2026-08-18 to 2026-09-04. Upgrade Teable to
+  `release.2026-09-07T01-58-27Z.2952` or later; `TROUBLESHOOTING.md` has a
+  stopgap if you cannot yet.
+
 ## v2026.9.16 - 2026-09-08
 
 ### Teable release.2026-09-08T06-17-32Z.2983

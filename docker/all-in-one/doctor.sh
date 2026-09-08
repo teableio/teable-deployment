@@ -146,6 +146,19 @@ while :; do
   sleep 5; waited=$((waited+5))
 done
 
+# Private CA: the containers trust it through NODE_EXTRA_CA_CERTS, but this script runs curl on the host, which
+# would fail every https probe (exit 60 -> "000") unless the host trusts the CA too. Hand curl a bundle of the
+# system roots plus PRIVATE_CA_FILE (CURL_CA_BUNDLE replaces the default store, hence the concatenation).
+if [ "$MODE" = "server" ] && [ -n "${PRIVATE_CA_FILE:-}" ] && [ -f "${PRIVATE_CA_FILE}" ]; then
+  DOCTOR_CA="$(mktemp)"; trap 'rm -f "$DOCTOR_CA"' EXIT
+  for sysca in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/cert.pem; do
+    [ -f "$sysca" ] && { cat "$sysca" > "$DOCTOR_CA"; break; }
+  done
+  cat "${PRIVATE_CA_FILE}" >> "$DOCTOR_CA"
+  export CURL_CA_BUNDLE="$DOCTOR_CA"
+  echo "  Private CA: host-side https probes trust ${PRIVATE_CA_FILE}"
+fi
+
 # Entry addresses: local goes through localhost + Host header; server uses the real domains
 if [ "$MODE" = "server" ]; then
   TEABLE_URL="https://${TEABLE_HOST:-}"
@@ -230,6 +243,60 @@ if [ "$APP_MODE" = 1 ]; then
     '<?xml'*) ok "Bare public bucket path /${TEABLE_PUBLIC_BUCKET:-teable-public}?location -> S3 XML (handled by MinIO)" ;;
     *) bad "Bare public bucket path /${TEABLE_PUBLIC_BUCKET:-teable-public}?location -> not S3 XML" "caddy main-site matcher must list the bare /<bucket> path next to /<bucket>/*" ;;
   esac
+fi
+
+# ---------- Entry certificate & DNS (server) ----------
+if [ "$MODE" = "server" ]; then
+  sec "Entry certificate & DNS (server)"
+  echo "  TLS mode: ${TLS_MODE:-unknown} (caddy image ${CADDY_IMAGE:-unknown})"
+  # What this machine's own :443 serves for each site, probed with that site's SNI (automatic mode issues one
+  # certificate per site; static mode serves one for all). A name is covered by an exact SAN or by the
+  # single-label wildcard of its parent (the TLS hostname rule). From the machine itself the connection reaches
+  # caddy through docker's own port forwarding, so another service that answers 443 for LAN clients (a second
+  # ingress on the same host) does not show up here -- also verify from a workstation (see private-network.md).
+  # tls_san HOST:PORT SNI -> the SAN list of the served certificate, "TIMEOUT" when the peer accepts the
+  # TCP connection but never completes the handshake (openssl s_client itself has no handshake timeout and
+  # would hang the whole doctor), or nothing when no certificate came back.
+  tls_san() {
+    local out; out="$(mktemp)"
+    ( exec openssl s_client -connect "$1" -servername "$2" </dev/null >"$out" 2>/dev/null ) &
+    local pid=$! waited=0
+    while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt 10 ]; do sleep 1; waited=$((waited+1)); done
+    if kill -0 "$pid" 2>/dev/null; then kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; rm -f "$out"; echo TIMEOUT; return 0; fi
+    wait "$pid" 2>/dev/null
+    openssl x509 -in "$out" -noout -text 2>/dev/null | awk '/Subject Alternative Name/{getline; print; exit}' | tr -d ' '
+    rm -f "$out"
+  }
+  for n in "${INFRA_HOST:-}" "*.sandbox.${BASE_DOMAIN:-}" "*.app.${BASE_DOMAIN:-}" ${TEABLE_HOST:+"$TEABLE_HOST"}; do
+    case "$n" in \*.*) sni="doctor-probe.${n#\*.}" ;; *) sni="$n" ;; esac
+    served="$(tls_san 127.0.0.1:443 "$sni")"
+    if [ "$served" = TIMEOUT ]; then
+      bad "TLS handshake on 127.0.0.1:443 for ${sni} timed out after 10s" "something accepts the connection but does not speak TLS: another service on 443, or caddy still starting (docker compose logs caddy)"
+      continue
+    fi
+    if [ -z "$served" ]; then
+      bad "no certificate served on 127.0.0.1:443 for ${sni}" "caddy not on 443 (docker port caddy), or the certificate is not issued yet (docker compose logs caddy)"
+      continue
+    fi
+    case ",${served}," in
+      *",DNS:${sni},"*|*",DNS:*.${sni#*.},"*) ok "certificate on :443 covers ${n}" ;;
+      *) bad "certificate on :443 for ${n} (SNI ${sni}) does not cover it (serves: ${served})" "wrong TLS_CERT_FILE, or another service answering on 443 -- TROUBLESHOOTING: 'wrong certificate on 443'" ;;
+    esac
+  done
+  # Wildcard DNS as the containers see it: the Teable app dials every sandbox at <port>-<id>.sandbox.<BASE_DOMAIN>,
+  # resolved through the host's resolvers. An /etc/hosts entry cannot express a wildcard and is not read by containers.
+  probe="doctor-probe.sandbox.${BASE_DOMAIN:-}"
+  res="$($DOCKER exec infra-service node -e "require('dns').promises.lookup('${probe}').then(r=>console.log(r.address)).catch(()=>console.log('NXDOMAIN'))" 2>/dev/null | tail -1)"
+  case "$res" in
+    NXDOMAIN|"") bad "wildcard DNS *.sandbox.${BASE_DOMAIN:-} does not resolve inside containers" "add the two wildcard records on a DNS server this machine uses (an /etc/hosts entry cannot express a wildcard) -- AI chat cannot reach sandboxes without it" ;;
+    *) ok "wildcard DNS *.sandbox.${BASE_DOMAIN:-} resolves inside containers -> ${res}" ;;
+  esac
+  if [ -n "${PRIVATE_CA_FILE:-}" ]; then
+    for c in infra-service $( [ "$APP_MODE" = 1 ] && echo teable ); do
+      v="$($DOCKER exec "$c" sh -c 'test -s "${NODE_EXTRA_CA_CERTS:-/nonexistent}" && echo ok' 2>/dev/null)"
+      [ "$v" = ok ] && ok "$c trusts PRIVATE_CA_FILE (NODE_EXTRA_CA_CERTS mounted)" || bad "$c does not have the private CA mounted" "re-run ./apply.sh server [--with-app] and docker compose up -d $c"
+    done
+  fi
 fi
 
 # ---------- app -> Infra contract ----------

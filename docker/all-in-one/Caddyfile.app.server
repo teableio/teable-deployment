@@ -1,16 +1,16 @@
 # all-in-one server entrypoint: TLS termination + routing (imports shared caddy.snippets).
 # Difference from Caddyfile.server: the Teable main site is at TEABLE_HOST (default = root domain); the console is at INFRA_HOST (default infra.<domain>).
-# Wildcard certificates (*.app / *.sandbox) require DNS-01; the caddy-data volume must persist (stores certs, avoids re-issue rate limits).
-{
-	email {$ACME_EMAIL}
-	acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN} # token needs Zone:Read + DNS:Edit
-}
+# Template: apply.sh renders it to *.generated -- the TLS_GLOBAL placeholder line becomes the ACME global block (cloudflare mode) or nothing,
+# and the per-site TLS_SITE placeholder line becomes `tls /certs/...` (static mode, your own certificate) or nothing.
+# Wildcard certificates (*.app / *.sandbox) require DNS-01 or a certificate you bring; the caddy-data volume must persist (stores certs, avoids re-issue rate limits).
+__TLS_GLOBAL__
 
 import caddy.snippets
 
 # Teable main site. Public-bucket paths forward to MinIO: under the minio provider the app builds public asset URLs
 # as <PUBLIC_ORIGIN>/<public-bucket>/..., so the entrypoint must hand that prefix to MinIO (path-style).
 {$TEABLE_HOST} {
+	__TLS_SITE__
 	# Bare /<bucket> (no trailing slash) must match too: S3 clients send GET /<bucket>?location,
 	# and Caddy's /x/* does not cover /x.
 	@publicBucket path /{$TEABLE_PUBLIC_BUCKET} /{$TEABLE_PUBLIC_BUCKET}/*
@@ -26,6 +26,7 @@ import caddy.snippets
 # One host, one certificate: /git and the bucket path-prefixes ride the Infra domain,
 # so the deployment needs no dedicated git./s3. DNS records.
 {$INFRA_HOST} {
+	__TLS_SITE__
 	handle /git/* {
 		reverse_proxy git-registry:8080
 	}
@@ -41,11 +42,13 @@ import caddy.snippets
 
 # App previews
 *.app.{$BASE_DOMAIN} {
+	__TLS_SITE__
 	reverse_proxy infra-service:8080
 }
 
 # Sandbox previews (independent origin at root path)
 *.sandbox.{$BASE_DOMAIN} {
+	__TLS_SITE__
 	import sandbox_preview
 }
 

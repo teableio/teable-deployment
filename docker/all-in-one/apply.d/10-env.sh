@@ -11,7 +11,7 @@ if [ ! -f "$ENV_FILE" ]; then
   cp "$EXAMPLE" "$ENV_FILE"
   echo "[init] $ENV_FILE generated from $EXAMPLE"
   if [ "$MODE" = "server" ]; then
-    echo "[x] server mode: hand-fill BASE_DOMAIN / ACME_EMAIL / CLOUDFLARE_API_TOKEN in .env first, then re-run ./apply.sh server."
+    echo "[x] server mode: hand-fill BASE_DOMAIN plus one TLS option in .env first (ACME_EMAIL + CLOUDFLARE_API_TOKEN, or TLS_CERT_FILE + TLS_KEY_FILE), then re-run ./apply.sh server."
     exit 1
   fi
 fi

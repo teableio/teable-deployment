@@ -1,5 +1,5 @@
-# Server host overlay: real domain + wildcard TLS (Caddy + Cloudflare DNS-01) + public-network hardening (only caddy publishes ports).
-#   cp .env.server.example .env   # fill in domain/email/token by hand (images are prefilled)
+# Server host overlay: real domain + wildcard TLS (Caddy: Cloudflare DNS-01 or your own certificate) + public-network hardening (only caddy publishes ports).
+#   cp .env.server.example .env   # fill in the domain and one TLS option by hand (images are prefilled)
 #   ./apply.sh server && docker compose up -d
 name: teable-sandbox-infra
 
@@ -24,12 +24,11 @@ services:
     environment:
       GIT_REGISTRY_BASE_PATH: /git
 
-  # TLS edge + routing: Cloudflare DNS-01 auto-issues/renews the wildcard certificate (the official image has no DNS plugins, see Dockerfile.caddy).
+  # TLS edge + routing. CADDY_IMAGE is set by apply.sh from the TLS mode: the Cloudflare DNS-01 build
+  # (compose.server.caddy-build.yaml, auto-issued wildcard certificate) or the official image serving your
+  # own certificate (compose.server.static-tls.yaml). Caddyfile.server.generated is rendered by apply.sh.
   caddy:
-    build:
-      context: .
-      dockerfile: Dockerfile.caddy
-    image: teable-infra/caddy-cloudflare:server
+    image: ${CADDY_IMAGE:?run ./apply.sh server first}
     container_name: caddy
     restart: unless-stopped
     networks:
@@ -41,15 +40,15 @@ services:
       - "443:443"
       - "443:443/udp"  # HTTP/3 (QUIC), optional
     volumes:
-      - ./Caddyfile.server:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile.server.generated:/etc/caddy/Caddyfile:ro
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
       - caddy-data:/data
       - caddy-config:/config
     environment:
       BASE_DOMAIN: ${BASE_DOMAIN:?fill .env then run ./apply.sh server}
       INFRA_HOST: ${INFRA_HOST:?fill .env then run ./apply.sh server}
-      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}                       # cloudflare mode only (validated by apply.sh)
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}   # cloudflare mode only
       OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh server}   # injected server-side by the sandbox preview block
       SANDBOX_PREVIEW_HOST: sandbox.${BASE_DOMAIN}                                       # rewrite target for port previews (no scheme)
       # Bucket path prefixes routed to MinIO on the Infra host (parse-time placeholders in Caddyfile).

@@ -6,13 +6,9 @@
 #          require the browser and the containers to reach the same address).
 
 if [ "$MODE" = "server" ]; then
-  # --- Required (non-secret) validation: only you can fill these; the script will not invent them ---
-  miss=0
-  for v in BASE_DOMAIN ACME_EMAIL CLOUDFLARE_API_TOKEN; do
-    eval "val=\${$v:-}"
-    [ -n "$val" ] || { echo "[x] .env is missing $v (fill it by hand)"; miss=1; }
-  done
-  [ "$miss" = 0 ] || { echo "    Fill them in, then re-run ./apply.sh server."; exit 1; }
+  # --- Required (non-secret) validation: only you can fill this; the script will not invent it.
+  #     TLS inputs (Cloudflare token or your own certificate) are validated by 25-tls.sh. ---
+  [ -n "${BASE_DOMAIN:-}" ] || { echo "[x] .env is missing BASE_DOMAIN (fill it by hand), then re-run ./apply.sh server."; exit 1; }
 
   if [ "$WITH_APP" = 1 ]; then
     # all-in-one: the Teable main site takes the root domain, the console yields to the infra subdomain (the two must never collide)

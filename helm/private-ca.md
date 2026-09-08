@@ -184,24 +184,32 @@ private PKI use the Kubernetes backend for published apps.
 
 ## The Docker path
 
-Usually not needed: `local` mode serves plain HTTP, and `server` mode issues
-**publicly trusted** certificates via ACME DNS-01 -- which works on intranet
-servers too, because the certificate is proven through a DNS record and the
-machine never needs to be reachable from the internet.
+Usually not needed: `local` mode serves plain HTTP, and `server` mode with
+automatic certificates issues **publicly trusted** ones via ACME DNS-01 --
+which works on intranet servers too, because the certificate is proven through
+a DNS record and the machine never needs to be reachable from the internet.
 
-If your sandboxes still face a private CA (typically a corporate TLS
-terminator in front of the stack), two `.env` switches cover it (both need
-`opensandbox-server` >= `v0.2.0-fix6`):
+When the entry serves a certificate from a private CA (you brought your own
+certificate via `TLS_CERT_FILE`, or a corporate TLS terminator sits in front of
+the stack), one `.env` line covers the whole stack (needs `opensandbox-server`
+>= `v0.2.0-fix6`):
 
 ```bash
-# Proper trust: mount your root CA into every sandbox + NODE_EXTRA_CA_CERTS
-SANDBOX_CA_CERT_FILE=/opt/teable/root-ca.crt   # absolute host path, PEM
+# Mounts the CA root into infra-service, the Teable app (--with-app) and every sandbox,
+# and points NODE_EXTRA_CA_CERTS at it. The corporate root alone is enough here:
+# the Docker path only appends to Node's built-in roots, nothing replaces the OS store.
+PRIVATE_CA_FILE=/opt/teable/root-ca.crt        # absolute host path, PEM
 
 # Or, for short trials only: disable Node TLS verification inside sandboxes
 SANDBOX_TLS_NO_VERIFY=1
 ```
 
-Then re-run `./apply.sh server [--with-app]` and
-`docker compose up -d opensandbox-server` -- new sandboxes pick it up. The
-same appended-vs-replaced caveat as Option A applies if you add more trust
-variables by editing `opensandbox.toml` (`[docker] sandbox_env`).
+Then re-run `./apply.sh server [--with-app]` and `docker compose up -d`: the
+app-side containers and the sandbox engine are recreated with the mount (new
+sandboxes pick it up). Rotating the CA is the same two commands -- `apply.sh`
+records the file's fingerprint so compose recreates what loads it.
+(`SANDBOX_CA_CERT_FILE`, the older sandbox-only switch, keeps working.)
+Not covered, as on Kubernetes: `curl`/`git`/Python inside sandboxes, Java, and
+published app containers on the Docker backend. The full walkthrough for
+private networks is
+[`docker/all-in-one/private-network.md`](../docker/all-in-one/private-network.md).

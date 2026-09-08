@@ -21,7 +21,7 @@ services:
           - ${INFRA_HOST}          # sandboxes upload build artifacts to presigned URLs on the Infra host
     volumes:
       # Same-target override of the base mount: swap in the entry config that carries the Teable routes
-      - ./Caddyfile.app.server:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile.app.server.generated:/etc/caddy/Caddyfile:ro
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
     environment:
       TEABLE_HOST: ${TEABLE_HOST:?run ./apply.sh server --with-app first}

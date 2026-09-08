@@ -1,0 +1,14 @@
+# server + your own certificate (TLS_MODE=static, appended by apply.sh): mount the certificate and key
+# into the official caddy image; the rendered Caddyfile serves them with `tls /certs/...` on every site.
+# A running caddy reads the files once at start; apply.sh records the certificate's fingerprint and it is
+# carried below as an environment variable, so after replacing the files `./apply.sh server` + `docker compose up -d`
+# recreates caddy with the new certificate.
+name: teable-sandbox-infra
+
+services:
+  caddy:
+    environment:
+      TLS_CERT_FINGERPRINT: ${TLS_CERT_SHA256:-}
+    volumes:
+      - ${TLS_CERT_FILE:?set TLS_CERT_FILE in .env}:/certs/fullchain.pem:ro
+      - ${TLS_KEY_FILE:?set TLS_KEY_FILE in .env}:/certs/privkey.pem:ro

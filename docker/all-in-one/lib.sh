@@ -4,6 +4,9 @@
 
 rand() { openssl rand -hex "$1"; }
 
+# sha256 of a file (openssl: same output on Linux and macOS, no sha256sum/shasum dependency).
+file_sha256() { openssl dgst -sha256 "$1" | awk '{print $NF}'; }
+
 # Reload .env (to pick up values freshly filled in by step scripts).
 reload_env() { set -a; . ./.env; set +a; }
 
@@ -103,17 +106,58 @@ write_git_override() {
   } > "$override"
 }
 
+# Escape a value for use as a sed `s|...|VALUE|` replacement: `\`, `&` (= matched text) and the `|` delimiter.
+sed_escape() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
+
+# Reject characters that cannot be carried inside a TOML basic string without escaping (`"` and `\`) or that
+# would break the line ($'\n'). Args: LABEL VALUE. Paths with `&`, `|`, spaces and unicode are fine.
+require_toml_safe() {
+  case "$2" in
+    *'"'*|*'\'*|*$'\n'*) echo "[x] $1 must not contain double quotes, backslashes or newlines: $2"; exit 1 ;;
+  esac
+}
+
 # Render opensandbox.generated.toml (injects execd/egress image refs + sandbox network name; api_key is not set here, compose env injects it).
 # Args: EXECD_IMAGE EGRESS_IMAGE SANDBOX_NET [CA_BINDS_LINE] [CA_ENV_LINE] -- the last two are whole
-# TOML lines (or empty) built by apply.d/40-runtime.sh from SANDBOX_CA_CERT_FILE / SANDBOX_TLS_NO_VERIFY.
+# TOML lines (or empty) built by apply.d/40-runtime.sh from PRIVATE_CA_FILE / SANDBOX_EXTRA_BINDS / SANDBOX_TLS_NO_VERIFY.
+# Values are sed-escaped (a `&` or `|` in a path must not corrupt the file) and the output is written to a
+# temp file first, so a failed render leaves the previous generated config in place.
 render_toml() {
   local execd_image="$1" egress_image="$2" sandbox_net="$3" ca_binds_line="${4:-}" ca_env_line="${5:-}"
   [ -f opensandbox.toml ] || { echo "[!] opensandbox.toml template missing, skipping render"; return 0; }
-  sed -e "s|__EXECD_IMAGE__|${execd_image}|g" \
-      -e "s|__EGRESS_IMAGE__|${egress_image}|g" \
-      -e "s|__SANDBOX_NETWORK__|${sandbox_net}|g" \
-      -e "s|__SANDBOX_CA_BINDS__|${ca_binds_line}|" \
-      -e "s|__SANDBOX_CA_ENV__|${ca_env_line}|" \
-      opensandbox.toml > opensandbox.generated.toml
+  local before=""; [ -f opensandbox.generated.toml ] && before="$(cksum < opensandbox.generated.toml)"
+  local tmp; tmp="$(mktemp)"
+  if ! sed -e "s|__EXECD_IMAGE__|$(sed_escape "${execd_image}")|g" \
+           -e "s|__EGRESS_IMAGE__|$(sed_escape "${egress_image}")|g" \
+           -e "s|__SANDBOX_NETWORK__|$(sed_escape "${sandbox_net}")|g" \
+           -e "s|__SANDBOX_CA_BINDS__|$(sed_escape "${ca_binds_line}")|" \
+           -e "s|__SANDBOX_CA_ENV__|$(sed_escape "${ca_env_line}")|" \
+           opensandbox.toml > "$tmp"; then
+    rm -f "$tmp"; echo "[x] rendering opensandbox.generated.toml failed; previous file left untouched"; exit 1
+  fi
+  if grep -q "__SANDBOX_CA_BINDS__\|__SANDBOX_CA_ENV__\|__EXECD_IMAGE__\|__EGRESS_IMAGE__\|__SANDBOX_NETWORK__" "$tmp"; then
+    rm -f "$tmp"; echo "[x] rendering opensandbox.generated.toml left a placeholder behind; previous file left untouched"; exit 1
+  fi
+  mv "$tmp" opensandbox.generated.toml
   echo "[ok] opensandbox.generated.toml"
+  # The engine reads this file once at start. 40-runtime records its fingerprint in .env and compose carries
+  # it as an environment variable, so a changed file changes the service definition and a plain
+  # `docker compose up -d` recreates the engine -- say so whenever the rendered config changed.
+  if [ -n "$before" ] && [ "$before" != "$(cksum < opensandbox.generated.toml)" ]; then
+    echo "[~] opensandbox.generated.toml changed: docker compose up -d recreates opensandbox-server (new sandboxes pick it up)"
+  fi
+}
+
+# Render a server Caddyfile template: __TLS_GLOBAL__ (whole line -> the global options block, or nothing)
+# and __TLS_SITE__ (inline -> the per-site tls directive, or nothing). Args: TEMPLATE OUTPUT TLS_GLOBAL TLS_SITE.
+# The {$VAR} placeholders stay literal: caddy expands them from the container environment at parse time.
+render_caddyfile() {
+  local tpl="$1" out="$2"
+  [ -f "$tpl" ] || { echo "[x] $tpl missing"; exit 1; }
+  TLS_GLOBAL="$3" TLS_SITE="$4" awk '
+    /^__TLS_GLOBAL__$/ { printf "%s", ENVIRON["TLS_GLOBAL"]; next }
+    { while ((i = index($0, "__TLS_SITE__")) > 0) $0 = substr($0, 1, i - 1) ENVIRON["TLS_SITE"] substr($0, i + 12) }  # literal splice (gsub would expand &)
+    { print }
+  ' "$tpl" > "$out"
+  echo "[ok] $out"
 }

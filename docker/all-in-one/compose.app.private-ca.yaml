@@ -1,0 +1,11 @@
+# Private CA + all-in-one (PRIVATE_CA_FILE set with --with-app, appended by apply.sh): the Teable app calls the
+# Infra entry over HTTPS (TEABLE_INFRA_API_URL) and must trust the CA that signed the entry's certificate.
+name: teable-sandbox-infra
+
+services:
+  teable:
+    environment:
+      NODE_EXTRA_CA_CERTS: /etc/ssl/private-ca/root-ca.crt
+      PRIVATE_CA_FINGERPRINT: ${PRIVATE_CA_SHA256:-}   # written by apply.sh; a rotated CA file changes it, so `docker compose up -d` recreates this container
+    volumes:
+      - ${PRIVATE_CA_FILE:?set PRIVATE_CA_FILE in .env}:/etc/ssl/private-ca/root-ca.crt:ro

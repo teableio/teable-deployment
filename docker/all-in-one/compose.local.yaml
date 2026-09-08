@@ -28,7 +28,7 @@ services:
   # Local entrypoint: no TLS, the official image suffices. Host ports 80 and 8088 both map to container :80
   # (8088 is the alternate entry used when the Teable app runs outside this stack and needs the Infra API + sandbox previews).
   caddy:
-    image: caddy:2.9.1
+    image: ${CADDY_STATIC_IMAGE:-caddy:2.9.1}   # official image (no DNS plugin needed); CADDY_STATIC_IMAGE lets air-gapped hosts point at a mirror
     container_name: caddy
     restart: unless-stopped
     networks: [teable-appnet]

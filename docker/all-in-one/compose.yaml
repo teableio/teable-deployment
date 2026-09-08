@@ -43,6 +43,10 @@ services:
       SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
       # api_key is not written into the toml; it is injected from env (overrides server.api_key). The whole stack shares one OPENSANDBOX_API_KEY.
       OPENSANDBOX_SERVER_API_KEY: ${OPENSANDBOX_API_KEY:?run ./apply.sh first}
+      # Fingerprint of the rendered config, written by apply.sh: the engine reads the file once at start, and
+      # carrying the fingerprint here makes a changed config change the service definition, so a plain
+      # `docker compose up -d` recreates the engine (new sandboxes pick the config up). Informational to the engine.
+      OPENSANDBOX_CONFIG_FINGERPRINT: ${OPENSANDBOX_CONFIG_SHA256:-}
 
   # Console + Infra API + app-runtime docker backend + built-in app gateway.
   infra-service:

@@ -2,6 +2,8 @@
 .env
 docker-compose.override.yml
 opensandbox.generated.toml
+Caddyfile.server.generated
+Caddyfile.app.server.generated
 
 # Re-include the two templates: a parent .gitignore's `.env*` rule would otherwise
 # swallow them (child-directory negation overrides the parent rule).

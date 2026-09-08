@@ -1,0 +1,11 @@
+# server + Cloudflare DNS-01 (TLS_MODE=cloudflare, appended by apply.sh): build caddy with the DNS plugin.
+# Kept apart from compose.server.yaml on purpose -- a service carrying both `build` and the official
+# image name would build and mis-tag that image when it is missing locally, which is exactly wrong for
+# the static-TLS mode that runs the official image.
+name: teable-sandbox-infra
+
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy

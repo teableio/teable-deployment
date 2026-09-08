@@ -44,18 +44,39 @@ set_kv EXECD_IMAGE "${EXECD_IMAGE}" "$ENV_FILE"
 set_kv EGRESS_IMAGE "${EGRESS_IMAGE}" "$ENV_FILE"
 SANDBOX_NET="${SANDBOX_DOCKER_NETWORK:-teable-sandbox-net}"
 
-# Private-CA trust for sandboxes (advanced, .env): SANDBOX_CA_CERT_FILE mounts the
-# root CA into every sandbox and points NODE_EXTRA_CA_CERTS at it; SANDBOX_TLS_NO_VERIFY=1
-# disables Node TLS verification instead (trials only). Both need server >= v0.2.0-fix6.
+# Private-CA trust for sandboxes (advanced, .env): PRIVATE_CA_FILE (validated by 25-tls.sh; the
+# legacy SANDBOX_CA_CERT_FILE still works) mounts the root CA into every sandbox and points
+# NODE_EXTRA_CA_CERTS at it; SANDBOX_TLS_NO_VERIFY=1 disables Node TLS verification instead
+# (trials only). Both need server >= v0.2.0-fix6.
 CA_MOUNT="/etc/ssl/private-ca/root-ca.crt"
-CA_BINDS_LINE=""
+CA_BINDS=""
 CA_ENV=""
-if [ -n "${SANDBOX_CA_CERT_FILE:-}" ]; then
+SANDBOX_CA_CERT_FILE="${SANDBOX_CA_CERT_FILE:-${PRIVATE_CA_FILE:-}}"
+if [ -n "${SANDBOX_CA_CERT_FILE}" ]; then
   [ -f "${SANDBOX_CA_CERT_FILE}" ] || { echo "[x] SANDBOX_CA_CERT_FILE points at a missing file: ${SANDBOX_CA_CERT_FILE}"; exit 1; }
   case "${SANDBOX_CA_CERT_FILE}" in /*) ;; *) echo "[x] SANDBOX_CA_CERT_FILE must be an absolute path"; exit 1 ;; esac
-  CA_BINDS_LINE="sandbox_binds = [\"${SANDBOX_CA_CERT_FILE}:${CA_MOUNT}:ro\"]"
+  require_toml_safe "the CA file path" "${SANDBOX_CA_CERT_FILE}"
+  CA_BINDS="\"${SANDBOX_CA_CERT_FILE}:${CA_MOUNT}:ro\""
   CA_ENV="NODE_EXTRA_CA_CERTS = \"${CA_MOUNT}\""
 fi
+# Extra host files mounted into every sandbox (advanced, .env): comma-separated
+# host:container[:ro] entries, e.g. a sudoers drop-in (see TROUBLESHOOTING) or a tool config.
+if [ -n "${SANDBOX_EXTRA_BINDS:-}" ]; then
+  IFS=',' read -r -a extra_binds <<EOF
+${SANDBOX_EXTRA_BINDS}
+EOF
+  for b in "${extra_binds[@]}"; do
+    b="$(printf '%s' "$b" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [ -n "$b" ] || continue
+    src="${b%%:*}"
+    case "$src" in /*) ;; *) echo "[x] SANDBOX_EXTRA_BINDS: host path must be absolute: $b"; exit 1 ;; esac
+    [ -e "$src" ] || { echo "[x] SANDBOX_EXTRA_BINDS points at a missing host path: $src"; exit 1; }
+    require_toml_safe "SANDBOX_EXTRA_BINDS entry" "$b"
+    CA_BINDS="${CA_BINDS:+${CA_BINDS}, }\"${b}\""
+  done
+fi
+CA_BINDS_LINE=""
+[ -n "${CA_BINDS}" ] && CA_BINDS_LINE="sandbox_binds = [${CA_BINDS}]"
 if [ "${SANDBOX_TLS_NO_VERIFY:-}" = "1" ]; then
   echo "[!] SANDBOX_TLS_NO_VERIFY=1: Node TLS verification is DISABLED inside sandboxes (trials only)."
   CA_ENV="${CA_ENV:+${CA_ENV}, }NODE_TLS_REJECT_UNAUTHORIZED = \"0\""
@@ -63,6 +84,10 @@ fi
 CA_ENV_LINE=""
 [ -n "${CA_ENV}" ] && CA_ENV_LINE="sandbox_env = { ${CA_ENV} }"
 render_toml "${EXECD_IMAGE}" "${EGRESS_IMAGE}" "${SANDBOX_NET}" "${CA_BINDS_LINE}" "${CA_ENV_LINE}"
+# Fingerprint of the rendered engine config: compose.yaml exposes it as an environment variable on
+# opensandbox-server, so a changed config makes `docker compose up -d` recreate the engine (which
+# otherwise keeps running with the file it read at start).
+[ -f opensandbox.generated.toml ] && set_kv OPENSANDBOX_CONFIG_SHA256 "$(file_sha256 opensandbox.generated.toml)" "$ENV_FILE"
 
 # Pre-create the shared agent workspace volume (declared external in compose; idempotent)
 if command -v docker >/dev/null 2>&1; then

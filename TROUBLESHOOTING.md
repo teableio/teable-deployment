@@ -167,17 +167,108 @@ see [`helm/private-ca.md`](helm/private-ca.md).
 ## Docker all-in-one
 
 `./doctor.sh` covers the mainline failures (entry routing, `/v1` split,
-storage, sandbox engine). Two frequent ones:
+storage, sandbox engine, and in server mode the certificate names, wildcard
+DNS and private-CA mounts). Deploying on a private network? The checklist in
+[`docker/all-in-one/private-network.md`](docker/all-in-one/private-network.md)
+prevents most of the entries below.
+
+### AI chat spins forever; Teable logs `SandboxReadyTimeoutException ... fetch failed` (server)
+
+The sandbox is running (its log shows `Server listening`) but the Teable app
+never reaches it. The app dials every sandbox at
+`<port>-<sandbox-id>.sandbox.<BASE_DOMAIN>`, resolved through the machine's
+resolvers, and that wildcard does not resolve -- typically because the domain
+was "set up" in a hosts file, which cannot express wildcards and is not read by
+containers. Add `*.sandbox.<BASE_DOMAIN>` (and `*.app.`) on a DNS server the
+machine uses; `./doctor.sh` confirms with its "wildcard DNS resolves inside
+containers" line.
+
+### Sandboxes exit immediately; their log shows `sudo: a password is required`
+
+The sandbox container dies within a second with
+`sudo: a terminal is required to read the password` / `sudo: a password is
+required`. Teable app images published between 2026-08-18 and 2026-09-04
+started Docker-runtime sandboxes through `sudo`, while the agent image had
+already dropped its passwordless sudo grant -- the two changes crossed.
+Kubernetes deployments are not affected.
+
+**Fix: upgrade the Teable app** to `release.2026-09-07T01-58-27Z.2952` or
+later -- every platform release from v2026.9.9 on pins one (`./pin-image.sh`,
+or set `TEABLE_IMAGE` in `.env`, then `docker compose up -d teable`). Sandboxes start
+through the direct entrypoint again; the workspace-directory ownership the
+`sudo` path was meant to fix is handled by the sandbox engine
+(`opensandbox-server` >= `v0.2.0-fix8`, pinned here).
+
+If you cannot upgrade yet, restore the grant from the host as a stopgap:
+
+```bash
+echo "agent ALL=(ALL) NOPASSWD:ALL" | sudo tee /opt/teable/sandbox-sudoers >/dev/null
+sudo chown root:root /opt/teable/sandbox-sudoers && sudo chmod 0440 /opt/teable/sandbox-sudoers
+```
+
+then in `.env`:
+
+```bash
+SANDBOX_EXTRA_BINDS=/opt/teable/sandbox-sudoers:/etc/sudoers.d/91-agent:ro
+```
+
+and `./apply.sh server --with-app` (or `local`) followed by
+`docker compose up -d` (the engine is recreated with the new config). New
+sandboxes start again. Remove the line (and re-run the same two commands) once
+the fixed Teable release is running: it hands the AI agent passwordless root
+inside every sandbox, which the fixed release no longer needs.
+
+### Admin sandbox check: `SELF_SIGNED_CERT_IN_CHAIN` (server)
+
+The entry's certificate is signed by a private/corporate CA and the app-side
+containers do not trust it. Set `PRIVATE_CA_FILE` in `.env` to the CA root
+certificate (PEM), re-run `./apply.sh server --with-app`, then
+`docker compose up -d`: the Teable app, the Infra Service and the sandbox
+engine are recreated with the CA. The same two commands apply after replacing
+the CA file's content (rotation) -- `apply.sh` records its fingerprint, so
+compose knows to recreate. See
+[`private-network.md`](docker/all-in-one/private-network.md).
+
+### Admin sandbox check: `ERR_TLS_CERT_ALTNAME_INVALID` (server)
+
+`Host: infra.<BASE_DOMAIN> is not in the cert's altnames: ...` -- the
+certificate on 443 does not list that name. Usually after changing
+`BASE_DOMAIN` without replacing the certificate, or a certificate missing the
+wildcards. Replace the files behind `TLS_CERT_FILE` / `TLS_KEY_FILE` with one
+covering all four names, then `./apply.sh server [--with-app]` and
+`docker compose up -d` -- `apply.sh` records the certificate's fingerprint, so
+the entry is recreated (a running Caddy never re-reads a replaced file on its
+own).
+
+### Wrong certificate on 443 (for example `DNS:ingress.local`) (server)
+
+`openssl s_client` against port 443 from a workstation shows a certificate that
+is not yours -- `ingress.local` is the default certificate of a Kubernetes
+ingress controller. Something else on the machine (a k3s or other Kubernetes
+ingress, nginx, a control panel) answers 443 for LAN clients. Testing from the
+machine itself does not show this: a local connection takes Docker's own
+forwarding and reaches the entry. Free 80/443 for the entry (disable that
+ingress, or use a machine of its own); the stack has no option to run on
+another port.
+
+### Admin page still shows an old TLS error after the fix (server)
+
+The "version and compatibility" check runs once when the Teable app starts and
+keeps its last result. After fixing certificates or DNS, restart the app so it
+re-checks: `docker compose restart teable`.
 
 ### Browser preview URLs do not resolve (server)
 
 The `*.sandbox.<BASE_DOMAIN>` and `*.app.<BASE_DOMAIN>` wildcard DNS records
 are missing — both must point at the machine, DNS-only (no proxy).
 
-### Certificate issuance fails on first start (server)
+### Certificate issuance fails on first start (server, automatic certificates)
 
-`CLOUDFLARE_API_TOKEN` lacks the Zone/DNS edit permission, or the DNS records
-point somewhere else. Check `docker compose logs caddy` for the ACME error.
+`CLOUDFLARE_API_TOKEN` lacks the Zone/DNS edit permission, the DNS records
+point somewhere else, or the machine cannot reach Let's Encrypt / the Cloudflare
+API outbound. Check `docker compose logs caddy` for the ACME error. On a network
+without that outbound access, bring your own certificate instead
+(`TLS_CERT_FILE` / `TLS_KEY_FILE`).
 
 ### doctor entry checks return `000` on the machine itself (server)
 
