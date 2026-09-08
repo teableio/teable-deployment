@@ -9,6 +9,25 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-08T05-53-30Z.2982
+
+#### Feature Updates
+
+- Updated the admin table query operations view to group search and aggregation insights by table, provide clearer index and search coverage actions, and show more readable conclusions, recommendations, and query path status.
+- Improved computed outbox lineage so partial-batch reruns within the same stage remain aligned, making serial retries easier to understand.
+- Renamed the “dirty records” metric to “estimated complexity” to better describe the displayed value.
+- Renamed the secret action from “Rotate” to “Edit” in app and automation credentials dialogs, without changing how secret values are updated.
+
+#### Bug Fixes & Improvements
+
+- Improved stability during table analysis on large workspaces, reducing the risk of database stalls and temporary 503 errors.
+- Fixed grant owner avatars in credentials and configuration dialogs; users without an avatar continue to see initials.
+- Improved credential usage lists so the “+N · View” popover shows only additional resources, truncates long names with hover details, keeps actions accessible, and displays when access was granted.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-08T05-53-30Z.2982)
+
 ## v2026.9.14 - 2026-09-08
 
 ### Teable release.2026-09-08T01-36-21Z.2976
