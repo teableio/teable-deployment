@@ -9,6 +9,19 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-09T04-35-35Z.2997
+
+#### Feature Updates
+
+#### Bug Fixes & Improvements
+- Improved search responsiveness for large tables with valid search indexes.
+- Fixed Grid views failing to load after a filtered user field was switched between single-select and multi-select modes.
+- Improved App Builder export security by excluding granted credentials and connection secrets from copied environment variables and downloaded source code. These credentials must now be provided separately by their owners.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-09T04-35-35Z.2997)
+
 ## v2026.9.18 - 2026-09-09
 
 ### Teable release.2026-09-09T01-48-49Z.2993
