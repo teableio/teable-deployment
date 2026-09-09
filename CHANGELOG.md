@@ -9,6 +9,28 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-09T01-48-49Z.2993
+
+#### Feature Updates
+- Expanded the Scraper catalog with additional discovery modes and targets, including X profiles, Facebook content, Amazon sellers, Walmart reviews, and Crunchbase people, with localized labels and clearer prompts.
+- Improved access to long-tail Scraper datasets by exposing supported modes in search results and allowing raw dataset IDs with discoverBy.
+- Updated the Scraper CLI so teable scrape run returns a snapshot ID immediately; use teable scrape status --wait to wait for results.
+- Added safer Scraper usage limits, pending-request reuse, and duplicate-charge prevention for concurrent status checks.
+
+#### Bug Fixes & Improvements
+- Improved table stability and reduced unnecessary network traffic during initial loading, reconnects, and periods of high activity.
+- Prevented compute activity subscription errors from displaying unrelated global notifications.
+- Fixed User field configuration changes between single-select and multi-select causing invalid filters or unloaded Grid views. Existing filters and list-based values are now preserved where supported.
+- Fixed empty in-table searches opened with Cmd+F leaving Grid rows stuck in a loading state. Current filters, sorting, and grouping now remain intact.
+- Improved computed-field reliability for BYODB PostgreSQL deployments.
+- Improved shared view reliability and consistency when loading field and record data.
+- Improved Admin table query page responsiveness in large environments while preserving summary counts and pagination behavior.
+- Improved Admin table query status accuracy when search is unavailable.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-09T01-48-49Z.2993)
+
 ## v2026.9.17 - 2026-09-08
 
 - **Docker server mode accepts your own certificate.** Fill `TLS_CERT_FILE` /
