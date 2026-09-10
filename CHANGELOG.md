@@ -9,6 +9,23 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-10T06-21-10Z.3025
+
+#### Feature Updates
+- Redesigned the Scrape Data menu with clearer platform icons, easier-to-scan options, fewer truncated labels, and in-panel configuration.
+- Expanded AI image generation to support current GPT Image, Gemini, Seedream, Recraft, Muse, Grok Imagine, and Arrow models, with more accurate model-specific options and image-to-image support.
+- Retired native Gmail and Outlook connections for the “When a new email is received” trigger. IMAP remains supported, while existing Gmail and Outlook records are preserved but can no longer be configured or reauthorized.
+
+#### Bug Fixes & Improvements
+- Reduced unnecessary activity requests when opening Grids, providing smoother status updates while formulas, lookups, or rollups are calculating.
+- Fixed form validation errors appearing as unhandled failures. Errors now remain in the form with clear messages, including consistent “Required” labels for missing fields.
+- Improved AI image validation and output handling for newer models, including SVG-style Arrow outputs and more accurate preservation of uploaded file types and extensions.
+- Prevented workflows using retired Gmail or Outlook email-trigger configurations from repeatedly failing in the background, and removed unavailable connection and authorization options from setup screens.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-10T06-21-10Z.3025)
+
 ## v2026.9.21 - 2026-09-10
 
 ### Teable release.2026-09-10T00-17-07Z.3010
