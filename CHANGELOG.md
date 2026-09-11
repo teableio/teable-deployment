@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-11T07-36-49Z.3059
+
+#### Feature Updates
+- Mobile sign-in now opens the system browser, improving compatibility with OAuth providers, existing browser sessions, and bot-protection flows. Sign-in is simplified to a server address and browser authentication; native email/password sign-in has been removed. Older servers continue to use the previous web-based flow.
+
+#### Bug Fixes & Improvements
+- Routine runs now move to completed status promptly after chat generation finishes, avoiding delays when workers are replaced during a rollout.
+- Email automation trigger setup no longer shows required-field errors immediately after selecting the trigger type; validation begins after connection fields are edited.
+- Composio-managed Gmail connections can now be assigned to automation and app credential slots and used with connector-based email event triggers. Native Gmail and Outlook trigger connections remain retired; IMAP connections are unchanged.
+- CLI help now provides consistent guidance for skill scope options and environment defaults.
+- Chat tool calls now remain visually grouped across step boundaries and trailing reasoning.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-11T07-36-49Z.3059)
+
 ## v2026.9.22 - 2026-09-10
 
 ### Teable release.2026-09-10T06-21-10Z.3025
