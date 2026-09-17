@@ -11,6 +11,13 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## Unreleased
 
+- **MinIO images now come from `ghcr.io/teableio`.** Upstream withdrew its
+  Docker Hub images (`minio/minio`, `minio/mc`), so the same pinned builds
+  (identical digests) are now hosted at `ghcr.io/teableio/minio` and
+  `ghcr.io/teableio/minio-mc`, mirrored in China like every other image.
+  Running installs are unaffected. Before your next `docker compose pull` or
+  reinstall, set `MINIO_IMAGE` / `MINIO_MC_IMAGE` in `.env` (Kubernetes:
+  `minio.image` / `minio.mcImage`) to the new references -- tags unchanged.
 - **Added recursive delete to the Infra object API.** `DELETE /s3/<bucket>/<prefix>/?recursive`
   removes everything at that path in one call; the plain directory form still
   refuses a non-empty directory. No action needed.

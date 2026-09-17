@@ -325,7 +325,7 @@ fi
 
 # ---------- Three storage planes ----------
 sec "Three storage planes"
-buckets="$($DOCKER run --rm --network "${APP_RUNTIME_DOCKER_NETWORK:-teable-appnet}" --entrypoint sh "${MINIO_MC_IMAGE:-minio/mc:latest}" \
+buckets="$($DOCKER run --rm --network "${APP_RUNTIME_DOCKER_NETWORK:-teable-appnet}" --entrypoint sh "${MINIO_MC_IMAGE:-ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z}" \
   -c "mc alias set local http://minio:9000 '$S3_ACCESS_KEY' '$S3_SECRET_KEY' >/dev/null 2>&1 && mc ls local/" 2>/dev/null)"
 for b in "${S3_BUCKET:-teable-app-artifacts}" $( [ "$APP_MODE" = 1 ] && echo "${TEABLE_PUBLIC_BUCKET:-teable-public} ${TEABLE_PRIVATE_BUCKET:-teable-private}" ); do
   if printf '%s' "$buckets" | grep -q "$b"; then ok "bucket exists: $b"; else bad "bucket missing: $b" "minio-init did not complete (docker compose logs minio-init)"; fi

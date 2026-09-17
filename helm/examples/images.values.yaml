@@ -22,8 +22,8 @@ postgres:
 redis:
   image: redis:7.2.4
 minio:
-  image: minio/minio:latest
-  mcImage: minio/mc:latest
+  image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z
+  mcImage: ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z
 infraService:
   image: ghcr.io/teableio/teable-infra-service:20260917T085728Z
   appRuntime:

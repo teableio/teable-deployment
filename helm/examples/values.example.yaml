@@ -110,9 +110,9 @@ redis:
     storageClassName: ""
 
 minio:
-  # Third-party images ship pinned by the chart except MinIO; pin it here.
-  image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-  mcImage: minio/mc:RELEASE.2025-04-16T18-13-26Z
+  # Pinned by the chart (hosted under ghcr.io/teableio; China: swap the prefix, identical tags).
+  image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z
+  mcImage: ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z
   storage:
     size: 50Gi            # attachments + app build artifacts
     storageClassName: ""

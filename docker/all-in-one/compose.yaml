@@ -132,9 +132,9 @@ services:
       retries: 5
       start_period: 20s
 
-  # app-runtime artifact store (S3-compatible). Pin the digest in production: get the sha256 via `docker compose images minio` and set MINIO_IMAGE in .env.
+  # app-runtime artifact store (S3-compatible). Hosted under ghcr.io/teableio; pin the digest in production: get the sha256 via `docker compose images minio` and set MINIO_IMAGE in .env.
   minio:
-    image: ${MINIO_IMAGE:-minio/minio:latest}
+    image: ${MINIO_IMAGE:-ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z}
     container_name: minio
     restart: unless-stopped
     networks: [teable-appnet]
@@ -148,7 +148,7 @@ services:
 
   # Bucket creation (loop until minio is ready, then mc mb); infra-service gates its startup on this.
   minio-init:
-    image: ${MINIO_MC_IMAGE:-minio/mc:latest}
+    image: ${MINIO_MC_IMAGE:-ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z}
     container_name: minio-init
     restart: "no"
     networks: [teable-appnet]

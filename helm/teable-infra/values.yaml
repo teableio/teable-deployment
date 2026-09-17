@@ -906,9 +906,10 @@ redis:
 # Bundled MinIO: S3-compatible object storage for app attachments and App Runtime artifacts.
 minio:
   enabled: true
-  # Third-party images: pin a digest for production installs.
-  image: minio/minio:latest
-  mcImage: minio/mc:latest
+  # Hosted under ghcr.io/teableio (upstream withdrew its Docker Hub images); China: swap the prefix for
+  # registry.cn-shenzhen.aliyuncs.com/teable/ (identical tags). Pin a digest for stricter production installs.
+  image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z
+  mcImage: ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z
   # Public S3 endpoint host (browsers hit it via presigned URLs). Blank: rides the Infra
   # host -- buckets route by path prefix, no dedicated s3 DNS record needed.
   host: ""
