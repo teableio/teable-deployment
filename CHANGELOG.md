@@ -22,6 +22,10 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 `ghcr.io/teableio/teable:latest` now resolves to `release.2026-09-15T10-15-21Z.3095`.
 
+### Teable release.2026-09-17T08-29-35Z.3144
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-09-17T08-29-35Z.3144`.
+
 ## v2026.9.23 - 2026-09-11
 
 ### Teable release.2026-09-11T07-36-49Z.3059
