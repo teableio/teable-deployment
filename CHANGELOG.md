@@ -11,6 +11,13 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## Unreleased
 
+- **Added recursive delete to the Infra object API.** `DELETE /s3/<bucket>/<prefix>/?recursive`
+  removes everything at that path in one call; the plain directory form still
+  refuses a non-empty directory. No action needed.
+- **The Infra object API no longer follows symbolic links.** A request whose path
+  passes through a symlink now gets `400`, so a link planted inside one prefix
+  cannot reach another. No action needed.
+
 ### Teable release.2026-09-15T10-15-21Z.3095
 
 `ghcr.io/teableio/teable:latest` now resolves to `release.2026-09-15T10-15-21Z.3095`.
