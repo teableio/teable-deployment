@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.9.23** (2026-09-11T08:56:31Z) -- do not edit
+> Generated for platform release **v2026.9.24** (2026-09-17T10:17:58Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -12,10 +12,10 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 
 | Component | Image | Architectures | Notes |
 |---|---|---|---|
-| `teable` | `ghcr.io/teableio/teable:release.2026-09-11T07-36-49Z.3059` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
+| `teable` | `ghcr.io/teableio/teable:release.2026-09-17T08-29-35Z.3144` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
 | `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: at runtime the app pulls `<prefix>:<its own release tag>`, so sandbox hosts need registry access |
 | `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260717T042653Z` | amd64, arm64 |  |
-| `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260824T111338Z` | amd64, arm64 |  |
+| `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260917T085728Z` | amd64, arm64 |  |
 | `opensandbox-server` | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix9` | amd64, arm64 | Patched build: adds the /v1 mount-prefix fix for proxied sandbox endpoints (path-proxy mode needs >= fix5), docker-runtime sandbox_env/sandbox_binds for private-CA trust (>= fix6), the container-level securityContext backfill plus shared-volume subPath pre-creation that unprivileged sandboxes need (>= fix7), docker-runtime workspace-directory ownership pre-creation (>= fix8), and setgid/sticky bits accepted in the subPath pre-creation dir_mode (>= fix9) |
 | `opensandbox-ingress` | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | amd64, arm64 |  |
 | `opensandbox-controller` | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | amd64, arm64 |  |
@@ -24,8 +24,8 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 | `opensandbox-egress` | `ghcr.io/teableio/opensandbox-egress:v1.0.12` | amd64, arm64 | Per-sandbox egress sidecar, started by the server on demand. |
 | `postgres` | `postgres:15.4` | amd64, arm64 |  |
 | `redis` | `redis:7.2.4` | amd64, arm64 |  |
-| `minio` | `minio/minio:RELEASE.2025-04-22T22-12-26Z` | amd64, arm64 | Pinned by the Docker defaults and the Kubernetes values example |
-| `minio-mc` | `minio/mc:RELEASE.2025-04-16T18-13-26Z` | amd64, arm64 | Bucket-provisioning sidecar for MinIO |
+| `minio` | `ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z` | amd64, arm64 | Hosted under ghcr.io/teableio (upstream withdrew its Docker Hub images), same digest as the upstream build |
+| `minio-mc` | `ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z` | amd64, arm64 | Bucket-provisioning sidecar for MinIO |
 | `caddy` | `caddy:2.9.1` | amd64, arm64 | Docker entry proxy (official image): used as-is by local mode and by server mode with your own certificate (TLS_MODE=static, CADDY_STATIC_IMAGE in .env) |
 
 Digests for every reference are in [`versions.yaml`](versions.yaml).
@@ -43,9 +43,10 @@ Digests for every reference are in [`versions.yaml`](versions.yaml).
 - **Infra Service and the app runtime base** are pinned by the Helm chart;
   the Docker path follows `:latest` (their stable channel), which resolved
   to the versions above at release time.
-- **PostgreSQL / Redis / MinIO** ship pinned in the Docker defaults and the
-  Kubernetes values example (the bare chart default for MinIO floats -- pin
-  it in your values, see `helm/examples/values.example.yaml`).
+- **PostgreSQL / Redis / MinIO** ship pinned in the Docker defaults, the
+  Helm chart and the Kubernetes values example. MinIO is hosted under
+  `ghcr.io/teableio/` (upstream withdrew its Docker Hub images) and mirrored
+  like every first-party image.
 
 ## China mirror
 
@@ -58,7 +59,7 @@ first-party image is mirrored there with identical tags. Details and offline
 | | Release tag |
 |---|---|
 | Minimum supported | `release.2026-07-14T12-24-39Z.2228` |
-| Verified against | `release.2026-09-11T07-36-49Z.3059` |
+| Verified against | `release.2026-09-17T08-29-35Z.3144` |
 
 Older app releases cannot use this runtime's path-proxy sandbox mode; upgrade
 the app first (its data is untouched by app image upgrades).
