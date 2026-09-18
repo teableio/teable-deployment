@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## v2026.9.24 - 2026-09-17
+## Unreleased
 
 - **MinIO images now come from `ghcr.io/teableio`.** Upstream withdrew its
   Docker Hub images (`minio/minio`, `minio/mc`), so the same pinned builds

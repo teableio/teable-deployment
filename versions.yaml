@@ -5,12 +5,12 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.9.24
-releasedAt: '2026-09-17T10:17:58Z'
+platformRelease: v2026.9.23
+releasedAt: '2026-09-11T08:56:31Z'
 components:
   teable:
-    image: ghcr.io/teableio/teable:release.2026-09-17T08-29-35Z.3144
-    digest: sha256:193e62464eb740841a21631e90b1b9d5e07f43e3e24739b39f5bee14cd06bd2c
+    image: ghcr.io/teableio/teable:release.2026-09-11T07-36-49Z.3059
+    digest: sha256:387c48c924b868cd00522b615d69cf96f69fedf6b23425ded02254f1496c1213
     architectures:
     - amd64
     - arm64
@@ -28,8 +28,8 @@ components:
     - amd64
     - arm64
   teable-infra-service:
-    image: ghcr.io/teableio/teable-infra-service:20260917T085728Z
-    digest: sha256:22921c125ac2111a5c512ceb9b225d73d9bca492ddb9316343b1ac10bfaeb93f
+    image: ghcr.io/teableio/teable-infra-service:20260824T111338Z
+    digest: sha256:64e570e8bcc96c612a30fe271793bb4b6442125819346a794ef539ea2e2322bd
     architectures:
     - amd64
     - arm64
@@ -97,15 +97,15 @@ components:
     - amd64
     - arm64
   minio:
-    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     digest: sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     architectures:
     - amd64
     - arm64
-    note: Hosted under ghcr.io/teableio (upstream withdrew its Docker Hub images),
-      same digest as the upstream build; pinned by the chart and the Docker defaults.
+    note: Pinned by the Docker defaults and the Kubernetes values example; the bare
+      chart default floats -- pin it in your values.
   minio-mc:
-    image: ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
     digest: sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
     architectures:
     - amd64
@@ -123,7 +123,7 @@ components:
       of it locally. Not used on Kubernetes.'
 teableCompatibility:
   minRelease: release.2026-07-14T12-24-39Z.2228
-  verifiedRelease: release.2026-09-17T08-29-35Z.3144
+  verifiedRelease: release.2026-09-11T07-36-49Z.3059
 requiredMigrations: []
 migrationCatalog: []
 hotSwap: true
