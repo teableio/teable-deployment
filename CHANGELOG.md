@@ -11,6 +11,36 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## Unreleased
 
+### Teable release.2026-09-18T12-29-19Z.3168
+
+#### Feature Updates
+
+- Starter recommendations now appear on a project’s first visit in the reader’s language and better reflect the project’s content. Suggestions can target real tables, pull relevant external data, and propose complete applications such as portals, internal tools, AI assistants, and websites.
+- Starter recommendations remain available while refreshed suggestions are prepared, with more reliable handling when generation fails or returns no content.
+- New chat messages now supersede pending authorization, connection, selection, credential, and question cards, allowing conversations to continue without getting stuck. These cards also have clearer layouts and actions.
+- The mobile + menu now offers clearer, grouped attachment and action shortcuts with improved subpage navigation.
+- Typing @ on mobile now opens the reference picker in supported contexts without triggering on email addresses. The trigger character is removed after the picker is completed or dismissed.
+- Added fuzzy search for mobile connectors, web scraping datasets, and the web integration picker.
+
+#### Bug Fixes & Improvements
+
+- Fixed stale cross-table computed values after linked records were updated, improving calculation consistency for chained formulas, lookups, inventory, and allocation workflows.
+- Fixed an issue where selecting an Assignee could unexpectedly scroll the record detail view and move the edited field out of view.
+- Improved integration connection screens with clearer loading feedback, loading placeholders, empty states, and mobile-safe actions.
+- Fixed misleading repeated “Table not found” errors during valid field changes and improved handling of pending or failed table imports.
+- Improved link deletion performance and reliability across required, self-referencing, one-way, bidirectional, computed, and recycled relationships.
+- Fixed an issue where queued App Builder messages could fail before reaching generation. Messages affected before this update must be resent.
+- Fixed mobile credential requests so they ask only for the required secret, and prevented confirmation-card actions from overlapping the home indicator.
+- Fixed grid view inconsistencies where rapid scrolling could briefly display previously viewed records in the wrong positions.
+- Improved reconnection for tables that have been idle by showing recovery progress and avoiding premature availability warnings.
+- Refined the mobile home layout, touch interactions, navigation, content refreshing, scroll restoration, and support for larger text.
+- Simplified settings for self-managed database spaces by hiding the irrelevant Data Database tab.
+- Fixed an Internal Server Error on the admin Table Query Ops page when the feature was unavailable, while preserving accessible filtering, sorting, and summary information.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-18T12-29-19Z.3168)
+
+## v2026.9.24 - 2026-09-17
+
 - **MinIO images now come from `ghcr.io/teableio`.** Upstream withdrew its
   Docker Hub images (`minio/minio`, `minio/mc`), so the same pinned builds
   (identical digests) are now hosted at `ghcr.io/teableio/minio` and
