@@ -455,7 +455,7 @@ infraService:
     knativeCompat: true
   namespaceOverride: opensandbox-system
   # Public delivery image so a bare install is turnkey; override with your own build if needed.
-  image: ghcr.io/teableio/teable-infra-service:20260917T085728Z
+  image: ghcr.io/teableio/teable-infra-service:20260919T055651Z
   imagePullPolicy: IfNotPresent
   # Image pull secrets for the infra-service deployment. Each entry: {name: <secret-name>}.
   # imagePullSecrets: []
@@ -609,7 +609,7 @@ infraService:
     ingressMode: ""
     serviceAccountName: teable-app-runtime
     # App base image users deploy on; blank would leave app deployment disabled.
-    defaultImage: ghcr.io/teableio/teable-app-runtime:20260717T042653Z
+    defaultImage: ghcr.io/teableio/teable-app-runtime:20260919T055651Z
     registrySecretName: opensandbox-preheater-registry
     # npm registry mirror for the runtime install fallback (non-standalone
     # artifacts run `pnpm install` at pod start, and corepack fetches the

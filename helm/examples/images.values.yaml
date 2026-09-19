@@ -25,9 +25,9 @@ minio:
   image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z
   mcImage: ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z
 infraService:
-  image: ghcr.io/teableio/teable-infra-service:20260917T085728Z
+  image: ghcr.io/teableio/teable-infra-service:20260919T055651Z
   appRuntime:
-    defaultImage: ghcr.io/teableio/teable-app-runtime:20260717T042653Z
+    defaultImage: ghcr.io/teableio/teable-app-runtime:20260919T055651Z
     allowedImagePrefixes:
     - ghcr.io/teableio/
 global:
