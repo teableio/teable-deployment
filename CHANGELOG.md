@@ -9,6 +9,33 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-19T11-56-47Z.3177
+
+#### Feature Updates
+
+- Added support for connecting X and other Composio integrations that require a deployment-owned OAuth app. API-key integrations continue to use credential forms.
+- Sheet form designer, preview, and share panels are unavailable in this release due to compatibility limitations.
+
+#### Bug Fixes & Improvements
+
+- Fixed personal views sometimes displaying blank loading placeholders until the page was refreshed.
+- Redirected outdated public template links to the Teable templates page instead of returning a 404 error.
+- Improved request performance and reduced database load across table, record, field, and SQL query operations.
+- Improved BYODB query timeout handling to cancel long-running queries more reliably and reduce server errors.
+- Improved mobile AI resource summaries with clearer details and counts for nested changes to fields, views, and records, while preserving navigation to affected tables.
+- Improved mobile chat reliability so drafts clear after sending, follow-up messages are delivered, and collapsed and expanded layouts behave consistently.
+- Made mobile chat sheets easier to dismiss and added a more compact collapsed state.
+- Fixed missing page titles when opening mobile table pages from links, notifications, or resource cards.
+- Prevented mobile record-picker and select-editor search fields from automatically opening the keyboard and obscuring options.
+- Fixed recently measured collapsible content sometimes failing to expand correctly.
+- Reduced unnecessary refreshes and polling when view configurations change, improving realtime collaboration performance.
+- Improved table-list consistency after schema updates complete.
+- Restored scrolling in the expanded-record member dropdown for easier selection from large member lists.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-19T11-56-47Z.3177)
+
 ## v2026.9.25 - 2026-09-19
 
 ### Teable release.2026-09-18T12-29-19Z.3168
