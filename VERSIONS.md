@@ -1,6 +1,6 @@
 # Versions
 
-> Generated for platform release **v2026.9.25** (2026-09-19T01:57:59Z) -- do not edit
+> Generated for platform release **v2026.9.26** (2026-09-20T01:19:21Z) -- do not edit
 > by hand. Machine-readable copy: [`versions.yaml`](versions.yaml)
 > (schema: [`schemas/versions.schema.json`](schemas/versions.schema.json)).
 
@@ -12,10 +12,10 @@ across releases. What changed between releases: [`CHANGELOG.md`](CHANGELOG.md).
 
 | Component | Image | Architectures | Notes |
 |---|---|---|---|
-| `teable` | `ghcr.io/teableio/teable:release.2026-09-18T12-29-19Z.3168` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
+| `teable` | `ghcr.io/teableio/teable:release.2026-09-19T11-56-47Z.3177` | amd64, arm64 | Stable channel (:latest) resolved to its release tag at generation time |
 | `teable-sandbox-agent` | `ghcr.io/teableio/teable-sandbox-agent` | - | Prefix only, no tag: at runtime the app pulls `<prefix>:<its own release tag>`, so sandbox hosts need registry access |
-| `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260717T042653Z` | amd64, arm64 |  |
-| `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260917T085728Z` | amd64, arm64 |  |
+| `teable-app-runtime` | `ghcr.io/teableio/teable-app-runtime:20260919T055651Z` | amd64, arm64 |  |
+| `teable-infra-service` | `ghcr.io/teableio/teable-infra-service:20260919T055651Z` | amd64, arm64 |  |
 | `opensandbox-server` | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix9` | amd64, arm64 | Patched build: adds the /v1 mount-prefix fix for proxied sandbox endpoints (path-proxy mode needs >= fix5), docker-runtime sandbox_env/sandbox_binds for private-CA trust (>= fix6), the container-level securityContext backfill plus shared-volume subPath pre-creation that unprivileged sandboxes need (>= fix7), docker-runtime workspace-directory ownership pre-creation (>= fix8), and setgid/sticky bits accepted in the subPath pre-creation dir_mode (>= fix9) |
 | `opensandbox-ingress` | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | amd64, arm64 |  |
 | `opensandbox-controller` | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | amd64, arm64 |  |
@@ -59,7 +59,7 @@ first-party image is mirrored there with identical tags. Details and offline
 | | Release tag |
 |---|---|
 | Minimum supported | `release.2026-07-14T12-24-39Z.2228` |
-| Verified against | `release.2026-09-18T12-29-19Z.3168` |
+| Verified against | `release.2026-09-19T11-56-47Z.3177` |
 
 Older app releases cannot use this runtime's path-proxy sandbox mode; upgrade
 the app first (its data is untouched by app image upgrades).
