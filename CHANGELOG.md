@@ -9,6 +9,16 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-21T14-48-39Z.3197
+
+#### Bug Fixes & Improvements
+- Fixed numeric lookup sorting to ensure values are arranged in numerical order; also corrected the lookup grouping order for referenced linked records.
+- Improved AI conversation reliability during model switching and recovery, especially for long-running routines that use non-default models.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-21T14-48-39Z.3197)
+
 ## v2026.9.28 - 2026-09-21
 
 ### Teable release.2026-09-21T07-48-52Z.3187
