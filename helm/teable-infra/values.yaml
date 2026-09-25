@@ -356,6 +356,18 @@ gitRegistry:
   # Base of the gitUrl returned by the credentials API, e.g. https://infra.example.com/git (includes basePath).
   # Blank: derived as https://<infra host><basePath>.
   publicUrl: ""
+  # Git base URL handed to sandboxes (App Builder clone/push) instead of publicUrl.
+  # Set it to the in-cluster Service so git traffic never leaves the cluster:
+  #   http://<release>-git-registry.<namespace>.svc.cluster.local
+  # (root path, no basePath). Useful on clouds whose load balancer rejects hairpin
+  # traffic from its own backends (e.g. Alibaba Cloud CLB). Pair it with a sandbox
+  # NetworkPolicy allow towards the git-registry pod
+  # (opensandbox-server.server.sandboxNetworkPolicy.additionalAllowedPeers).
+  # CAUTION: /api/git/credentials returns this URL to every caller, including the
+  # Teable backend (publish/rollback run git on the backend host). Only set it when
+  # the Teable backend also runs inside the cluster (or can resolve that Service);
+  # otherwise keep it blank so everyone uses publicUrl (previous behaviour).
+  sandboxUrl: ""
   # Public path prefix: git shares the Infra Service domain (production-proven shape),
   # so no dedicated git DNS record is needed; empty string means a dedicated domain at root path.
   basePath: "/git"

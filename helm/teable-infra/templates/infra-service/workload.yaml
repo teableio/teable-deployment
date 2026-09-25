@@ -351,6 +351,10 @@ spec:
               value: "http://{{ .Release.Name }}-git-registry.{{ $namespace }}.svc"
             - name: GIT_REGISTRY_PUBLIC_URL
               value: {{ required "gitRegistry.publicUrl (or global.baseDomain) is required when gitRegistry.enabled=true" (.Values.gitRegistry.publicUrl | default (include "teable-infra.gitPublicUrl" .)) | quote }}
+            {{- if .Values.gitRegistry.sandboxUrl }}
+            - name: GIT_REGISTRY_SANDBOX_URL
+              value: {{ .Values.gitRegistry.sandboxUrl | quote }}
+            {{- end }}
             - name: GIT_REGISTRY_JWT_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
