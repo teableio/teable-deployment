@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.9.31 - 2026-09-25
 
 - **Git traffic can stay inside the cluster.** New Helm value `gitRegistry.sandboxUrl` lets the Infra Service hand out an in-cluster git URL (e.g. `http://<release>-git-registry.<namespace>.svc.cluster.local`) instead of the public one, so App Builder clone/push no longer hairpins through the public load balancer. The same URL is also returned to the Teable backend for publish/rollback, so set it only when the Teable backend runs inside the cluster as well. Blank keeps the previous behaviour. No action needed.
 
