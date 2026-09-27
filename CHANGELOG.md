@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-09-27T02-14-26Z.3273
+
+#### Feature Updates
+- “Contact Support” in the web user menu and mobile settings now opens a Teable Community feedback form instead of the previous anonymous form. Users can submit feature requests and issue reports to the Teable team publicly or privately.
+- Users can request a data export before deleting their account or permanently deleting a space from the recycle bin. The export includes CSV data, app packages, and record attachments in a downloadable archive, with a download link sent by email. Administrators can also request and send an export link when deactivating or deleting a user.
+
+#### Bug Fixes & Improvements
+- Improved export completeness and reliability: account exports now include spaces owned by the user that have been moved to the recycle bin; archives have a clearly defined root folder; missing attachments are reported without stopping the export; and failed app package downloads are retried. Export emails use the recipient’s language.
+- Fixed export confirmation prompts and success messages in the admin interface. The confirmation prompt now appears only after an export request is accepted. The self-service export quota message now correctly states “5 exports within 24 hours”; the limit has not changed.
+- Fixed retry behavior when loading more execution records fails while offline. Users can continue loading after reconnecting without duplicate entries or unstable retries.
+- Improved the reliability of login and publish status after startup or a connection interruption.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-09-27T02-14-26Z.3273)
+
 ## v2026.9.32 - 2026-09-25
 
 ### Teable release.2026-09-25T09-38-50Z.3268
