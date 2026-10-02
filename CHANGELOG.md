@@ -9,6 +9,19 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-02T04-02-20Z.3278
+
+#### Feature Updates
+- iOS sign-in now requires an existing Teable account and a server version that supports browser-based mobile authentication. Account creation through the iOS sign-in flow and sign-in to older, unsupported servers are no longer available.
+- The mobile app now requests AI data-processing consent before sign-in, with consent applying separately to each server. Users are prompted on launch if they have not accepted the current consent version; declining signs them out.
+
+#### Bug Fixes & Improvements
+- Fixed conditional lookups returning unrelated records when matching fields are empty, and improved comparison consistency between single-value and multi-value fields. Results may change for filters that previously relied on empty values matching each other.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-02T04-02-20Z.3278)
+
 ## v2026.9.34 - 2026-09-30
 
 ### Teable release.2026-09-30T04-47-05Z.3276
