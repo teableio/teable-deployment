@@ -5,12 +5,12 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.9.34
-releasedAt: '2026-09-30T13:13:22Z'
+platformRelease: v2026.10.0
+releasedAt: '2026-10-02T06:57:49Z'
 components:
   teable:
-    image: ghcr.io/teableio/teable:release.2026-09-30T04-47-05Z.3276
-    digest: sha256:0749d49ab168307bb3687b2f5e267b5ebd1a914b3910bc31c11b3bd16d3f1ef4
+    image: ghcr.io/teableio/teable:release.2026-10-02T04-02-20Z.3278
+    digest: sha256:e5f77b2ce821224eb1dd8dad43684389139836b9b546fa5ccceaad24b3bb2dee
     architectures:
     - amd64
     - arm64
@@ -123,7 +123,7 @@ components:
       of it locally. Not used on Kubernetes.'
 teableCompatibility:
   minRelease: release.2026-07-14T12-24-39Z.2228
-  verifiedRelease: release.2026-09-30T04-47-05Z.3276
+  verifiedRelease: release.2026-10-02T04-02-20Z.3278
 requiredMigrations: []
 migrationCatalog: []
 hotSwap: true
