@@ -461,6 +461,10 @@ infraService:
     # applies while a restricted deploy account installs everything else.
     namespaceScope:
       create: true
+    # Namespaces where the console web terminal may exec into pods (a namespaced
+    # Role each). Defaults to [sandboxNamespace.name]; the terminal only targets
+    # sandbox pods, so widen this only if you have a reason to.
+    execNamespaces: []
     # Temporary Knative cleanup grant inside the app-runtime Role (kept for one
     # release for rolling upgrades). Set false if the deploy account cannot
     # grant serving.knative.dev permissions.

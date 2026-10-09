@@ -272,13 +272,6 @@ rules:
 - apiGroups:
   - ''
   resources:
-  - pods/exec
-  verbs:
-  - create
-  - get
-- apiGroups:
-  - ''
-  resources:
   - nodes/proxy
   verbs:
   - get

@@ -36,9 +36,8 @@ rules:
   - apiGroups: [""]
     resources: ["nodes", "nodes/status", "namespaces", "pods", "pods/log", "services", "persistentvolumeclaims", "persistentvolumes", "events"]
     verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["pods/exec"]
-    verbs: ["create", "get"]
+  # pods/exec is deliberately NOT cluster-wide: the console terminal only opens
+  # sandbox pods, so the grant lives in a namespaced Role (rbac.execNamespaces).
   # kubelet stats/summary: aggregates actual PVC usage
   - apiGroups: [""]
     resources: ["nodes/proxy"]
@@ -91,6 +90,45 @@ subjects:
     namespace: {{ $namespace }}
 {{- end }}
 {{- if ($rbac.namespaceScope).create }}
+{{- /* Console web terminal (pods/exec). Namespaced on purpose: a cluster-wide exec grant
+     would let anyone who reaches the terminal endpoint shell into control-plane pods.
+     Defaults to the sandbox namespace; list more in rbac.execNamespaces if you need them. */}}
+{{- range $execNs := ($rbac.execNamespaces | default (list $.Values.sandboxNamespace.name)) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Release.Name }}-infra-service-exec
+  namespace: {{ $execNs | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $.Release.Name }}-infra-service-exec
+  namespace: {{ $execNs | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $.Release.Name }}-infra-service-exec
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

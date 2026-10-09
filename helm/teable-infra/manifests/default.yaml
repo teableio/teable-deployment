@@ -684,13 +684,6 @@ rules:
 - apiGroups:
   - ''
   resources:
-  - pods/exec
-  verbs:
-  - create
-  - get
-- apiGroups:
-  - ''
-  resources:
   - nodes/proxy
   verbs:
   - get
@@ -958,6 +951,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: teable-infra-service-exec
+  namespace: teable-sandbox
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods/exec
+  verbs:
+  - create
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: teable-infra-service-opensandbox-key
   namespace: opensandbox-system
   labels:
@@ -1167,6 +1179,25 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: teable-app-deployer
+  namespace: opensandbox-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: teable-infra-service-exec
+  namespace: teable-sandbox
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: teable-infra-service-exec
+subjects:
+- kind: ServiceAccount
+  name: infra-service
   namespace: opensandbox-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
