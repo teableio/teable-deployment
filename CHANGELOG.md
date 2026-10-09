@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.2 - 2026-10-09
 
 - **Docker: sandbox previews keep cookies.** Apps that sign in inside a `*.sandbox.<domain>` preview now stay signed in. Pull the updated `deploy/` files and run `docker compose up -d caddy`.
 
