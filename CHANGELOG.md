@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.1 - 2026-10-09
 
 - **Security fix: console web terminal hardened against cross-site WebSocket hijacking.** A page served from a same-site host (for example a sandbox preview subdomain) could open the Infra Service terminal WebSocket with the operator's login cookie and get a shell in any pod. Cookie-authenticated WebSocket and write requests now require a same-origin caller, and the `pods/exec` grant moved from the cluster-wide ClusterRole into a Role scoped to the sandbox namespace (new value `infraService.rbac.execNamespaces`, default `[sandboxNamespace.name]`). Upgrade the chart; if you pre-provision the ClusterRole yourself (`rbac.clusterScope.create=false`), drop `pods/exec` from it.
 
