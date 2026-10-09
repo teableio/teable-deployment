@@ -31,7 +31,7 @@ services:
     image: ${CADDY_STATIC_IMAGE:-caddy:2.9.1}   # official image (no DNS plugin needed); CADDY_STATIC_IMAGE lets air-gapped hosts point at a mirror
     container_name: caddy
     restart: unless-stopped
-    networks: [teable-appnet]
+    networks: [teable-appnet, teable-sandbox-net]   # sandbox-net: previews dial sandbox-<id>:<port> directly (caddy.snippets sandbox_preview)
     ports:
       - "80:80"
       - "8088:80"
@@ -39,7 +39,6 @@ services:
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
     environment:
-      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?run ./apply.sh local first}   # injected server-side by the sandbox preview block
       SANDBOX_PREVIEW_HOST: ${SANDBOX_PREVIEW_HOST:-sandbox.localhost:8088}     # rewrite target for port previews (no scheme)
     depends_on:
       infra-service:

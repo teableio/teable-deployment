@@ -35,6 +35,7 @@ services:
       teable-appnet:
         aliases:
           - ${INFRA_HOST}          # lets infra-service reach caddy in-container (no host loopback), matching the presigned-URL host
+      teable-sandbox-net: {}       # sandbox previews: caddy dials sandbox-<id>:<port> directly by Docker DNS (caddy.snippets sandbox_preview)
     ports:
       - "80:80"        # ACME + http->https
       - "443:443"
@@ -49,7 +50,6 @@ services:
       INFRA_HOST: ${INFRA_HOST:?fill .env then run ./apply.sh server}
       ACME_EMAIL: ${ACME_EMAIL:-}                       # cloudflare mode only (validated by apply.sh)
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}   # cloudflare mode only
-      OPENSANDBOX_API_KEY: ${OPENSANDBOX_API_KEY:?fill .env then run ./apply.sh server}   # injected server-side by the sandbox preview block
       SANDBOX_PREVIEW_HOST: sandbox.${BASE_DOMAIN}                                       # rewrite target for port previews (no scheme)
       # Bucket path prefixes routed to MinIO on the Infra host (parse-time placeholders in Caddyfile).
       S3_BUCKET: ${S3_BUCKET:-teable-app-artifacts}

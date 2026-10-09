@@ -1,5 +1,5 @@
 # Shared routes -- imported by both the local and server Caddyfiles; the sandbox preview rewrite lives only here.
-# {$SANDBOX_PREVIEW_HOST} / {env.OPENSANDBOX_API_KEY} are injected by compose per mode and substituted at parse time.
+# {$SANDBOX_PREVIEW_HOST} is injected by compose per mode and substituted at parse time.
 
 # Console + Infra API + sandbox port-preview rewrite.
 #   Port preview (/v1/sandboxes/{id}/endpoints/{port}) returns host:port/proxy/{port} by default, which 404s root-path assets of Next/SPA apps;
@@ -25,16 +25,19 @@
 	}
 }
 
-# Sandbox previews (independent origin at root path): Host={id}-{port}.sandbox.<domain> -> engine server-proxy.
-#   Inject the key (browser top-level navigations cannot carry headers); Accept-Encoding=identity disables compression to avoid multi-hop decoding errors; WebSocket passes through by default.
+# Sandbox previews (independent origin at root path): Host={id}-{port}.sandbox.<domain> -> the sandbox container itself.
+#   Caddy sits on the sandbox network (compose: teable-sandbox-net) and dials container sandbox-{id} by Docker DNS, the role
+#   the ingress gateway plays on Kubernetes. No engine hop in between, so request and response headers (Cookie,
+#   Authorization), WebSocket and compression pass through untouched; the engine's /v1/sandboxes/{id}/proxy/{port} path
+#   proxy stays a machine-only API (key required) and never carries browser traffic.
+#   The upstream address holds placeholders, which Caddy treats as one "dynamically static" upstream: keep health checks
+#   and load balancing at their defaults (off) here, otherwise one dead sandbox would mark every preview down.
+#   Sandboxes created with a networkPolicy share an egress sidecar's namespace on the default bridge and are not reachable
+#   this way; Teable never requests one.
 (sandbox_preview) {
 	@sbx header_regexp sbx Host ^([a-z0-9-]+)-([0-9]+)\.
 	handle @sbx {
-		rewrite * /v1/sandboxes/{re.sbx.1}/proxy/{re.sbx.2}{uri}
-		reverse_proxy opensandbox-server:8090 {
-			header_up OPEN-SANDBOX-API-KEY {env.OPENSANDBOX_API_KEY}
-			header_up Accept-Encoding identity
-		}
+		reverse_proxy sandbox-{re.sbx.1}:{re.sbx.2}
 	}
 	# Catch-all: Host does not match the {id}-{port} shape (should not happen normally)
 	handle {

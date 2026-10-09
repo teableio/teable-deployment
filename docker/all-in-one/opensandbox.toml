@@ -25,7 +25,7 @@ volume_default_size = "1Gi"
 # Sandboxes attach to a dedicated network and opensandbox-server joins it too, to reach them by container IP (the default docker0 "bridge" cannot connect across networks -> SandboxReadyTimeout).
 # Network name is injected by apply.sh (= SANDBOX_DOCKER_NETWORK in .env, same source as compose, cannot drift).
 network_mode = "__SANDBOX_NETWORK__"
-host_ip = "127.0.0.1"                        # direct port mappings bind to loopback; previews go via Caddy->server-proxy, not through these ports
+host_ip = "127.0.0.1"                        # direct port mappings bind to loopback; previews go Caddy -> sandbox container over the sandbox network, not through these ports
 drop_capabilities = ["AUDIT_WRITE", "MKNOD", "NET_ADMIN", "NET_RAW", "SYS_ADMIN", "SYS_MODULE", "SYS_PTRACE", "SYS_TIME", "SYS_TTY_CONFIG"]
 # allow setuid privilege elevation inside sandboxes
 no_new_privileges = false

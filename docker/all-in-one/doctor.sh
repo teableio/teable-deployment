@@ -374,6 +374,22 @@ else
   state="$(printf '%s' "$resp" | grep -o '"state":"[^"]*"' | head -1 | cut -d'"' -f4)"
   if [ -n "$sid" ] && [ "$state" = "Running" ]; then
     ok "sandbox create -> Running ($sid)"
+    # Preview chain: *.sandbox.<domain> -> caddy -> sandbox-<id>:<port> over the sandbox network (no engine hop).
+    # Probe execd's /ping on 44772 (200; 401 when execd runs with an access token): both prove the request reached
+    # the sandbox container. Anything else means caddy could not dial it, or the Host fell through to another route
+    # (e.g. the console catch-all answering 404/307), so only these two codes pass.
+    # NOTE: relies on execd's port being routable through the preview domain; if that changes,
+    # switch the probe to a port the test sandbox serves itself.
+    preview_host="${SANDBOX_PREVIEW_HOST:-sandbox.localhost}"; preview_host="${preview_host%%:*}"
+    if [ "$MODE" = server ]; then
+      pcode=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "https://${sid}-44772.sandbox.${BASE_DOMAIN:-}/ping")
+    else
+      pcode=$(curl -s -o /dev/null -w '%{http_code}' -m 20 -H "Host: ${sid}-44772.${preview_host}" "${INFRA_URL}/ping")
+    fi
+    case "$pcode" in
+      200|401) ok "sandbox preview chain *.sandbox -> caddy -> sandbox container (execd /ping -> $pcode)" ;;
+      *) bad "sandbox preview chain -> $pcode (expected 200/401 from execd)" "caddy cannot reach sandbox-${sid} on the sandbox network (caddy must join SANDBOX_DOCKER_NETWORK: docker compose up -d caddy after updating compose), or *.sandbox.<domain> is not routed to the sandbox_preview block (wildcard DNS / SANDBOX_PREVIEW_HOST)" ;;
+    esac
     code=$(curl -s -o /dev/null -w '%{http_code}' -m 60 -X DELETE ${INFRA_HOSTHDR:+-H "Host: $INFRA_HOSTHDR"} -H "OPEN-SANDBOX-API-KEY: ${OPENSANDBOX_API_KEY:-}" "${INFRA_URL}/v1/sandboxes/$sid")
     [ "$code" = 204 ] && ok "sandbox destroy -> 204" || bad "sandbox destroy -> $code" "opensandbox-server logs"
   else
