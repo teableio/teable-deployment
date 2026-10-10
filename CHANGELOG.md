@@ -9,6 +9,10 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Docker local mode: browser previews use `*.sandbox.localhost`.** The Teable app now hands the browser a per-port subdomain preview URL instead of the path-proxy URL on the Infra host, so previews keep app cookies in local mode too. Pull the updated `deploy/` files and run `./apply.sh local --with-app` then `docker compose up -d teable`.
+
 ## v2026.10.2 - 2026-10-09
 
 - **Docker: sandbox previews keep cookies.** Apps that sign in inside a `*.sandbox.<domain>` preview now stay signed in. Pull the updated `deploy/` files and run `docker compose up -d caddy`.

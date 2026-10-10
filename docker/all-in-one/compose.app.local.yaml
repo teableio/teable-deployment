@@ -18,6 +18,12 @@ services:
       # and a Teable release carrying SANDBOX_OPENSANDBOX_USE_SERVER_PROXY support;
       # older app builds simply ignore this variable.
       SANDBOX_OPENSANDBOX_USE_SERVER_PROXY: "true"
+      # Browser-facing preview URLs stay on per-port subdomains ({id}-{port}.sandbox.localhost, resolved
+      # natively by browsers and served by caddy's sandbox_preview block) even though the backend itself
+      # goes through the path proxy above. Without this the app hands the browser the path-proxy URL on
+      # the Infra host, which carries no engine key and cannot keep app cookies.
+      # Requires a Teable release from 2026-09-07 or later; older builds ignore the variable.
+      SANDBOX_OPENSANDBOX_PREVIEW_SUBDOMAIN: "true"
 
   caddy:
     networks:
@@ -30,7 +36,8 @@ services:
       - ./caddy.snippets:/etc/caddy/caddy.snippets:ro
     environment:
       TEABLE_PUBLIC_BUCKET: ${TEABLE_PUBLIC_BUCKET:-teable-public}   # used for public-bucket path forwarding
-      # Sandbox endpoint/preview domain: local mode always uses local domains. Browser preview resolves
-      # *.sandbox.localhost natively; machine-side sandbox traffic goes through the /v1 path proxy
-      # (SANDBOX_OPENSANDBOX_USE_SERVER_PROXY above), so no wildcard DNS is needed anywhere.
+      # Sandbox endpoint/preview domain: local mode always uses local domains. Browser previews use
+      # *.sandbox.localhost (SANDBOX_OPENSANDBOX_PREVIEW_SUBDOMAIN above, resolved natively by browsers);
+      # machine-side sandbox traffic goes through the /v1 path proxy (SANDBOX_OPENSANDBOX_USE_SERVER_PROXY),
+      # so no wildcard DNS is needed anywhere.
       SANDBOX_PREVIEW_HOST: ${SANDBOX_PREVIEW_HOST:-sandbox.localhost}
