@@ -45,7 +45,7 @@ opensandbox-server:
   server:
     image:
       repository: ghcr.io/teableio/opensandbox-server
-      tag: v0.2.0-fix9
+      tag: v0.2.0-fix10
     gateway:
       image:
         repository: ghcr.io/teableio/opensandbox-ingress

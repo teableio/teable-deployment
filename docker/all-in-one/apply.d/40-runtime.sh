@@ -31,7 +31,7 @@ if [ -n "${EXECD_IMAGE:-}" ]; then
   EXECD_IMAGE="${migrated}"
 fi
 if [ -n "${OPENSANDBOX_SERVER_IMAGE:-}" ]; then
-  migrated="$(retire_pin "${OPENSANDBOX_SERVER_IMAGE}" "v0.2.0-fix4 v0.2.0-fix5 v0.2.0-fix6 v0.2.0-fix7 v0.2.0-fix8" "v0.2.0-fix9" "opensandbox-server")"
+  migrated="$(retire_pin "${OPENSANDBOX_SERVER_IMAGE}" "v0.2.0-fix4 v0.2.0-fix5 v0.2.0-fix6 v0.2.0-fix7 v0.2.0-fix8 v0.2.0-fix9" "v0.2.0-fix10" "opensandbox-server")"
   if [ "${migrated}" != "${OPENSANDBOX_SERVER_IMAGE}" ]; then
     echo "[~] OPENSANDBOX_SERVER_IMAGE ${OPENSANDBOX_SERVER_IMAGE} is superseded; updating .env to ${migrated}"
     set_kv OPENSANDBOX_SERVER_IMAGE "${migrated}" "$ENV_FILE"
