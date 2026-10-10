@@ -41,7 +41,7 @@ server:
   # -- Server image configuration
   image:
     repository: ghcr.io/teableio/opensandbox-server
-    tag: "v0.2.0-fix10"
+    tag: "v0.2.0-fix11"
 
   # -- Number of server replicas
   replicaCount: 2

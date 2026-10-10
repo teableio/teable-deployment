@@ -11,7 +11,7 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## Unreleased
 
-- **Security fix: sandbox engine `v0.2.0-fix10` requires the API key on its path proxy.** `/v1/sandboxes/{id}/proxy/{port}` (HTTP and WebSocket) no longer serves requests without `OPEN-SANDBOX-API-KEY`. Browser previews are unaffected (they use the gateway on Kubernetes and the `*.sandbox` route on Docker). Kubernetes: upgrade the chart. Docker: re-run `./apply.sh` (it migrates the pin) and `docker compose up -d opensandbox-server`; local mode also needs the `*.sandbox.localhost` preview change from this release.
+- **Security fix: sandbox engine `v0.2.0-fix11` requires the API key on its path proxy.** `/v1/sandboxes/{id}/proxy/{port}` (HTTP and WebSocket) no longer serves requests without `OPEN-SANDBOX-API-KEY`. Browser previews are unaffected (they use the gateway on Kubernetes and the `*.sandbox` route on Docker). Kubernetes: upgrade the chart. Docker: re-run `./apply.sh` (it migrates the pin) and `docker compose up -d opensandbox-server`; local mode also needs the `*.sandbox.localhost` preview change from this release.
 - **Docker local mode: browser previews use `*.sandbox.localhost`.** The Teable app now hands the browser a per-port subdomain preview URL instead of the path-proxy URL on the Infra host, so previews keep app cookies in local mode too. Pull the updated `deploy/` files and run `./apply.sh local --with-app` then `docker compose up -d teable`.
 
 ## v2026.10.2 - 2026-10-09
