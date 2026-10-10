@@ -5,8 +5,8 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.10.2
-releasedAt: '2026-10-09T11:13:42Z'
+platformRelease: v2026.10.3
+releasedAt: '2026-10-10T03:16:54Z'
 components:
   teable:
     image: ghcr.io/teableio/teable:release.2026-10-02T04-02-20Z.3278
@@ -34,8 +34,8 @@ components:
     - amd64
     - arm64
   opensandbox-server:
-    image: ghcr.io/teableio/opensandbox-server:v0.2.0-fix9
-    digest: sha256:bb530674457d6a5db36cd70868b5ba5d924a771ffce347c9641cec07d007a8ad
+    image: ghcr.io/teableio/opensandbox-server:v0.2.0-fix11
+    digest: sha256:3fd3e584285edc79850d998e7fcfa5def37dac2b0d40120f73f3d49ef58236e0
     architectures:
     - amd64
     - arm64
@@ -44,7 +44,8 @@ components:
       private-CA trust (>= fix6), the container-level securityContext backfill plus
       shared-volume subPath pre-creation that unprivileged sandboxes need (>= fix7),
       docker-runtime workspace-directory ownership pre-creation (>= fix8), and setgid/sticky
-      bits accepted in the subPath pre-creation dir_mode (>= fix9); upstream does
+      bits accepted in the subPath pre-creation dir_mode (>= fix9), and API-key enforcement
+      on the sandbox path-proxy routes including WebSocket (>= fix11); upstream does
       not include them yet.'
   opensandbox-ingress:
     image: ghcr.io/teableio/opensandbox-ingress:v1.0.7
