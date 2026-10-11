@@ -9,6 +9,12 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-10T06-11-53Z.3314
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-10-10T06-11-53Z.3314`.
+
 ## v2026.10.3 - 2026-10-10
 
 - **Security fix: sandbox engine `v0.2.0-fix11` requires the API key on its path proxy.** `/v1/sandboxes/{id}/proxy/{port}` (HTTP and WebSocket) no longer serves requests without `OPEN-SANDBOX-API-KEY`. Browser previews are unaffected (they use the gateway on Kubernetes and the `*.sandbox` route on Docker). Kubernetes: upgrade the chart. Docker: re-run `./apply.sh` (it migrates the pin) and `docker compose up -d opensandbox-server`; local mode also needs the `*.sandbox.localhost` preview change from this release.
