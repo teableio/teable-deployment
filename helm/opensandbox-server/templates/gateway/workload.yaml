@@ -1,6 +1,18 @@
 # Copyright 2026 Alibaba Group Holding Ltd.
 # Gateway workload (components/ingress): proxies sandbox traffic, aligned with server config [ingress].
 {{- if .Values.server.gateway.enabled }}
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}-secure-access
+  namespace: {{ include "opensandbox-server.namespace" . }}
+  labels:
+    {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 4 }}
+stringData:
+  keys: {{ include "opensandbox-server.secureAccessKeyString" . | quote }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -19,6 +31,12 @@ spec:
       {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if include "opensandbox-server.secureAccessEnabled" . }}
+      annotations:
+        # Rotating the signing keys must roll the gateway too; the keys no longer sit in
+        # the pod spec, so hash them here (the server side is covered by checksum/config-toml).
+        checksum/secure-access: {{ include "opensandbox-server.secureAccessKeyString" . | sha256sum | quote }}
+      {{- end }}
       labels:
         {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ingress-gateway
@@ -39,8 +57,19 @@ spec:
             - "--provider-type={{ .Values.server.gateway.providerType }}"
             - "--mode={{ include "opensandbox-server.ingressGatewayBinaryMode" . }}"
             - "--log-level={{ .Values.server.gateway.logLevel }}"
-{{- if .Values.server.gateway.secureAccess.keys }}
-            - "--secure-access-keys={{- range $i, $k := .Values.server.gateway.secureAccess.keys }}{{ if $i }},{{ end }}{{ $k.key_id }}={{ $k.key }}{{- end }}"
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
+            # Key string comes from the Secret rendered above this Deployment, via the
+            # SECURE_ACCESS_KEYS env; kubelet expands $(VAR), so the pod spec holds no
+            # key material (the running process still receives it as a flag).
+            - "--secure-access-keys=$(SECURE_ACCESS_KEYS)"
+{{- end }}
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
+          env:
+            - name: SECURE_ACCESS_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}-secure-access
+                  key: keys
 {{- end }}
           ports:
             - name: http

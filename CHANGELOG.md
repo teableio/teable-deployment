@@ -9,6 +9,10 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Helm: sandbox preview signing keys are stored as Secrets.** When `opensandbox-server.server.gateway.secureAccess.keys` is set (inject it at deploy time, e.g. `helm upgrade --set-string`), the rendered engine config and the preview gateway key string now live in Secrets instead of a ConfigMap and plain container args; `activeKey` defaults to the first key. Without keys nothing changes. No action needed.
+
 ## v2026.10.4 - 2026-10-11
 
 ### Teable release.2026-10-10T06-11-53Z.3314

@@ -214,6 +214,14 @@ server:
     # When keys are provided, the server signs route tokens with the active key
     # and the ingress gateway verifies them.
     secureAccess:
+      # Signing material is meant to be injected at deploy time (e.g. `helm upgrade
+      # --set-string ...secureAccess.keys[0].key=<base64>` from your CI secret
+      # store), never committed to a values file. When keys are set, the rendered
+      # server config and the gateway's key string are stored as Kubernetes
+      # Secrets instead of ConfigMap/args, so the material never shows in plain
+      # objects. activeKey defaults to the first key_id. Configuring keys alone
+      # does not enforce anything: enforcement starts when a client creates a
+      # sandbox with secureAccess=true.
       activeKey: ""
       # List of signing keys. Each entry: { key_id: "a", key: "<base64-secret>" }.
       # key_id must be exactly one character in [0-9a-z].

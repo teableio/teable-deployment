@@ -120,7 +120,7 @@ gateway.route.mode = {{ .Values.server.gateway.gatewayRouteMode | quote }}
 {{- if and .Values.server.gateway.enabled .Values.server.gateway.secureAccess.keys }}
 
 [ingress.secure_access]
-active_key = {{ .Values.server.gateway.secureAccess.activeKey | quote }}
+active_key = {{ include "opensandbox-server.secureAccessActiveKey" . | quote }}
 {{- range .Values.server.gateway.secureAccess.keys }}
 [[ingress.secure_access.keys]]
 key_id = {{ .key_id | quote }}
@@ -535,4 +535,28 @@ spec:
 {{- end -}}
 {{- toYaml $merged -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Active signing key id: explicit activeKey, else the first configured key_id.
+*/}}
+{{- define "opensandbox-server.secureAccessActiveKey" -}}
+{{- $sa := .Values.server.gateway.secureAccess -}}
+{{- if $sa.activeKey -}}{{ $sa.activeKey }}{{- else -}}{{ (index $sa.keys 0).key_id }}{{- end -}}
+{{- end }}
+
+{{/*
+True when OSEP-0011 signing keys are configured: the server config then renders
+as a Secret (it contains the keys) and the gateway reads its key string from a
+Secret-backed env var instead of a plain container arg.
+*/}}
+{{- define "opensandbox-server.secureAccessEnabled" -}}
+{{- if and .Values.server.gateway.enabled .Values.server.gateway.secureAccess.keys -}}true{{- end -}}
+{{- end }}
+
+{{/*
+Gateway key string: key_id=base64[,key_id=base64], the --secure-access-keys format.
+*/}}
+{{- define "opensandbox-server.secureAccessKeyString" -}}
+{{- range $i, $k := .Values.server.gateway.secureAccess.keys }}{{ if $i }},{{ end }}{{ $k.key_id }}={{ $k.key }}{{- end }}
 {{- end }}

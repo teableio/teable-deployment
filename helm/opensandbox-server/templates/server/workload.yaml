@@ -1,14 +1,23 @@
 # Copyright 2026 Alibaba Group Holding Ltd.
-# Server workload: ConfigMap, Deployment, Service.
+# Server workload: config object (ConfigMap, or Secret when it carries OSEP-0011
+# signing keys), Deployment, Service.
 ---
 apiVersion: v1
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
+kind: Secret
+{{- else }}
 kind: ConfigMap
+{{- end }}
 metadata:
   name: {{ include "opensandbox-server.fullname" . }}-config
   namespace: {{ include "opensandbox-server.namespace" . }}
   labels:
     {{- include "opensandbox-server.labels" . | nindent 4 }}
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
+stringData:
+{{- else }}
 data:
+{{- end }}
   config.toml: |
 {{ .Values.configToml | indent 4 }}
 {{ include "opensandbox-server.ingressConfigToml" . | indent 4 }}
@@ -131,8 +140,13 @@ spec:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
         - name: config
+          {{- if include "opensandbox-server.secureAccessEnabled" . }}
+          secret:
+            secretName: {{ include "opensandbox-server.fullname" . }}-config
+          {{- else }}
           configMap:
             name: {{ include "opensandbox-server.fullname" . }}-config
+          {{- end }}
         {{- with .Values.server.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
