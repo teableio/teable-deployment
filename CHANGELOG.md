@@ -9,6 +9,36 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-12T12-45-53Z.3331
+
+#### Feature Updates
+- Admins can now configure sandbox CPU, memory, and temporary disk resources separately for AI chat, app builder, IM bots, and routines. Empty values inherit defaults or environment settings, and settings show effective defaults with a confirmation of resource changes before saving.
+- The Sandboxes page now supports filtering and batch deletion of IM bot and routine sandboxes, making it easier to recreate them with updated resource settings.
+- Added optional secure access for sandbox previews.
+
+#### Bug Fixes & Improvements
+- Fixed API-sent messages unexpectedly entering the queue instead of steering an active onboarding conversation.
+- Mobile chat histories now keep processed queued messages visually connected, eliminating large blank gaps between replies.
+- Stopping an AI reply now consistently clears the “working” state from the iOS lock screen activity.
+- Mobile resource change cards now retain specific resource names across split-screen and sheet chat views after opening linked boards or views.
+- Improved drag-and-drop feedback and folder drop detection in the mobile resource tree, making it easier to move tables, automations, and folders into subfolders.
+- Home conversation cards now prioritize conversations waiting for an answer, followed by unresolved failures and other unread conversations, consistently across iPhone, Android, and iPad.
+- Improved realtime collaboration reliability when values are cleared or clients reconnect, reducing unexpected errors and crashes while keeping shared content up to date.
+- Fixed changes to fields outside a table’s search coverage causing slower searches. Unrelated field changes now preserve search availability, reducing timeouts on large tables.
+- Improved mobile grid scrollbar touch handling. Dragging a scrollbar now stops ongoing inertial scrolling so the table follows the user’s touch more predictably.
+- Improved sandbox preview reliability when secure-access settings change. Shared preview links may expire after secure access is enabled and need to be refreshed or regenerated.
+- Clarified the link sign-in wording on the Chinese SSO settings page.
+- Improved trash reset reliability for large tables with many deleted views, fields, or records.
+- Improved computed-field update reliability when fields are deleted or link fields become unavailable, allowing unaffected fields to continue updating.
+- Fixed artifact viewers showing stale content, particularly on mobile after a page remains open for a long time. Displayed content now stays aligned with the selected version.
+- Improved security for comment images and private files.
+- Improved security for AI provider connections and made connection-test errors clearer and more consistent.
+- Base duplication now handles unavailable link fields more gracefully, preventing an affected field from causing the entire operation to fail.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-12T12-45-53Z.3331)
+
 ## v2026.10.5 - 2026-10-12
 
 - **Helm: sandbox preview signing keys are stored as Secrets.** When `opensandbox-server.server.gateway.secureAccess.keys` is set (inject it at deploy time, e.g. `helm upgrade --set-string`), the rendered engine config and the preview gateway key string now live in Secrets instead of a ConfigMap and plain container args; `activeKey` defaults to the first key. Without keys nothing changes. No action needed.
