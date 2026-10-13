@@ -9,6 +9,27 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-13T10-15-34Z.3346
+
+#### Feature Updates
+- Added a scraping data source catalog to discover and run endpoints by platform and data type, with data source information displayed in the menu. Agent and CLI workflows now support searching, viewing, and running endpoints and checking endpoint status, with clearer data source and endpoint details.
+- Scraping charges are now calculated based on the actual cost of each data source, with support for reserving credits in advance, setting a per-run credit limit, and settling charges at the end.
+- Removed Base-level read-only database connections and the associated connection panel. Base no longer provides credentials for direct PostgreSQL access; existing BYODB and SQL query functionality is unaffected.
+
+#### Bug Fixes & Improvements
+- Record updates containing only system or computed fields now succeed without changing existing values. Ignored fields such as Auto Number and Created Time remain ignored, while unknown fields still return validation errors.
+- Scraping menus on web and mobile now display specific data types, such as Posts, Profile, or Company, only when those types are available. Search results and platforms without distinct data types still use platform-only selection.
+- Improved sandbox security and reliability while retaining AI conversations, app previews, file uploads, and signed preview links.
+- Fixed failures in imports and bulk record creation caused by emoji near the truncation limit in long text, including Google Sheets imports. Also improved the reliability of text containing special Unicode characters during import rollback.
+- Project viewers can now find and open completed routine runs and the conversations they generate. Read-only access remains separate from editing actions, and permission consistency across routine history views has been improved.
+- Fixed an issue where forms blocked submission when required fields with configured default values were left blank. These fields now use their default values.
+- Improved member avatar portability across deployments and fixed delayed avatar updates in member, creator, and modifier views.
+- Fixed horizontal scrollbar synchronization issues when dragging across many views, including when dragging to the left and right edges.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-13T10-15-34Z.3346)
+
 ## v2026.10.6 - 2026-10-13
 
 ### Teable release.2026-10-12T12-45-53Z.3331
