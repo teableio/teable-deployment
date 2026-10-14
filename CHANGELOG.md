@@ -9,6 +9,33 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-14T00-38-05Z.3367
+
+#### Feature Updates
+- Added a cookie consent banner for app visitors in the EU, UK, and Switzerland when needed, with consent choices shared with the Teable website. The sign-in page now includes Cookie settings and separates product update email preferences from legal consent.
+
+#### Bug Fixes & Improvements
+- AI conversations are now created only when the first message is sent and appear in history after the first successful message, reducing empty chats and keeping conversations accessible without refreshing.
+- Improved AI chat and App Builder history reliability: unread indicators recover after reconnecting, and conversation actions handle missing or newly created chats more consistently.
+- Fixed computed-field error handling after linked-record fields are deleted or restored. Dependent formulas now show invalid states correctly, and lookup and conditional rollup values recover more reliably after undo.
+- Fixed numeric-to-date field conversion failures when dependent formulas or rollups exist. Dependent fields now update more reliably after type changes and clear incompatible formatting and display options.
+- Fixed built-in email client unsubscribe buttons for automation emails, Send Email API messages, and newsletters, including previously delivered emails with unsubscribe support. The existing confirmation page remains unchanged.
+- Fixed misleading success messages when pasted link-field values cannot be created or linked. Unsupported input is now validated more consistently, with clearer errors when linked records cannot be created.
+- Fixed formula field updates through the field PATCH API that could report success without applying the new expression. Valid formula options are now preserved, and result type changes apply more consistently.
+- Fixed conditional rollup SUM calculations to include all matching records, regardless of sorting or row limits, preventing undercounted totals.
+- Fixed multi-value lookups inheriting unsupported ring display settings. Compatible number formatting, such as currency and precision, is still preserved.
+- Lookup and conditional lookup API requests now reject button fields as source fields. Requests that previously accepted these unsupported configurations will now fail validation.
+- Fixed default naming and function selection for conditional rollups created through the API. Unnamed fields use source-field and target-table names, and an omitted expression defaults to counting all records. Formatting options now appear only after a rollup function is selected.
+- Fixed single-value formula cells using ERROR("custom error") appearing blank. They now display #ERROR: custom error and retain error details when saved or referenced.
+- Conditional lookups now return all matching records when the match limit is left blank, rather than defaulting to one match. The configuration hint also reflects the current limit. Existing configurations with a blank limit may now return more records.
+- Fixed button click counts not being saved through record create, update, and batch update APIs. Saved counts now appear consistently in API responses and subsequent reads.
+- Fixed TODAY() to respect the formula field’s configured time zone and return the expected local start of day. Time zone handling is also more consistent in nested formulas.
+- Improved the Simplified Chinese circular dependency message for conditional rollup filters, replacing raw English text and technical identifiers with a localized prompt. Invalid updates remain blocked without changing the existing configuration.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-14T00-38-05Z.3367)
+
 ## v2026.10.7 - 2026-10-13
 
 ### Teable release.2026-10-13T10-15-34Z.3346
