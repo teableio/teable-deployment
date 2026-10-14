@@ -6,12 +6,17 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}-secure-access
+  name: {{ include "opensandbox-server.secureAccessSecretName" . }}
   namespace: {{ include "opensandbox-server.namespace" . }}
   labels:
     {{- include "opensandbox-server.ingressGatewaySelectorLabels" . | nindent 4 }}
 stringData:
   keys: {{ include "opensandbox-server.secureAccessKeyString" . | quote }}
+  {{- if not .Values.server.gateway.secureAccess.keys }}
+  # Chart-generated key (autoGenerate). Read back via lookup on upgrade so the
+  # key never rotates by itself; delete this Secret and upgrade to rotate it.
+  generated-key: {{ include "opensandbox-server.secureAccessGeneratedKey" . | quote }}
+  {{- end }}
 {{- end }}
 ---
 apiVersion: apps/v1
@@ -68,7 +73,7 @@ spec:
             - name: SECURE_ACCESS_KEYS
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "opensandbox-server.ingressGatewayFullname" . }}-secure-access
+                  name: {{ include "opensandbox-server.secureAccessSecretName" . }}
                   key: keys
 {{- end }}
           ports:

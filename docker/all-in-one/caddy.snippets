@@ -34,12 +34,19 @@
 #   and load balancing at their defaults (off) here, otherwise one dead sandbox would mark every preview down.
 #   Sandboxes created with a networkPolicy share an egress sidecar's namespace on the default bridge and are not reachable
 #   this way; Teable never requests one.
+#   The id part must be an engine-issued UUID: a looser pattern would let a crafted Host steer the dial to any other
+#   container on the sandbox network whose name starts with "sandbox-".
 (sandbox_preview) {
-	@sbx header_regexp sbx Host ^([a-z0-9-]+)-([0-9]+)\.
+	# The egress sidecar's policy API (18080) and mitmproxy (18081) are control endpoints, not previews.
+	@control header_regexp ctl Host ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-(18080|18081)\.
+	handle @control {
+		respond "Sandbox control ports are not served on preview domains." 403
+	}
+	@sbx header_regexp sbx Host ^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-([1-9][0-9]{0,4})\.
 	handle @sbx {
 		reverse_proxy sandbox-{re.sbx.1}:{re.sbx.2}
 	}
-	# Catch-all: Host does not match the {id}-{port} shape (should not happen normally)
+	# Catch-all: Host does not match the {uuid}-{port} shape
 	handle {
 		respond 404
 	}

@@ -181,6 +181,107 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  name: opensandbox-ingress-gateway-secure-access
+  namespace: opensandbox-system
+  labels:
+    app.kubernetes.io/name: opensandbox-ingress-gateway
+    app.kubernetes.io/instance: teable
+stringData:
+  keys: a=<base64 signing key, generated at install time - replace before applying
+    directly>
+  generated-key: "<base64 signing key, generated at install time - replace before
+    applying directly>"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: opensandbox-server-config
+  namespace: opensandbox-system
+  labels:
+    helm.sh/chart: opensandbox-server-0.5.0
+    app.kubernetes.io/name: opensandbox-server
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/version: 0.1.0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: opensandbox-server
+    app.kubernetes.io/part-of: opensandbox
+stringData:
+  config.toml: |
+    [server]
+    host = "0.0.0.0"
+    port = 80
+    api_key = ""
+
+    [log]
+    level = "INFO"
+
+    [runtime]
+    type = "kubernetes"
+    execd_image = "ghcr.io/teableio/opensandbox-execd:v1.0.19-fix3"
+
+    [kubernetes]
+    kubeconfig_path = ""
+    namespace = "teable-sandbox"
+    informer_enabled = true
+    informer_resync_seconds = 300
+    informer_watch_timeout_seconds = 60
+    sandbox_create_timeout_seconds = 86400
+    sandbox_create_poll_interval_seconds = 0.5
+    snapshot_create_timeout_seconds = 900
+    workload_provider = "batchsandbox"
+    batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
+
+    [egress]
+    image = "ghcr.io/teableio/opensandbox-egress:v1.0.12"
+    mode = "dns+nft"
+
+    [ingress]
+    mode = "gateway"
+
+    gateway.address = "*.sandbox.teable.example.org"
+    gateway.route.mode = "wildcard"
+
+    [ingress.secure_access]
+    active_key = "a"
+    [[ingress.secure_access.keys]]
+    key_id = "a"
+    key = "<base64 signing key, generated at install time - replace before applying directly>"
+  batchsandbox-template.yaml: |
+    metadata: null
+    spec:
+      replicas: 1
+      template:
+        spec:
+          affinity:
+            podAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: opensandbox.io/id
+                      operator: Exists
+                  topologyKey: kubernetes.io/hostname
+                weight: 100
+          containers:
+          - name: sandbox
+            volumeMounts:
+            - mountPath: /home/agent/workspace-state
+              name: workspace-state
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 0
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 0
+            runAsUser: 0
+            seccompProfile:
+              type: Unconfined
+          volumes:
+          - emptyDir: {}
+            name: workspace-state
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: opensandbox-api-key
   namespace: opensandbox-system
   labels:
@@ -225,87 +326,6 @@ stringData:
   storage-encryption-iv: generated at install time - replace before applying directly
   minio-access-key: generated at install time - replace before applying directly
   minio-secret-key: generated at install time - replace before applying directly
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: opensandbox-server-config
-  namespace: opensandbox-system
-  labels:
-    helm.sh/chart: opensandbox-server-0.5.0
-    app.kubernetes.io/name: opensandbox-server
-    app.kubernetes.io/instance: teable
-    app.kubernetes.io/version: 0.1.0
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: opensandbox-server
-    app.kubernetes.io/part-of: opensandbox
-data:
-  config.toml: |
-    [server]
-    host = "0.0.0.0"
-    port = 80
-    api_key = ""
-
-    [log]
-    level = "INFO"
-
-    [runtime]
-    type = "kubernetes"
-    execd_image = "ghcr.io/teableio/opensandbox-execd:v1.0.19-fix3"
-
-    [kubernetes]
-    kubeconfig_path = ""
-    namespace = "teable-sandbox"
-    informer_enabled = true
-    informer_resync_seconds = 300
-    informer_watch_timeout_seconds = 60
-    sandbox_create_timeout_seconds = 86400
-    sandbox_create_poll_interval_seconds = 0.5
-    snapshot_create_timeout_seconds = 900
-    workload_provider = "batchsandbox"
-    batchsandbox_template_file = "/etc/opensandbox/batchsandbox-template.yaml"
-
-    [egress]
-    image = "ghcr.io/teableio/opensandbox-egress:v1.0.12"
-    mode = "dns+nft"
-
-    [ingress]
-    mode = "gateway"
-
-    gateway.address = "*.sandbox.teable.example.org"
-    gateway.route.mode = "wildcard"
-  batchsandbox-template.yaml: |
-    metadata: null
-    spec:
-      replicas: 1
-      template:
-        spec:
-          affinity:
-            podAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-              - podAffinityTerm:
-                  labelSelector:
-                    matchExpressions:
-                    - key: opensandbox.io/id
-                      operator: Exists
-                  topologyKey: kubernetes.io/hostname
-                weight: 100
-          containers:
-          - name: sandbox
-            volumeMounts:
-            - mountPath: /home/agent/workspace-state
-              name: workspace-state
-          restartPolicy: Never
-          securityContext:
-            fsGroup: 0
-            fsGroupChangePolicy: OnRootMismatch
-            runAsGroup: 0
-            runAsUser: 0
-            seccompProfile:
-              type: Unconfined
-          volumes:
-          - emptyDir: {}
-            name: workspace-state
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -1529,6 +1549,8 @@ spec:
       app.kubernetes.io/instance: teable
   template:
     metadata:
+      annotations:
+        checksum/secure-access: b2192a01c3e8591050aa268342990c9e6a5375fb14979318ff001dc904feb80e
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1546,6 +1568,13 @@ spec:
         - "--provider-type=batchsandbox"
         - "--mode=header"
         - "--log-level=info"
+        - "--secure-access-keys=$(SECURE_ACCESS_KEYS)"
+        env:
+        - name: SECURE_ACCESS_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: opensandbox-ingress-gateway-secure-access
+              key: keys
         ports:
         - name: http
           containerPort: 28888
@@ -1594,7 +1623,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 76a45013de0c8861e3681ee4689b5d91558bb3bb88fe63c89973e2eb7b4b6306
+        checksum/config-toml: 05b98e53a0eb494064eb632d9f18c6c0276e509bcb00d54d981de46700ee8f57
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1668,8 +1697,8 @@ spec:
             memory: 512Mi
       volumes:
       - name: config
-        configMap:
-          name: opensandbox-server-config
+        secret:
+          secretName: opensandbox-server-config
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -2351,6 +2380,8 @@ spec:
           value: teable-agent
         - name: SANDBOX_OPENSANDBOX_IMAGE
           value: ghcr.io/teableio/teable-sandbox-agent
+        - name: SANDBOX_OPENSANDBOX_SECURE_ACCESS
+          value: 'true'
         - name: SANDBOX_JWT_SECRET
           valueFrom:
             secretKeyRef:

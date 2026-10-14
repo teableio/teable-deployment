@@ -163,6 +163,15 @@ spec:
                    the resulting image through the Infra API on startup. */}}
             - name: SANDBOX_OPENSANDBOX_IMAGE
               value: {{ $teable.sandboxAgentImagePrefix | quote }}
+            {{- if include "teable-infra.sandboxSecureAccess" . }}
+            {{- /* The sandbox engine holds signing keys (opensandbox-server
+                   server.gateway.secureAccess), so create sandboxes with secure access:
+                   the gateway then rejects unsigned requests to sandbox ports, and preview
+                   links handed to browsers are time-limited signed URLs. Images that
+                   predate the switch ignore it. */}}
+            - name: SANDBOX_OPENSANDBOX_SECURE_ACCESS
+              value: "true"
+            {{- end }}
             {{- /* Signs sandbox session tokens; per-install random so tokens cannot be forged across installs. */}}
             - name: SANDBOX_JWT_SECRET
               valueFrom:

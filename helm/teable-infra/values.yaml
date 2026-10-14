@@ -103,6 +103,21 @@ opensandbox-server:
         certificate:
           enabled: true
           issuerName: letsencrypt-dns
+      # default-on: sandbox ports behind the gateway only answer signed links
+      # (OSEP-0011). The chart generates a signing key on install and keeps it
+      # across upgrades, and the bundled Teable app (teable.enabled) gets
+      # SANDBOX_OPENSANDBOX_SECURE_ACCESS=true so it creates protected sandboxes
+      # and hands out time-limited signed preview links. Running Teable outside
+      # this chart? Set that env var on it yourself.
+      # GitOps / `helm template` renders cannot keep a generated key (no cluster
+      # lookup): set explicit `keys` instead (generate a key with
+      # `openssl rand -base64 32` and inject it from your secret store):
+      #   secureAccess:
+      #     keys:
+      #       - key_id: "a"
+      #         key: "<base64>"
+      secureAccess:
+        autoGenerate: true
 
 # Global values (passed to both sub-charts).
 global:

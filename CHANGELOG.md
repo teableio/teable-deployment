@@ -9,6 +9,15 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Console security: file previews can no longer run scripts.** Files from the shared sandbox volume are served with scripts disabled: HTML, JS and XML preview as plain text, opening a raw SVG link downloads it, and raw file links only work from the console itself. Image, video, PDF and text previews look the same. No action needed.
+- **Console security: sandbox access tokens stay on the server.** The sandbox detail view no longer sends sandbox access tokens or other credential-like annotations to the browser, and the Preview button only signs preview ports, never the sandbox's internal control ports (execd, egress). No action needed.
+- **Helm: sandbox ports now require signed links.** Knowing a sandbox ID no longer opens its ports: the chart generates a signing key on install (kept across upgrades) and Teable hands out time-limited signed preview links. No action needed for a plain `helm upgrade`; if you upgrade with `--reuse-values`, use `--reset-then-reuse-values` once, and if you render with `helm template` or Argo CD, set `opensandbox-server.server.gateway.secureAccess.keys` yourself (see "Signed sandbox access" in `helm/README.md`).
+- **Docker: stricter sandbox preview routing** — `*.sandbox.<domain>` now only routes
+  engine-issued sandbox ids and no longer serves the egress control ports (18080/18081).
+  No action needed.
+
 ## v2026.10.8 - 2026-10-14
 
 ### Teable release.2026-10-14T00-38-05Z.3367

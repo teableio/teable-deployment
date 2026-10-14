@@ -80,3 +80,11 @@ https://{{ include "teable-infra.s3Host" . }}
 {{- define "teable-infra.externalEntry" -}}
 {{- if eq ((((.Values.global).entry).mode) | toString) "external-nginx" -}}true{{- end -}}
 {{- end }}
+
+{{- /* Non-empty ("true") when the opensandbox-server sub-chart has OSEP-0011 secure
+       access in effect (gateway enabled with explicit keys or autoGenerate). Delegates
+       to the sub-chart helper so "in effect" has a single definition; that helper reads
+       values only, so a {Values: <sub-chart values>} context is enough. */}}
+{{- define "teable-infra.sandboxSecureAccess" -}}
+{{- include "opensandbox-server.secureAccessEnabled" (dict "Values" (index .Values "opensandbox-server")) -}}
+{{- end }}

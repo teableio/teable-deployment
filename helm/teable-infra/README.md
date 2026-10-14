@@ -69,6 +69,7 @@ helm install opensandbox helm/teable-infra \
 |-----|---------|-------------|
 | `opensandbox-controller.controller.*` | see values.yaml | Controller image, replicas, snapshot settings |
 | `opensandbox-server.server.*` | see values.yaml | Server image, replicas, gateway, config.toml |
+| `opensandbox-server.server.gateway.secureAccess.autoGenerate` | `true` | Signed access to sandbox ports: generate a signing key on install (reused on upgrade) and set `SANDBOX_OPENSANDBOX_SECURE_ACCESS=true` on the bundled Teable app. Explicit `secureAccess.keys` win; set them when rendering with `helm template`/GitOps |
 | `infraService.enabled` | `false` | Deploy the Infra Service control plane (`infraService.image` required) |
 | `gitRegistry.enabled` | `false` | Deploy the Git Registry (`gitRegistry.publicUrl` required) |
 | `gitRegistry.sandboxUrl` | `""` | In-cluster git base URL returned by `/api/git/credentials` to sandboxes **and** the Teable backend (`http://<release>-git-registry.<ns>.svc.cluster.local`); set only when the Teable backend runs in-cluster too; blank = `publicUrl` |

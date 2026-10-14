@@ -46,7 +46,7 @@ Optional: override gateway image, replicas, or resources (see `server.gateway.*`
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `server.image.repository` | Server image repository | `ghcr.io/teableio/opensandbox-server` |
-| `server.image.tag` | Server image tag | `v0.2.0-fix4` |
+| `server.image.tag` | Server image tag | `v0.2.0-fix11` |
 | `server.replicaCount` | Server replicas | `2` |
 | `server.resources` | CPU/memory requests and limits | See values.yaml |
 | `namespaceOverride` | Deployment namespace | `opensandbox-system` |
@@ -54,11 +54,14 @@ Optional: override gateway image, replicas, or resources (see `server.gateway.*`
 | `server.gateway.enabled` | When true: set server config to gateway and deploy components/ingress gateway | `false` |
 | `server.gateway.host` | config `gateway.address` (address returned to clients) | `opensandbox.example.com` |
 | `server.gateway.gatewayRouteMode` | server config and gateway route mode (header/uri) | `header` |
+| `server.gateway.secureAccess.keys` | OSEP-0011 signing keys `[{key_id, key}]` shared by server and gateway (`key_id`: one char `[0-9a-z]`, `key`: base64); explicit keys always win | `[]` |
+| `server.gateway.secureAccess.activeKey` | Key id used for new signatures (explicit keys only) | first `key_id` |
+| `server.gateway.secureAccess.autoGenerate` | With the gateway enabled and no `keys`: generate one key at install and reuse it on upgrade (Helm `lookup`) | `false` |
 | `server.gateway.*` | Gateway image, replicas, port, dataplaneNamespace, providerType, resources | See values.yaml |
 
 Versioning note:
 
-- `server.image.tag` is pinned in values.yaml (currently `v0.2.0-fix4`); it only falls
+- `server.image.tag` is pinned in values.yaml (currently `v0.2.0-fix11`); it only falls
   back to the chart `appVersion` if you set it to an empty string.
 - The chart package `version` and the image tag are intentionally separate. A server
   release branch or tag does not automatically imply a new Helm chart package version.
@@ -67,6 +70,8 @@ Versioning note:
   version was published for that purpose.
 
 **Gateway**: When `server.gateway.enabled=true`, the chart writes `[ingress] mode = "gateway"` in config.toml and deploys **components/ingress** Deployment/Service/RBAC; gateway `--mode` matches config. External access must be configured separately.
+
+**Secure access (OSEP-0011)**: with signing keys in effect (`server.gateway.secureAccess.keys`, or `autoGenerate`), the server config gains `[ingress.secure_access]` and is stored as a Secret, and the gateway reads `--secure-access-keys` from the `opensandbox-ingress-gateway-secure-access` Secret. Keys alone enforce nothing: sandboxes created with `secureAccess: true` then only answer signed links or their access token. `autoGenerate` keeps the generated key in that Secret and reads it back with `lookup`, so renderers without cluster access (`helm template`, `--dry-run`, Argo CD) get a new key on every render; use explicit `keys` there. To rotate a generated key, delete the Secret and upgrade.
 
 Set `[kubernetes].namespace` in config for the sandbox workload namespace. Override `api_key` via Secret or values in production.
 

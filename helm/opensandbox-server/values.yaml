@@ -211,21 +211,33 @@ server:
         secretName: ""
         dnsNames: []
     # OSEP-0011 (upstream OpenSandbox spec) signing keys shared between server and ingress.
-    # When keys are provided, the server signs route tokens with the active key
-    # and the ingress gateway verifies them.
+    # When keys are in effect (explicit keys, or autoGenerate below), the server
+    # signs route tokens with the active key and the ingress gateway verifies them.
     secureAccess:
       # Signing material is meant to be injected at deploy time (e.g. `helm upgrade
       # --set-string ...secureAccess.keys[0].key=<base64>` from your CI secret
-      # store), never committed to a values file. When keys are set, the rendered
-      # server config and the gateway's key string are stored as Kubernetes
-      # Secrets instead of ConfigMap/args, so the material never shows in plain
-      # objects. activeKey defaults to the first key_id. Configuring keys alone
-      # does not enforce anything: enforcement starts when a client creates a
-      # sandbox with secureAccess=true.
+      # store), never committed to a values file. When keys are in effect, the
+      # rendered server config and the gateway's key string are stored as
+      # Kubernetes Secrets instead of ConfigMap/args, so the material never shows
+      # in plain objects. activeKey defaults to the first key_id (explicit keys
+      # only). Configuring keys alone does not enforce anything: enforcement
+      # starts when a client creates a sandbox with secureAccess=true.
       activeKey: ""
       # List of signing keys. Each entry: { key_id: "a", key: "<base64-secret>" }.
-      # key_id must be exactly one character in [0-9a-z].
+      # key_id must be exactly one character in [0-9a-z]; key is standard base64
+      # (32 random bytes recommended: `openssl rand -base64 32`).
       keys: []
+      # When the gateway is enabled and `keys` is empty, generate one signing key
+      # (key_id "a", 32 random bytes) at install time. It is stored in the
+      # opensandbox-ingress-gateway-secure-access Secret and read back with Helm
+      # `lookup` on every upgrade, so it never rotates by itself; to rotate it,
+      # delete that Secret and run `helm upgrade` (links signed with the old key
+      # stop working). Explicit `keys` always win.
+      # Renderers without cluster access -- `helm template`, `--dry-run`, Argo CD
+      # and other GitOps tools that render with `helm template` -- cannot look the
+      # Secret up and produce a NEW key on every render (constant diffs, restarts
+      # and broken preview links): set explicit `keys` there instead.
+      autoGenerate: false
 
 # -- Server config (TOML). Mounted at /etc/opensandbox/config.toml.
 configToml: |

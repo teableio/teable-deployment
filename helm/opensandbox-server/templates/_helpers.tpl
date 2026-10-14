@@ -117,11 +117,11 @@ mode = {{ .Values.server.gateway.enabled | ternary "gateway" "direct" | quote }}
 gateway.address = {{ include "opensandbox-server.gatewayHost" . | quote }}
 gateway.route.mode = {{ .Values.server.gateway.gatewayRouteMode | quote }}
 {{- end }}
-{{- if and .Values.server.gateway.enabled .Values.server.gateway.secureAccess.keys }}
+{{- if include "opensandbox-server.secureAccessEnabled" . }}
 
 [ingress.secure_access]
 active_key = {{ include "opensandbox-server.secureAccessActiveKey" . | quote }}
-{{- range .Values.server.gateway.secureAccess.keys }}
+{{- range fromYamlArray (include "opensandbox-server.secureAccessKeys" .) }}
 [[ingress.secure_access.keys]]
 key_id = {{ .key_id | quote }}
 key = {{ .key | quote }}
@@ -539,24 +539,84 @@ spec:
 
 {{/*
 Active signing key id: explicit activeKey, else the first configured key_id.
+activeKey only applies to explicit keys; a generated key is always active.
 */}}
 {{- define "opensandbox-server.secureAccessActiveKey" -}}
 {{- $sa := .Values.server.gateway.secureAccess -}}
-{{- if $sa.activeKey -}}{{ $sa.activeKey }}{{- else -}}{{ (index $sa.keys 0).key_id }}{{- end -}}
+{{- if and $sa.keys $sa.activeKey -}}{{ $sa.activeKey }}{{- else -}}{{ (index (fromYamlArray (include "opensandbox-server.secureAccessKeys" .)) 0).key_id }}{{- end -}}
 {{- end }}
 
 {{/*
-True when OSEP-0011 signing keys are configured: the server config then renders
-as a Secret (it contains the keys) and the gateway reads its key string from a
-Secret-backed env var instead of a plain container arg.
+True when OSEP-0011 signing keys are in effect (explicit keys, or autoGenerate):
+the server config then renders as a Secret (it contains the keys) and the
+gateway reads its key string from a Secret-backed env var instead of a plain
+container arg. Values-only on purpose (no lookup, no randomness), so the
+umbrella chart can call it with a {Values: <this chart's values>} context.
 */}}
 {{- define "opensandbox-server.secureAccessEnabled" -}}
-{{- if and .Values.server.gateway.enabled .Values.server.gateway.secureAccess.keys -}}true{{- end -}}
+{{- $sa := .Values.server.gateway.secureAccess -}}
+{{- if and .Values.server.gateway.enabled (or $sa.keys $sa.autoGenerate) -}}true{{- end -}}
+{{- end }}
+
+{{/*
+Effective signing keys as a YAML list (read it back with fromYamlArray).
+Explicit secureAccess.keys always win and are passed through untouched.
+Otherwise, when autoGenerate is on, a single key with key_id "a" is used (see
+secureAccessGeneratedKey). Empty when secure access is not in effect.
+*/}}
+{{- define "opensandbox-server.secureAccessKeys" -}}
+{{- $sa := .Values.server.gateway.secureAccess -}}
+{{- if $sa.keys -}}
+{{- toYaml $sa.keys -}}
+{{- else if include "opensandbox-server.secureAccessEnabled" . -}}
+{{- toYaml (list (dict "key_id" "a" "key" (include "opensandbox-server.secureAccessGeneratedKey" .))) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Name of the gateway Secret holding the key string. It also persists a
+generated key (data key "generated-key") across upgrades.
+*/}}
+{{- define "opensandbox-server.secureAccessSecretName" -}}
+{{- include "opensandbox-server.ingressGatewayFullname" . }}-secure-access
+{{- end }}
+
+{{/*
+Generated signing key (base64 of 32 random bytes) for autoGenerate.
+
+Persistence: reuse the "generated-key" entry of the gateway Secret written by
+an earlier release (lookup); generate a new key only when there is none (first
+install, or the Secret was deleted to rotate the key). The entry survives a
+detour through explicit keys (apply never prunes data keys written through
+stringData), so switching back to autoGenerate reuses the old generated key.
+
+Single value per render: the key lands in four places rendered from two
+template files -- the server config Secret plus its checksum annotation
+(server/workload.yaml), and the gateway Secret plus its checksum annotation
+(gateway/workload.yaml). Each randBytes call returns a different value, so the
+first call caches the result in .Values.server.gateway.secureAccess._generatedKey
+and every later call returns the cached value. This works because Helm renders
+all templates of a chart against one shared .Values map; the cache lives only
+in the render-time copy of the values and is never stored in the release.
+
+lookup returns nothing without cluster access (helm template, --dry-run,
+Argo CD), so those renderers get a fresh key on every render: they must set
+explicit keys instead.
+*/}}
+{{- define "opensandbox-server.secureAccessGeneratedKey" -}}
+{{- $sa := .Values.server.gateway.secureAccess -}}
+{{- if not (get $sa "_generatedKey") -}}
+{{- $previous := "" -}}
+{{- $existing := lookup "v1" "Secret" (include "opensandbox-server.namespace" .) (include "opensandbox-server.secureAccessSecretName" .) -}}
+{{- with $existing }}{{- with .data }}{{- with (get . "generated-key") }}{{- $previous = b64dec . -}}{{- end }}{{- end }}{{- end -}}
+{{- $_ := set $sa "_generatedKey" ($previous | default (randBytes 32)) -}}
+{{- end -}}
+{{- get $sa "_generatedKey" -}}
 {{- end }}
 
 {{/*
 Gateway key string: key_id=base64[,key_id=base64], the --secure-access-keys format.
 */}}
 {{- define "opensandbox-server.secureAccessKeyString" -}}
-{{- range $i, $k := .Values.server.gateway.secureAccess.keys }}{{ if $i }},{{ end }}{{ $k.key_id }}={{ $k.key }}{{- end }}
+{{- range $i, $k := fromYamlArray (include "opensandbox-server.secureAccessKeys" .) }}{{ if $i }},{{ end }}{{ $k.key_id }}={{ $k.key }}{{- end }}
 {{- end }}

@@ -195,6 +195,38 @@ component combination. Upgrading from an older platform release, pass
 `versions.yaml` and prints the migrations your install still has to run, in
 order (see also "Upgrading across releases" in `VERSIONS.md`).
 
+## Signed sandbox access
+
+Sandbox ports are served on `*.sandbox.<baseDomain>`, and by default they only
+answer signed links: the chart generates a signing key on install (kept in the
+`opensandbox-ingress-gateway-secure-access` Secret and reused on every
+upgrade), and the bundled Teable app hands browsers time-limited signed
+preview links. Teable images older than `release.2026-10-12T12-45-53Z.3331`
+ignore this and keep creating unprotected sandboxes.
+
+- **`helm template`, Argo CD and other GitOps renderers** cannot read the
+  stored key back and would generate a new one on every render. Generate a key
+  once (`openssl rand -base64 32`), keep it in your secret store and pass it
+  explicitly; explicit keys always win:
+
+  ```yaml
+  opensandbox-server:
+    server:
+      gateway:
+        secureAccess:
+          keys:
+            - key_id: "a"
+              key: "<base64>"
+  ```
+
+- **`--reuse-values` upgrades** keep the defaults of the chart you installed
+  before, so they skip new defaults like this one. Upgrade once with
+  `--reset-then-reuse-values` (or with `-f my-values.yaml`).
+- **Teable running outside this chart** (`teable.enabled: false`): set
+  `SANDBOX_OPENSANDBOX_SECURE_ACCESS=true` on it.
+- **Rotating the generated key**: delete that Secret and run `helm upgrade`.
+  Preview links signed with the old key stop working.
+
 ## Hardening sandboxes
 
 Sandboxes run as root with an unconfined seccomp profile by default, because
