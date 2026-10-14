@@ -1588,7 +1588,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: 73be100c9b18179114dbe2495190d5768c227fd6cb1f4f5538fd199462872c3e
+        checksum/secure-access: c92370393881f7958d391450fabad7e77908a8af624c6f40c922c86088ee9c30
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1661,7 +1661,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 9d8295534d37baba1914d9a2120c6d7ee0a9cf08c53a4de2085c09b55b285457
+        checksum/config-toml: c4d0579da7422eb1099432ff21ea2b52c57d0b8c389aea0459cf8c5173d63ed0
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server

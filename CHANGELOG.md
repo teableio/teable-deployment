@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.10 - 2026-10-14
 
 - **Console: sandbox storage usage and JuiceFS writeback stats work again.** The chart adds a Role in
   `kube-system` (`infraService.juicefsWriteback.mountNamespace`) so the console can exec into JuiceFS mount pods;
