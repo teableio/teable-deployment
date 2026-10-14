@@ -135,7 +135,12 @@ different release name or namespace, or enabling components that are off by
 default (e.g. `registryGc`)? Re-render the cluster half from the chart with
 `rbac.namespaceScope.create: false` set on infra-service and
 opensandbox-server, and apply the resulting ClusterRole/ClusterRoleBinding
-documents.)
+documents plus the `<release>-infra-service-juicefs-exec` Role/RoleBinding.)
+
+`cluster-rbac.yaml` also carries one namespaced pair: a Role/RoleBinding in
+`kube-system` that lets the console exec into JuiceFS mount pods (directory
+usage and writeback stats). If your shared filesystem is not JuiceFS, skip it
+and set `infraService.juicefsWriteback.mountExec: false`.
 
 Then install as the deploy account with:
 

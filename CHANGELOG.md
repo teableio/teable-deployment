@@ -9,6 +9,13 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Console: sandbox storage usage and JuiceFS writeback stats work again.** The chart adds a Role in
+  `kube-system` (`infraService.juicefsWriteback.mountNamespace`) so the console can exec into JuiceFS mount pods;
+  the web terminal stays limited to sandbox namespaces. Restricted deploy accounts: have your admin re-apply
+  `cluster-rbac.yaml`. Not using JuiceFS? Set `infraService.juicefsWriteback.mountExec: false`.
+
 ## v2026.10.9 - 2026-10-14
 
 - **Console security: file previews can no longer run scripts.** Files from the shared sandbox volume are served with scripts disabled: HTML, JS and XML preview as plain text, opening a raw SVG link downloads it, and raw file links only work from the console itself. Image, video, PDF and text previews look the same. No action needed.

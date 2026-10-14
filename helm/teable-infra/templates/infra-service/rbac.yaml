@@ -1,6 +1,6 @@
-{{- /* RBAC for infra-service: SA + cluster-wide read-only ClusterRole + three cross-namespace Roles (engine key rotation / app-runtime management / image preheating).
+{{- /* RBAC for infra-service: SA + cluster-wide read-only ClusterRole + namespaced Roles (sandbox exec / JuiceFS mount exec / engine key rotation / app-runtime management / image preheating).
      With rbac.create=false the whole group is skipped (for clusters managing RBAC centrally; bring your own identically named SA and grants).
-     With rbac.clusterScope.create=false only the ClusterRole/ClusterRoleBinding are skipped: a restricted deploy account installs the
+     With rbac.clusterScope.create=false only the ClusterRole/ClusterRoleBinding and the JuiceFS mount-namespace Role/RoleBinding are skipped: a restricted deploy account installs the
      namespace-scoped half while a cluster admin pre-provisions the cluster-scoped half. */}}
 {{- if and .Values.infraService.enabled (.Values.infraService.rbac).create }}
 {{- $rbac := .Values.infraService.rbac }}
@@ -37,7 +37,8 @@ rules:
     resources: ["nodes", "nodes/status", "namespaces", "pods", "pods/log", "services", "persistentvolumeclaims", "persistentvolumes", "events"]
     verbs: ["get", "list", "watch"]
   # pods/exec is deliberately NOT cluster-wide: the console terminal only opens
-  # sandbox pods, so the grant lives in a namespaced Role (rbac.execNamespaces).
+  # sandbox pods, so the grant lives in namespaced Roles (rbac.execNamespaces,
+  # plus the JuiceFS mount namespace below).
   # kubelet stats/summary: aggregates actual PVC usage
   - apiGroups: [""]
     resources: ["nodes/proxy"]
@@ -88,12 +89,54 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.infraService.serviceAccountName | quote }}
     namespace: {{ $namespace }}
+{{- $jfs := .Values.infraService.juicefsWriteback | default dict }}
+{{- if ne (toString (index $jfs "mountExec")) "false" }}
+{{- /* JuiceFS CSI mount pods: infra-service execs into their jfs-mount container for
+     `juicefs summary` (directory usage) and the writeback cache backlog. Rendered with the
+     cluster-scoped half because it grants into a system namespace that a namespaced deploy
+     account usually cannot touch. Browser-driven exec (terminal, sandbox file browser) cannot
+     target these pods: the service only accepts targets in EXEC_NAMESPACES. */}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-infra-service-juicefs-exec
+  namespace: {{ $jfs.mountNamespace | default "kube-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+rules:
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-infra-service-juicefs-exec
+  namespace: {{ $jfs.mountNamespace | default "kube-system" | quote }}
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-infra-service-juicefs-exec
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.infraService.serviceAccountName | quote }}
+    namespace: {{ $namespace }}
+{{- end }}
 {{- end }}
 {{- if ($rbac.namespaceScope).create }}
 {{- /* Console web terminal (pods/exec). Namespaced on purpose: a cluster-wide exec grant
      would let anyone who reaches the terminal endpoint shell into control-plane pods.
      Defaults to the sandbox namespace; list more in rbac.execNamespaces if you need them. */}}
-{{- range $execNs := ($rbac.execNamespaces | default (list $.Values.sandboxNamespace.name)) }}
+{{- range $execNs := splitList "," (include "teable-infra.execNamespaces" $) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

@@ -88,3 +88,11 @@ https://{{ include "teable-infra.s3Host" . }}
 {{- define "teable-infra.sandboxSecureAccess" -}}
 {{- include "opensandbox-server.secureAccessEnabled" (dict "Values" (index .Values "opensandbox-server")) -}}
 {{- end }}
+
+{{- /* Namespaces where browser-driven pod exec (console terminal, sandbox file browser,
+       benchmark) is allowed, comma-joined. infra-service/rbac.yaml renders one exec Role per
+       entry, and the workload passes the same list as EXEC_NAMESPACES so the service refuses
+       any other target -- including the JuiceFS mount namespace it may exec into itself. */}}
+{{- define "teable-infra.execNamespaces" -}}
+{{- join "," ((.Values.infraService.rbac).execNamespaces | default (list .Values.sandboxNamespace.name)) -}}
+{{- end }}

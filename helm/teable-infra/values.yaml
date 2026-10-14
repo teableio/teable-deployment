@@ -775,6 +775,14 @@ infraService:
   juicefsWriteback:
     volumeId: teable-agent-juicefs-pv
     mountNamespace: kube-system
+    # Let infra-service exec into the JuiceFS CSI mount pods in mountNamespace to
+    # read directory usage (`juicefs summary`, which Teable uses for sandbox
+    # storage quotas) and the writeback cache backlog on the console overview.
+    # Rendered as a Role/RoleBinding in mountNamespace together with the
+    # cluster-scoped RBAC (rbac.clusterScope.create), since a namespaced deploy
+    # account usually cannot grant into kube-system. Set false when the shared
+    # filesystem is not JuiceFS.
+    mountExec: true
     cacheDirs:
       - /mnt/stateful_partition/kube-ephemeral-ssd/jfsCache
       - /var/jfsCache

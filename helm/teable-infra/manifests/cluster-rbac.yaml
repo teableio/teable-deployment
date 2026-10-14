@@ -6,7 +6,8 @@
 # Secret values are placeholders: helm install generates real random ones.
 # If you apply this file directly with kubectl instead, replace every
 # GENERATED-AT-INSTALL-TIME value with your own random material first.
-# Cluster-scoped RBAC (ClusterRole/ClusterRoleBinding) extracted for the
+# Cluster-scoped RBAC (ClusterRole/ClusterRoleBinding, plus the infra-service
+# Role/RoleBinding in the JuiceFS mount namespace kube-system) extracted for the
 # restricted-deploy-account flow: a cluster admin applies crds.yaml and this
 # file first, then the deploy account installs with the rbac.clusterScope
 # toggles set to false (see helm/README.md).
@@ -413,6 +414,44 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: teable-infra-service
+subjects:
+- kind: ServiceAccount
+  name: infra-service
+  namespace: opensandbox-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: teable-infra-service-juicefs-exec
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods/exec
+  verbs:
+  - create
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: teable-infra-service-juicefs-exec
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: teable-infra-service-juicefs-exec
 subjects:
 - kind: ServiceAccount
   name: infra-service

@@ -85,6 +85,8 @@ spec:
             {{- end }}
             - name: K8S_NAMESPACES
               value: {{ join "," $watchNs | quote }}
+            - name: EXEC_NAMESPACES
+              value: {{ include "teable-infra.execNamespaces" . | quote }}
             - name: HISTORY_SAMPLE_SECONDS
               value: {{ .Values.infraService.historySampleSeconds | default 5 | quote }}
             - name: HISTORY_WINDOW_SECONDS

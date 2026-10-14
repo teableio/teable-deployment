@@ -971,6 +971,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: teable-infra-service-juicefs-exec
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods/exec
+  verbs:
+  - create
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: teable-infra-service-exec
   namespace: teable-sandbox
   labels:
@@ -1199,6 +1218,25 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: teable-app-deployer
+  namespace: opensandbox-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: teable-infra-service-juicefs-exec
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: infra-service
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: opensandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: teable-infra-service-juicefs-exec
+subjects:
+- kind: ServiceAccount
+  name: infra-service
   namespace: opensandbox-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1550,7 +1588,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: c029bac8c931c3d0b1f0d9d848c97630b95ecaf8e2a4849e973e9114a968b6aa
+        checksum/secure-access: 8f66b1a01b4e6c1804c0ae6b318eb29be2da6f9dbcb866f02e3e7668136be765
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1623,7 +1661,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: e272fdeb2f77f69def179ba75d1a341b0dc7c6572f39f2234667c111daea1e29
+        checksum/config-toml: b3a13e24abacc721f51cce95dd05ed7469b04bbc157e1570a07cd04c88fbf149
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1843,6 +1881,8 @@ spec:
           value: ''
         - name: K8S_NAMESPACES
           value: opensandbox-system,opensandbox,teable-sandbox,app-deploy
+        - name: EXEC_NAMESPACES
+          value: teable-sandbox
         - name: HISTORY_SAMPLE_SECONDS
           value: '5'
         - name: HISTORY_WINDOW_SECONDS
