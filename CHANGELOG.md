@@ -9,6 +9,30 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-14T12-10-48Z.3400
+
+#### Feature Updates
+- Editors can now import CSV files and append data to existing tables without owner-level permissions. Imported records identify the importing editor as their creator.
+- Added reusable structured queries with field selection, aliases, filters, sorting, pagination, and aggregations, available through a unified API endpoint and CLI.
+- Added a versioned Query Library with stable query IDs, immutable revisions, pinned or latest-version references, sharing controls, revision restoration, and protection against conflicting updates.
+
+#### Bug Fixes & Improvements
+- Field PATCH requests now correctly apply supported options and constraints, including select choices, lookup display settings, rollup and formula configuration, and unique and required settings. Dependent fields and calculated values update accordingly while preserving applicable formatting. Unsupported options and constraints now return validation errors instead of success without applying changes.
+- Last modified time and user fields now explicitly represent “track all” with an empty field list, remove references to deleted fields, and preserve existing history during configuration changes.
+- Assignees now receive member-field notifications when records are duplicated.
+- Converting fields to single-line text now produces readable filename (token) entries for attachments, clears button click-count data, and quotes user names containing commas.
+- Conditional rollups now return a clear validation error for source fields outside the selected target table and prevent invalid fields from being created.
+- Improved reliability for automation workflows, AI field generation, workflow AI actions, routines, and media generation, reducing failures before execution.
+- Updated Simplified Chinese filter labels and ordering for single-user and multi-user fields.
+- Restored the ability for base owners and permission matrix administrators to view, restore, and permanently delete archived records when the authority matrix is enabled.
+- The AI chat model picker is now scrollable, with effort settings remaining visible while users browse models.
+- Button click limits now require positive integers in both the UI and API. Invalid API updates leave existing settings unchanged. Disabling a limit clears its maximum and reset settings, while unsaved edits are preserved without being overwritten by external field updates.
+- Improved security for public record sharing.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-14T12-10-48Z.3400)
+
 ## v2026.10.10 - 2026-10-14
 
 - **Console: sandbox storage usage and JuiceFS writeback stats work again.** The chart adds a Role in
