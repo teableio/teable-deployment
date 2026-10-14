@@ -5,8 +5,8 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.10.8
-releasedAt: '2026-10-14T01:35:44Z'
+platformRelease: v2026.10.9
+releasedAt: '2026-10-14T07:29:06Z'
 components:
   teable:
     image: ghcr.io/teableio/teable:release.2026-10-14T00-38-05Z.3367
@@ -28,8 +28,8 @@ components:
     - amd64
     - arm64
   teable-infra-service:
-    image: ghcr.io/teableio/teable-infra-service:20261013T082338Z
-    digest: sha256:b1017111412d7fbd28b8c209e7b81e77f82eb5eabf1d87339a55b4ace1526964
+    image: ghcr.io/teableio/teable-infra-service:20261014T071943Z
+    digest: sha256:7a8dadd074a1c01aaf94b2570c9d954ff288d7779ac086a36c7628ad478d9673
     architectures:
     - amd64
     - arm64

@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.9 - 2026-10-14
 
 - **Console security: file previews can no longer run scripts.** Files from the shared sandbox volume are served with scripts disabled: HTML, JS and XML preview as plain text, opening a raw SVG link downloads it, and raw file links only work from the console itself. Image, video, PDF and text previews look the same. No action needed.
 - **Console security: sandbox access tokens stay on the server.** The sandbox detail view no longer sends sandbox access tokens or other credential-like annotations to the browser, and the Preview button only signs preview ports, never the sandbox's internal control ports (execd, egress). No action needed.
