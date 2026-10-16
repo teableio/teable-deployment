@@ -9,6 +9,43 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-16T01-06-23Z.3440
+
+#### Feature Updates
+- Added This Year, Last Year, and Next Year presets to date filters.
+- Added “Add to chat” to the record detail menu, with correct context for records opened from linked tables or outside the current filtered view. On mobile, the action opens AI chat and reliably adds the record.
+- Skill activation now appears as a dedicated step in web and mobile chats, showing the skill name, description, and expandable instructions. Messages starting with /skill-name now reliably activate available skills.
+- Large web fetch and tool results are now available as readable files, with clearer failure handling for tool actions.
+
+#### Bug Fixes & Improvements
+- Improved platform security and reliability.
+- Creating a user field through the API without specifying shouldNotify now leaves notifications off. Explicitly setting it to true continues to send notifications.
+- AI-generated list views now display all stored numeric priorities, including values outside the standard High, Medium, and Low mapping.
+- App Builder sessions now consistently apply the latest field-display rules, including retained sessions and existing workspaces.
+- New single-line text values now trim surrounding spaces and replace line breaks and tabs with spaces, including writes without typecasting. Pasting multiline values into single-line primary fields also reuses matching linked records more reliably.
+- Long text values now trim leading and trailing whitespace while preserving internal line breaks and tabs. Values that are empty after trimming are stored as null.
+- Required form fields without default values now appear even if previously hidden. Required fields with defaults remain hidden as configured.
+- URLs in single-line and long-text cells now open on the first click, even when the cell is not selected.
+- Rating and checkbox icons now apply values on the first click. Clicking the current rating or a checked checkbox again clears it without an extra click.
+- Percentage fields now display and save values consistently across forms, expanded records, and grids. For example, entering 50 saves 0.5 and displays 50%.
+- Voice input now uses OpenAI’s gpt-transcribe model to maintain transcription availability. Saved configurations using legacy transcription models are automatically mapped to the new model.
+- Restored embedded child tables for accessible linked records, including headers, values, and record actions. Read-only record details also preserve this view and allow linked records to open; share views continue to use compact tags.
+- Text-to-number conversion now correctly handles currency values, numbers within text, and percentages. Text without a supported numeric value still converts to an empty value.
+- Number-to-checkbox conversion now treats all non-empty numeric values, including 0, as checked. Only empty values remain unchecked.
+- Saving single-select fields with duplicate option names now shows a clear validation error and leaves the field unchanged. Duplicate checks also ignore surrounding spaces.
+- Multiple-select to single-line text conversion now quotes option names containing commas, double quotes, or line breaks to preserve value boundaries.
+- Single- and multiple-select fields now correctly parse quoted typecast values containing commas. Select writes consistently use option names: non-typecast requests reject option IDs, while typecast requests treat ID-like values as literal names.
+- Table creation now returns VALIDATION_ERROR instead of validation_error when an unsupported field type is used as the sole primary field. These requests continue to be rejected without creating a table.
+- Date writes through the v2 API now respect field date formats and time zones, with or without typecasting. Date-to-text conversion preserves the displayed format and time zone, while text-to-date conversion uses the target field’s time zone and clears invalid values.
+- Renaming or deleting select options now updates unchanged defaults appropriately, preventing invalid defaults from blocking field saves or record creation. Explicit default changes remain respected, and resubmitting unchanged options without IDs no longer clears valid defaults.
+- Restored the time picker for empty date cells configured with a 24-hour format. Date-only inputs and calendar selections now save at midnight in the field’s configured time zone.
+- Formulas referencing button fields now return empty values instead of button-count data. Rollups over empty linked-record sets now return empty values for average and xor, so some existing results may change from 0 or false to empty.
+- Fixed cross-chat card dismissals so activity in one chat no longer closes pending cards in another. Also eliminated duplicate storage of presented files.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-16T01-06-23Z.3440)
+
 ## v2026.10.11 - 2026-10-14
 
 ### Teable release.2026-10-14T12-10-48Z.3400
