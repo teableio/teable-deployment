@@ -72,10 +72,18 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $gitRegistry.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: git-registry
           image: {{ required "infraService.image or gitRegistry.image is required when gitRegistry.enabled=true" $image | quote }}
           imagePullPolicy: {{ .Values.infraService.imagePullPolicy | default "IfNotPresent" | quote }}
+          {{- with $gitRegistry.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command: ["node", ".output/git-registry/server.mjs"]
           ports:
             - name: http

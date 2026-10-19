@@ -51,10 +51,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.infraService.serviceAccountName | quote }}
+      {{- with .Values.infraService.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: monitor
           image: {{ required "infraService.image is required when infraService.enabled=true" .Values.infraService.image | quote }}
           imagePullPolicy: {{ .Values.infraService.imagePullPolicy | quote }}
+          {{- with .Values.infraService.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 8080

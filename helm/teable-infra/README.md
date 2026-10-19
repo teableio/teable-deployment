@@ -73,6 +73,7 @@ helm install opensandbox helm/teable-infra \
 | `infraService.enabled` | `false` | Deploy the Infra Service control plane (`infraService.image` required) |
 | `gitRegistry.enabled` | `false` | Deploy the Git Registry (`gitRegistry.publicUrl` required) |
 | `gitRegistry.sandboxUrl` | `""` | In-cluster git base URL returned by `/api/git/credentials` to sandboxes **and** the Teable backend (`http://<release>-git-registry.<ns>.svc.cluster.local`); set only when the Teable backend runs in-cluster too; blank = `publicUrl` |
+| `gitRegistry.podSecurityContext` / `containerSecurityContext` (same under `infraService`) | `{}` | Pod / container securityContext. Empty keeps the image identity (root); set uid 1000 + `fsGroup: 1000` + `fsGroupChangePolicy: OnRootMismatch` to run git-registry as non-root (block-storage volumes only; see values.yaml before doing the same for infra-service) |
 | `appRuntime.enabled` | `false` | Provision the app namespace, quotas, RBAC, and ingress |
 | `runtimeNetworkPolicy.enabled` | `false` | Apply egress NetworkPolicies to runtime namespaces |
 | `registryGc.enabled` | `false` | Weekly docker-registry GC (requires an existing registry) |

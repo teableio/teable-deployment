@@ -18,6 +18,10 @@ release's `versions.yaml`. Hot-swappable; no action needed.
   of your fixed sandbox nodes (for example `{teable.io/sandbox-tier: base}`) and
   sandboxes fill those first; autoscaled nodes only take what does not fit and
   drain once load drops. Empty by default: no change unless you set it.
+- **Helm: optional non-root mode for git-registry and infra-service.**
+  New `gitRegistry.podSecurityContext` / `containerSecurityContext` (and the same
+  under `infraService`) let these pods run as uid 1000; both stay root by default.
+  No action needed — see the comments in `values.yaml` before opting in.
 
 ## v2026.10.13 - 2026-10-16
 

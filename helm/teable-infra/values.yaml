@@ -434,6 +434,14 @@ gitRegistry:
     limits:
       cpu: "2"
       memory: 2Gi
+  # Pod / container securityContext for git-registry. Empty (default) keeps the
+  # image identity (root). To run as the image's non-root user, set
+  # runAsNonRoot: true, runAsUser/runAsGroup/fsGroup: 1000 and
+  # fsGroupChangePolicy: OnRootMismatch - the kubelet then hands the existing
+  # repository volume over to group 1000 once. Requires a volume type that
+  # honours fsGroup (block storage such as cloud disks; NFS usually does not).
+  podSecurityContext: {}
+  containerSecurityContext: {}
   nodeSelector: {}
   tolerations: []
   ingress:
@@ -808,6 +816,14 @@ infraService:
     limits:
       cpu: 500m
       memory: 512Mi
+  # Pod / container securityContext for the infra-service Deployment. Empty
+  # (default) keeps the image identity (root). The file browser and the
+  # S3-compatible API write into the shared sandbox volume, which sandboxes fill
+  # as root unless sandboxSecurity runs them as uid 1000; only run infra-service
+  # as uid 1000 (the image's non-root user) when that volume is writable by it
+  # or fileBrowser is disabled.
+  podSecurityContext: {}
+  containerSecurityContext: {}
   ingress:
     # default-on: console + Infra API on infra.<baseDomain> (path /). The sandbox
     # engine /v1 lives on the same host via the opensandbox-server sub-chart ingress.
