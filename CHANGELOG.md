@@ -9,6 +9,16 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Helm: fill preferred sandbox nodes first (`global.sandboxScheduling.packing.preferNodeLabels`).**
+  Bin-packing places a new sandbox on the node that already runs the most. When
+  that node is an autoscaled one, it keeps being refilled and never empties, so
+  it never scales down even while fixed capacity sits idle. Set this to the labels
+  of your fixed sandbox nodes (for example `{teable.io/sandbox-tier: base}`) and
+  sandboxes fill those first; autoscaled nodes only take what does not fit and
+  drain once load drops. Empty by default: no change unless you set it.
+
 ## v2026.10.13 - 2026-10-16
 
 ### Teable release.2026-10-16T07-06-34Z.3445

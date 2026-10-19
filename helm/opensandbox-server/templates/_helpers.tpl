@@ -220,6 +220,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if $enabled -}}true{{- end -}}
 {{- end }}
 
+{{- /* Node labels the packer should fill first (packing.preferNodeLabels). Empty
+       map = plain bin packing across every sandbox node. */}}
+{{- define "opensandbox-server.schedulingPreferNodeLabels" -}}
+{{- $gs := fromYaml (include "opensandbox-server.schedulingValues" .) -}}
+{{- with $gs.packing }}{{- with .preferNodeLabels }}{{- toYaml . -}}{{- end }}{{- end -}}
+{{- end }}
+
 {{- define "opensandbox-server.schedulingMemoryLimit" -}}
 {{- $gs := fromYaml (include "opensandbox-server.schedulingValues" .) -}}
 {{- $gs.memoryLimit | default "" -}}
@@ -344,6 +351,20 @@ spec:
                     - key: opensandbox.io/id
                       operator: Exists
 ` -}}
+{{- /* preferNodeLabels: fill those nodes (e.g. fixed, prepaid capacity) before any
+       other. Without it the packer only sees "the node with the most sandboxes",
+       so an autoscaled node that became the fullest keeps being refilled and is
+       never empty enough to scale down. The node-affinity score outweighs the
+       pod-affinity one, so packing still applies within the preferred nodes and
+       the rest only take what does not fit. */ -}}
+{{- $prefer := fromYaml (include "opensandbox-server.schedulingPreferNodeLabels" .) | default dict -}}
+{{- if $prefer -}}
+{{- $exprs := list -}}
+{{- range $k, $v := $prefer -}}
+{{- $exprs = append $exprs (dict "key" $k "operator" "In" "values" (list (toString $v))) -}}
+{{- end -}}
+{{- $_ := set $affinityOverlay.spec.template.spec.affinity "nodeAffinity" (dict "preferredDuringSchedulingIgnoredDuringExecution" (list (dict "weight" 100 "preference" (dict "matchExpressions" $exprs)))) -}}
+{{- end -}}
 {{- $merged = mustMergeOverwrite $affinityOverlay $merged -}}
 {{- end -}}
 {{- if $memoryLimit -}}

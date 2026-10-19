@@ -209,6 +209,12 @@ global:
     # template wins on conflicts.
     packing:
       enabled: true
+      # Node labels to fill first, e.g. {teable.io/sandbox-tier: base} on the fixed
+      # (prepaid / reserved) sandbox pool. Only other nodes take what does not fit
+      # there, so autoscaled nodes drain and scale down once load drops. Empty =
+      # plain packing onto the fullest node, which can keep an autoscaled node
+      # alive indefinitely once it becomes the fullest.
+      preferNodeLabels: {}
     # Scheduling currency: rendered as OPENSANDBOX_K8S_SANDBOX_REQUEST_* envs on
     # opensandbox-server (explicit server.env entries still win). Empty = keep
     # current behavior. Keep cpuRequest small (<=50m) so memory stays the
