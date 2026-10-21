@@ -9,6 +9,19 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Long-unhealthy published apps are scaled to zero instead of deleted.**
+  An app deployment that stays unhealthy past `infraService.appRuntime.unhealthyTtlSeconds`
+  (default 6h) is now scaled to zero instead of being removed. The next visit wakes it for
+  another try; if it is still not ready after 30 minutes it is scaled back to zero. Apps hit
+  by a temporary node or image problem recover on their own; before, they had to be
+  published again. No action needed.
+- **infra-service: app runtime counters on an internal metrics port.**
+  `:9464/metrics` (Prometheus text) reports cleanup, wake and idle scale-down counts and
+  deployment states, with no app names in labels. The port is not exposed through the
+  Service or ingress. No action needed; scrape it if you collect cluster metrics.
+
 ## v2026.10.15 - 2026-10-21
 
 ### Teable release.2026-10-21T02-11-07Z.3507
