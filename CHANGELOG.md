@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.14 - 2026-10-20
 
 - **Helm: fill preferred sandbox nodes first (`global.sandboxScheduling.packing.preferNodeLabels`).**
   Bin-packing places a new sandbox on the node that already runs the most. When
