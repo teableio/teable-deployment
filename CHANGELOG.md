@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.16 - 2026-10-21
 
 - **Long-unhealthy published apps are scaled to zero instead of deleted.**
   An app deployment that stays unhealthy past `infraService.appRuntime.unhealthyTtlSeconds`
