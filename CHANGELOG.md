@@ -9,6 +9,28 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-22T04-57-21Z.3531
+
+#### Feature Updates
+
+- New apps with structured queries enabled now use `queries.yaml` for supported record and aggregate queries, including filtering, sorting, pagination, and parameters. Unsupported query shapes are clearly rejected with alternatives, while existing apps retain their current SQL behavior.
+- Routines now have a dedicated page for configuration and run history, with direct access to each run’s conversation. Editing includes autosave and next-run visibility, and ownership transfers to an eligible base or space owner when needed.
+- The command palette, opened with Cmd+K on macOS or Ctrl+K on Windows, provides quick access to project resources and common actions. It supports keyboard navigation, recent items, permission-aware results, and natural-language questions through Cuppy.
+- Structured sorting now supports explicit `NULLS FIRST` and `NULLS LAST` ordering for records and aggregate queries while preserving existing defaults.
+- AI image generation and regeneration are no longer available for lookup, formula, or other computed attachment fields. Editable source attachment fields continue to support generation, and lookup attachments continue to display, preview, and synchronize normally.
+
+#### Bug Fixes & Improvements
+
+- Fixed an issue preventing Claude.ai and Claude Desktop custom connectors from connecting to Teable MCP. Existing connectors may need to be removed and added again.
+- Fixed conditional rollups with multi-value filters so totals refresh correctly when source values change, including for newly created equivalent fields.
+- Improved field deletion dependency checks to use the current version of each authorized App, reducing response time and ensuring results reflect current dependencies.
+- Field deletion confirmations now identify referencing Apps and named queries, including the App, query, version, field, and usage. Queries with unresolved dependencies are marked as unknown, and checks remain advisory without changing queries or blocking deletion.
+- Improved routine permissions and mobile behavior so read-only members can view routine details without restricted controls, and opened run chats are titled and marked as read correctly.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-22T04-57-21Z.3531)
+
 ## v2026.10.16 - 2026-10-21
 
 - **Long-unhealthy published apps are scaled to zero instead of deleted.**
