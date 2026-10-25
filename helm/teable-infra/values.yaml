@@ -341,8 +341,10 @@ appRuntime:
         limits.cpu: "200"
         limits.memory: 400Gi
         pods: "100"
-        secrets: "300"
-        configmaps: "300"
+        # Every published app keeps one ConfigMap and one Secret for its current
+        # version (sleeping apps included), so these grow with the app count.
+        secrets: "2000"
+        configmaps: "2000"
     limitRange:
       enabled: true
       default:

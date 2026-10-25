@@ -9,6 +9,13 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Helm: App Runtime quota fits more published apps.** The `app-deploy` namespace
+  now allows 2000 ConfigMaps and Secrets (was 300). Each published app keeps one of
+  each, so with about 300 apps new publishes failed with `exceeded quota`. No action
+  needed unless you override `appRuntime.resources.quota.hard`.
+
 ## v2026.10.18 - 2026-10-23
 
 ### Teable release.2026-10-23T02-23-06Z.3549
