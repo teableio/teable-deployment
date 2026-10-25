@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.19 - 2026-10-25
 
 - **Helm: App Runtime quota fits more published apps.** The `app-deploy` namespace
   now allows 2000 ConfigMaps and Secrets (was 300). Each published app keeps one of
