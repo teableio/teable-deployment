@@ -9,6 +9,43 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-27T02-17-21Z.3593
+
+#### Feature Updates
+- Added a unified Table Operations console for search and indexes, complexity assessment, schema integrity, and computed updates. Existing admin links retain their parameters.
+- Instance administrators can assess table complexity without joining the project, including dependencies, workload estimates, field-level breakdowns, and estimate quality, without exposing record contents.
+- MCP and CLI list-bases now support pagination and filtering by base name or space. Results default to 50 bases per page, with a maximum of 100; clients must follow nextOffset while hasMore is true.
+- Streamlined personal settings into seven entries grouped under Account, Preferences, and a tabbed Developer Tools section. Existing links remain compatible.
+- Added an Artifact Manager with a paginated, project-grouped view of accessible artifacts, share status, downloads, and direct access to the in-app viewer.
+- “Fix with AI” now opens a new chat in the artifact’s project with the relevant context attached.
+- Feishu IM bots can reuse skills already installed and enabled in the project space, keeping shared skills consistent without duplicate installation.
+- Structured Query v2 now supports same-project relational reporting across one-to-one, one-to-many, many-to-many, and multi-hop relations, with related-record aggregates, filtering, grouping, sorting, timezone-aware calculations, and grouped totals. Permissions apply at every hop, and missing targets return null. Cross-project relations, cyclic paths, paths beyond three hops, and direct projection or sorting of to-many fields remain unsupported; relation queries do not automatically fall back to SQL.
+- Added validation warnings for new SQL-based query definitions and an optional strict mode that rejects them. Existing SQL fallbacks remain supported.
+- Added atomic record upsert for v2 tables, allowing integrations to create, ignore, or update records using one unique text, number, or date field. Each row reports a created, updated, unchanged, or skipped result. Composite and non-unique match fields and share-view requests are unsupported.
+- Added an experimental headless runtime with embedded PGlite or PostgreSQL, HTTP and command-line interfaces, computed fields, local attachments, persistent local storage, and validated app bundles for repeatable installation of base structures and seed data. It does not include authentication, permissions, a UI, remote realtime transport, browser-based bundle installation, or S3 attachments; PGlite storage supports a single writer.
+
+#### Bug Fixes & Improvements
+- Fixed saving, rollback, import, and duplication failures for apps whose generated query files came from an older host version. Failed saves and imports no longer leave apps in an unusable state, and imports preserve unrelated source files and binary assets.
+- Query validation errors now identify the affected field, field type, rejected operator, and generator version when authorized.
+- Stale table links now return a clear not-found response, and calculation update lists retain instance-wide results, statistics, and project filters.
+- Large base listings now return valid, complete pages instead of oversized responses that could be truncated.
+- Pages opened inside the mobile app now recognize cookie consent completed at sign-in, preventing the banner from reappearing or reopening through Cookie settings. External-browser behavior is unchanged.
+- Improved artifact browsing and viewing, including project visibility, pagination, download error feedback, share-password handling, and transitions from dialogs to AI chats.
+- Improved error messages across all 12 supported languages. Field renaming now explains duplicate or invalid database names and keeps the editor open for correction; custom domain verification and removal failures provide clearer reasons.
+- Improved reliability and localized feedback for view updates, imports, record reordering, field time zones, and sidebar renaming.
+- Task cards now retain their original titles while progress notes stream and remain visible until follow-up questions are ready.
+- Improved Structured Query reliability for grouped reports, weighted averages, repeated relation paths, filters, timezone buckets, pagination, totals, and parameter validation.
+- Improved BYODB reliability during concurrent computed writes, reducing server errors and prolonged delays under heavy load.
+- Improved concurrent record updates involving type conversion, reducing unnecessary delays and timeouts while preserving consistent select options and coordination with field changes.
+- Concurrent upserts using the same unique key now avoid duplicate records, partial updates, and auto-number gaps for skipped rows while respecting permissions and workspace row limits.
+- Fixed linked-record copy-and-paste matching after changing the display column. Pasted values now use the selected display field; unmatched values remain unchanged and do not create linked records.
+- Improved the reliability of large computed-field cascades and backfills during sustained concurrent updates.
+- Improved security for authentication, form submissions, upserts, and application dependencies while preserving normal mobile sign-in behavior.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-27T02-17-21Z.3593)
+
 ## v2026.10.19 - 2026-10-25
 
 - **Helm: App Runtime quota fits more published apps.** The `app-deploy` namespace
