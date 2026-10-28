@@ -75,7 +75,8 @@ helm install opensandbox helm/teable-infra \
 | `gitRegistry.sandboxUrl` | `""` | In-cluster git base URL returned by `/api/git/credentials` to sandboxes **and** the Teable backend (`http://<release>-git-registry.<ns>.svc.cluster.local`); set only when the Teable backend runs in-cluster too; blank = `publicUrl` |
 | `gitRegistry.podSecurityContext` / `containerSecurityContext` (same under `infraService`) | `{}` | Pod / container securityContext. Empty keeps the image identity (root); set uid 1000 + `fsGroup: 1000` + `fsGroupChangePolicy: OnRootMismatch` to run git-registry as non-root (block-storage volumes only; see values.yaml before doing the same for infra-service) |
 | `appRuntime.enabled` | `false` | Provision the app namespace, quotas, RBAC, and ingress |
-| `runtimeNetworkPolicy.enabled` | `false` | Apply egress NetworkPolicies to runtime namespaces |
+| `runtimeNetworkPolicy.enabled` | `true` | Apply egress NetworkPolicies to runtime namespaces |
+| `runtimeNetworkPolicy.appRuntime.egress.mode` | `allowAll` | `publicOnly` limits published apps to DNS and the public internet (private ranges and cloud metadata blocked); allow the artifact download path via `additionalAllowedPeers`, see values.yaml |
 | `registryGc.enabled` | `false` | Weekly docker-registry GC (requires an existing registry) |
 | `storageAutoscaler.enabled` | `false` | ACK-specific PVC autoscaling policies |
 | `global` | `{}` | Optional GKE integration keys (`projectId`, `gkeLocation`, `gkeClusterName`) |

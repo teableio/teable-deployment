@@ -9,6 +9,14 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Helm: optional egress fence for published apps (`runtimeNetworkPolicy.appRuntime.egress.mode`).**
+  Set `publicOnly` to give published apps the same egress fence as sandboxes: DNS
+  and the public internet only, with private networks and cloud metadata endpoints
+  blocked. Apps download their artifact on every start, so also allow that path in
+  `additionalAllowedPeers` (see `values.yaml`). Default stays `allowAll`; no action needed.
+
 ## v2026.10.20 - 2026-10-27
 
 ### Teable release.2026-10-27T02-17-21Z.3593

@@ -298,6 +298,37 @@ runtimeNetworkPolicy:
   appRuntime:
     enabled: true
     namespace: app-deploy
+    egress:
+      # allowAll: published app pods have unrestricted egress (default).
+      # publicOnly: same fence as the sandbox policy — DNS plus the public
+      # internet; private, CGNAT and link-local ranges (which include cloud
+      # metadata endpoints) and serviceCidrs are blocked. Apps download their
+      # artifact from infra-service on every start, so allow that path below
+      # (an in-cluster Service, or the ingress controller when the artifact
+      # origin is a public domain of this cluster) or new app pods will fail.
+      mode: allowAll
+      # publicOnly only. IPv4 and IPv6 entries are both accepted.
+      serviceCidrs: []
+      additionalBlockedCidrs: []
+      dnsNamespace: kube-system
+      dnsPorts:
+        - 53
+      # publicOnly only. Exceptions inside the blocked ranges: a CIDR string or
+      # {cidr, ports: [{protocol, port}]}.
+      additionalAllowedCidrs: []
+      # publicOnly only. In-cluster endpoints by namespaceSelector and/or
+      # podSelector plus optional ports (container ports). Use these instead of
+      # additionalAllowedCidrs on CNIs that match egress against the post-DNAT
+      # pod IP (e.g. Alibaba Cloud Terway), for example:
+      #   - namespaceSelector:
+      #       matchLabels:
+      #         kubernetes.io/metadata.name: ingress-nginx
+      #     podSelector:
+      #       matchLabels:
+      #         app.kubernetes.io/name: ingress-nginx
+      #     ports:
+      #       - port: 443
+      additionalAllowedPeers: []
 
 appRuntime:
   # default-on: app deployment plane (namespace/quota/RBAC/cert) consumed by infra-service

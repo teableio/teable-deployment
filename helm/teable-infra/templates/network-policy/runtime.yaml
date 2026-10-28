@@ -45,10 +45,19 @@ spec:
 {{- $appRuntime := $policy.appRuntime | default dict }}
 {{- $appRuntimeEnabled := ternary $appRuntime.enabled true (hasKey $appRuntime "enabled") }}
 {{- if $appRuntimeEnabled }}
+{{- $egress := $appRuntime.egress | default dict }}
+{{- $mode := $egress.mode | default "allowAll" }}
+{{- if not (has $mode (list "allowAll" "publicOnly")) }}
+{{- fail (printf "runtimeNetworkPolicy.appRuntime.egress.mode: must be allowAll or publicOnly, got %q" $mode) }}
+{{- end }}
+{{- $publicOnly := eq $mode "publicOnly" }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: teable-app-runtime-allow-all-egress
+  {{- /* One policy per mode under distinct names: on upgrade Helm creates the
+         new policy before deleting the old one, so switching modes never leaves
+         app pods without a policy (rules of both are OR-ed meanwhile). */}}
+  name: {{ ternary "teable-app-runtime-egress-public-only" "teable-app-runtime-allow-all-egress" $publicOnly }}
   namespace: {{ $appRuntime.namespace | default "app-deploy" | quote }}
   labels:
     app.kubernetes.io/name: teable-app-runtime-egress
@@ -62,6 +71,96 @@ spec:
   policyTypes:
     - Egress
   egress:
+  {{- if not $publicOnly }}
     - {}
+  {{- else }}
+    {{- /* Same fence as the sandbox policy (opensandbox-server
+           sandboxNetworkPolicy): DNS plus the public internet; private, CGNAT and
+           link-local ranges (which include cloud metadata endpoints) and the
+           Service CIDRs are blocked unless allow-listed below. */}}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $egress.dnsNamespace | default "kube-system" | quote }}
+      ports:
+        {{- range ($egress.dnsPorts | default (list 53)) }}
+        - protocol: UDP
+          port: {{ . }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
+    {{- /* Blocked CIDRs are routed into the ipBlock of their address family: an
+           `except` entry must be a subnet of its parent `cidr`. */}}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              {{- range concat ($egress.serviceCidrs | default list) ($egress.additionalBlockedCidrs | default list) }}
+              {{- if not (contains ":" .) }}
+              - {{ . | quote }}
+              {{- end }}
+              {{- end }}
+    - to:
+        - ipBlock:
+            cidr: ::/0
+            except:
+              - fc00::/7
+              - fe80::/10
+              {{- range concat ($egress.serviceCidrs | default list) ($egress.additionalBlockedCidrs | default list) }}
+              {{- if contains ":" . }}
+              - {{ . | quote }}
+              {{- end }}
+              {{- end }}
+    {{- /* Allow rules are OR-ed, so these punch holes in the private-range
+           excepts above for endpoints apps must reach. */}}
+    {{- range ($egress.additionalAllowedCidrs | default list) }}
+    {{- if kindIs "string" . }}
+    - to:
+        - ipBlock:
+            cidr: {{ . | quote }}
+    {{- else if kindIs "map" . }}
+    - to:
+        - ipBlock:
+            cidr: {{ required "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedCidrs: map entries require a non-empty `cidr`" .cidr | quote }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ required "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedCidrs: `ports` entries require `port`" .port }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+    {{- fail "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedCidrs: entries must be a CIDR string or a {cidr, ports} map" }}
+    {{- end }}
+    {{- end }}
+    {{- /* Selector-based allow rules for in-cluster endpoints (e.g. the ingress
+           controller that public platform domains are DNAT-ed to, or the
+           infra-service artifact endpoint). On CNIs that match egress policies
+           against the post-DNAT pod IP (e.g. Alibaba Cloud Terway) an ipBlock
+           allow for a Service ClusterIP never matches. */}}
+    {{- range ($egress.additionalAllowedPeers | default list) }}
+    {{- if not (kindIs "map" .) }}
+    {{- fail "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedPeers: entries must be maps with namespaceSelector and/or podSelector" }}
+    {{- end }}
+    {{- $peer := omit . "ports" }}
+    {{- if not $peer }}
+    {{- fail "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedPeers: entries require namespaceSelector and/or podSelector" }}
+    {{- end }}
+    - to:
+        - {{- toYaml $peer | nindent 10 }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - protocol: {{ .protocol | default "TCP" }}
+          port: {{ required "runtimeNetworkPolicy.appRuntime.egress.additionalAllowedPeers: `ports` entries require `port`" .port }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}
