@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.10.21 - 2026-10-28
 
 - **Helm: optional egress fence for published apps (`runtimeNetworkPolicy.appRuntime.egress.mode`).**
   Set `publicOnly` to give published apps the same egress fence as sandboxes: DNS
