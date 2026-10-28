@@ -1588,7 +1588,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: c14ad44fcc9a06db3668ed8931a0f360eddc03e1cc60fbf97b18ca50ff47e03a
+        checksum/secure-access: 943edc596d86226bf41b21248819e903b662fb0d595fbabbb4858c07685004a6
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1661,7 +1661,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 0e807c02afb1231c0e069073773cf73d1f483c0232e47c81da3a4bbd1d1eab79
+        checksum/config-toml: a236667d7d3e1482082eed4314fbce1a86b35644d2db9254a94104afbf74be72
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1765,7 +1765,7 @@ spec:
     spec:
       containers:
       - name: git-registry
-        image: ghcr.io/teableio/teable-infra-service:20261026T025751Z
+        image: ghcr.io/teableio/teable-infra-service:20261028T074734Z
         imagePullPolicy: IfNotPresent
         command:
         - node
@@ -1863,7 +1863,7 @@ spec:
       serviceAccountName: infra-service
       containers:
       - name: monitor
-        image: ghcr.io/teableio/teable-infra-service:20261026T025751Z
+        image: ghcr.io/teableio/teable-infra-service:20261028T074734Z
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -2836,7 +2836,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: generate
-        image: ghcr.io/teableio/teable-infra-service:20261026T025751Z
+        image: ghcr.io/teableio/teable-infra-service:20261028T074734Z
         env:
         - name: SECRET_NAME
           value: git-registry-jwt
