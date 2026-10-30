@@ -9,6 +9,30 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-30T09-29-42Z.3673
+
+#### Feature Updates
+- Global search now highlights all visible matching cells, shows the active match and total count, and supports Enter to move between results. Highlights and navigation respect filters, hidden fields, shared views, and permissions, including for multi-value fields.
+- Pinned Connect everything and Skill creator to the top of the skill menu and made menu ordering consistent across entry points.
+- Pressing Enter now confirms paste operations in the confirmation dialog.
+- Base share users can now navigate from expanded linked records to their source tables, with connector lines clarifying relationships.
+- AI chat now uses the Artifact open in the right-side panel as context. Collapsing the panel removes that context; the legacy layout is unchanged.
+
+#### Bug Fixes & Improvements
+- AI conversations now preserve existing project names, including in app-only and automation-only projects and conversations started through AI diagnostics. New unnamed projects stay unnamed until a user names them or the first AI conversation generates a relevant name.
+- Unnamed projects now consistently show a localized “Untitled project” placeholder across web, mobile, search, exports, templates, and integrations. Fixed exports of unnamed projects getting stuck in a loading state.
+- Improved loading performance for the space home and sidebar chat list, especially in spaces with many projects, permission rules, or routine runs.
+- Completed translations for Template Center, App Builder, Chat, and Base publishing workflows across Arabic, German, Spanish, French, Hebrew, Italian, Japanese, Russian, Turkish, and Ukrainian. Improved locale-specific plural forms and corrected template payout text to show the $50 threshold.
+- Fixed failures when duplicating Apps from Git sources and improved duplication reliability and security.
+- Fixed link field duplication so copies retain existing linked records across all relationship types and directions. Editing or clearing a copied field no longer affects the source field, its linked records, or the corresponding field in the related table.
+- Fixed Markdown list numbering when Backspace promotes the first item of a nested list to the correct level.
+- Fixed an “Unknown error” notification when opening link field settings after the linked table was deleted or became inaccessible.
+- Fixed validation errors in AI-generated queries using empty or non-empty filters, allowing affected queries and aggregations to run correctly.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-30T09-29-42Z.3673)
+
 ## v2026.10.22 - 2026-10-30
 
 ### Teable release.2026-10-30T02-25-28Z.3658
