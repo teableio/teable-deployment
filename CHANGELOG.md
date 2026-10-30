@@ -9,6 +9,22 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-10-30T02-25-28Z.3658
+
+#### Feature Updates
+- Improved the resource pane with resizable lists, full-name tooltips for truncated items, quick access to open tabs when collapsed, and keyboard navigation.
+
+#### Bug Fixes & Improvements
+- Unread email reminders now apply only to Chat tasks that run for at least 10 minutes and remain unread for 30 minutes after completion, whether successful or failed. Emails identify the task by its prompt and link directly to the relevant project and conversation.
+- Prevented duplicate conversations in the new layout while preserving normal conversation creation and retries after failed attempts.
+- Archiving or deleting the active conversation now immediately opens a new conversation. Archived conversations can be restored with Undo if you have not navigated elsewhere.
+- Stabilized the resource pane layout when switching between Resources and Artifacts.
+- Reduced repeated sidebar tooltips with a short delay and kept them hidden while a conversation’s context menu is open.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-10-30T02-25-28Z.3658)
+
 ## v2026.10.21 - 2026-10-28
 
 - **Helm: optional egress fence for published apps (`runtimeNetworkPolicy.appRuntime.egress.mode`).**
