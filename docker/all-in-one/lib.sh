@@ -73,7 +73,7 @@ refresh_lan_ip() {
   echo "[update] ${key}: ${cur} -> ${newv} (LAN IP changed)"
 }
 
-# ed25519 keypair: prefer openssl (Linux OpenSSL); macOS LibreSSL lacks support, so fall back to a node:22-slim container.
+# ed25519 keypair: prefer openssl (Linux OpenSSL); macOS LibreSSL lacks support, so fall back to a node:24-slim container.
 # Output: private key PEM + "---SPLIT---" + public key PEM.
 ed25519_pair() {
   local p s
@@ -84,7 +84,7 @@ ed25519_pair() {
   fi
   rm -f "$p" "$s"
   if command -v docker >/dev/null 2>&1; then
-    docker run --rm node:22-slim node -e 'const c=require("crypto");const{publicKey,privateKey}=c.generateKeyPairSync("ed25519");process.stdout.write(privateKey.export({type:"pkcs8",format:"pem"})+"---SPLIT---\n"+publicKey.export({type:"spki",format:"pem"}))' 2>/dev/null && return 0
+    docker run --rm node:24-slim node -e 'const c=require("crypto");const{publicKey,privateKey}=c.generateKeyPairSync("ed25519");process.stdout.write(privateKey.export({type:"pkcs8",format:"pem"})+"---SPLIT---\n"+publicKey.export({type:"spki",format:"pem"}))' 2>/dev/null && return 0
   fi
   return 1
 }

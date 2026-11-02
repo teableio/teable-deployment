@@ -9,6 +9,20 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### infra-service and app runtime on Node.js 24.22.2
+
+`teable-infra-service` and `teable-app-runtime` move from Node.js 22 to
+24.22.2, which includes the October 2026 Node.js security fixes (Brotli
+decoding, TLS hostname verification, DNS name handling). Apps started after
+the upgrade run on Node.js 24.
+
+Action: none — the new images come with this release. One exception: on
+macOS hosts whose OpenSSL cannot generate ed25519 keys, the deploy scripts'
+key-generation fallback now runs `node:24-slim` instead of `node:22-slim`;
+offline installs should pre-pull it.
+
 ## v2026.11.0 - 2026-11-01
 
 ### Teable release.2026-11-01T07-52-11Z.3675
