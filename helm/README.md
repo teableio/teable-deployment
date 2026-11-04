@@ -54,6 +54,15 @@ replace the placeholder Secret values with your own random material, apply
 `crds.yaml` then `default.yaml` — and accept that you lose Helm's release
 management (upgrades become re-applies).
 
+## App secrets
+
+On a fresh install the chart's `teable-app-secrets` Secret gets a random
+`secret-key`, the root the app derives its sign-in secrets and most
+stored-data keys from. The chart keeps it on upgrade; never change or remove
+it by hand, and back it up with the rest of that Secret. Installs from an
+older chart have no `secret-key`, and the chart leaves them that way: adding
+one by hand signs everyone out and makes stored data unreadable.
+
 ## Pinning and upgrading images
 
 [`examples/images.values.yaml`](examples/images.values.yaml) carries the image

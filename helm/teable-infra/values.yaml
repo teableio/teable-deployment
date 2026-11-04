@@ -930,9 +930,10 @@ teable:
     name: teable
     user: teable
   secret:
-    # Chart-generated app secret bundle (DB/Redis/MinIO credentials, JWT and storage encryption
-    # material) so a bare install needs no manual secret prep. Idempotent: on upgrade existing
-    # values are reused via lookup, so credentials never rotate accidentally.
+    # Chart-generated app secret bundle (DB/Redis/MinIO credentials, SECRET_KEY, JWT and storage
+    # encryption material) so a bare install needs no manual secret prep. Idempotent: on upgrade
+    # existing values are reused via lookup, so credentials never rotate accidentally. SECRET_KEY
+    # is generated on fresh installs only.
     create: true
     name: teable-app-secrets
   # Image pull secrets for the teable deployment. Each entry: {name: <secret-name>}.

@@ -326,6 +326,7 @@ stringData:
   storage-encryption-iv: generated at install time - replace before applying directly
   minio-access-key: generated at install time - replace before applying directly
   minio-secret-key: generated at install time - replace before applying directly
+  secret-key: generated at install time - replace before applying directly
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -1588,7 +1589,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: c1c5a0070e81d163fe995f90d6396cb2da22d6019410ff29d63e36be73d00e9b
+        checksum/secure-access: 2eba5c68b329840b74bb53189924b91cdd7504183e743aee869458402ef40448
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1661,7 +1662,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 749ee258e7361c17f48feea76ab434114dd5f180fe05a48e2374aa44c62d533d
+        checksum/config-toml: a23ea2ea24e65b7161c1cbf05ce8fe998b99674408cba2bfe685780701e2ef3b
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -2427,6 +2428,12 @@ spec:
             secretKeyRef:
               name: teable-app-secrets
               key: sandbox-jwt-secret
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: secret-key
+              optional: true
         readinessProbe:
           httpGet:
             path: "/health"

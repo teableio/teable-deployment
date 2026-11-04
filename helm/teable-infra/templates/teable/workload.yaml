@@ -178,6 +178,15 @@ spec:
                 secretKeyRef:
                   name: {{ $secretName | quote }}
                   key: sandbox-jwt-secret
+            {{- /* Root of the app's sign-in secrets and most stored-data keys. Only installs the chart
+                   created fresh have it (see secret.yaml); optional keeps it unset -- never blank -- on
+                   the rest, so they stay on the secrets their data is under. */}}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: secret-key
+                  optional: true
             {{- /* SANDBOX_OPENSANDBOX_RUNTIME is intentionally unset: kubernetes is the app's default and correct here; only the docker path must override it. */}}
             {{- /* SANDBOX_URL is intentionally unset: the integrated automation sandbox starts inside the app container when it is absent. */}}
           {{- /* First boot runs DB migrations, which can take minutes; a tight liveness delay would kill the Pod mid-migration and corrupt the bootstrap. */}}

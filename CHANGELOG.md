@@ -9,6 +9,19 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Fresh installs get their own `SECRET_KEY`
+
+`apply.sh --with-app` writes a generated `SECRET_KEY` to the new
+`docker/all-in-one/teable-app.env`, and the Helm chart adds `secret-key` to
+`teable-app-secrets`. The app derives its sign-in secrets and most of its
+stored-data keys from it. Existing installs are left as they are; do not add
+one to them by hand.
+
+Action: Docker — re-run `./apply.sh <mode> --with-app` before
+`docker compose up -d`, which now expects `teable-app.env`. Helm — none.
+
 ## v2026.11.3 - 2026-11-04
 
 ### Teable release.2026-11-04T04-12-18Z.3742

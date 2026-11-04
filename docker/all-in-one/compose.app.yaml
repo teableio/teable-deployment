@@ -25,6 +25,11 @@ services:
     networks: [teable-appnet, teable-data-net]
     volumes:
       - teable-assets:/app/.assets
+    # Created by apply.sh, with SECRET_KEY on fresh installs. Keys set under `environment` below win
+    # over the same keys here, so SECRET_KEY must never appear there: an entry would either hide this
+    # file's value or pass a blank, which the app takes as a real key.
+    env_file:
+      - teable-app.env
     environment:
       TZ: ${TIMEZONE:-UTC}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?run ./apply.sh first}

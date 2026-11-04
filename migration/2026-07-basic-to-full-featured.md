@@ -73,6 +73,10 @@ docker inspect teable --format '{{range .Config.Env}}{{println .}}{{end}}' > tea
 | `TEABLE_INFRA_BUCKET` | `teable-agent` | AI/sandbox data plane |
 | `SANDBOX_OPENSANDBOX_IMAGE` | The same value as in the Infra stack's `.env` | Sandbox agent image prefix (no tag): Teable pairs it with its own release tag and preheats that image via the Infra API on startup. China: use `registry.cn-shenzhen.aliyuncs.com/teable/teable-sandbox-agent` |
 
+**Keep your existing app secrets as they are.** If your app has no
+`SECRET_KEY` set, do not add one here: data already encrypted would stop
+decrypting.
+
 Restart the app for the changes to take effect.
 
 > **Checkpoint**: the app container comes back healthy and the login page
