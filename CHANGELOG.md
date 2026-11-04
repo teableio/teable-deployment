@@ -9,6 +9,39 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-04T04-12-18Z.3742
+
+#### Feature Updates
+- Added read-only impact previews for field deletion and type conversion, table deletion and duplication, record pasting and bulk updates, and database duplication. Previews show blockers, warnings, dependencies, and unknowns, and are also available through the HTTP API and authenticated integrations. Current inputs and permissions are still validated when operations are submitted.
+- The Artifact gallery now displays cover thumbnails in the main gallery, “Shared with me,” and the Artifacts tab of projects. Thumbnails are automatically generated for updated Artifacts; administrators can request thumbnail generation for existing Artifacts. Cards display placeholders when no thumbnail provider is configured.
+- Application credentials can now be rotated in App Settings to refresh credentials for eligible published apps without creating a new version. Rotation signs out app users and may briefly interrupt requests; apps with unpublished changes must be manually republished.
+- Improved application credential management with filtering, status information, and bulk refresh capabilities for large deployments.
+
+#### Bug Fixes & Improvements
+- Word and PDF attachment previews now display a clear error message when files cannot be loaded, instead of remaining on the loading screen.
+- Reduced duplicate CLI upgrade reminders and limited update-check delays to two seconds when the package registry is unavailable. Older CLI versions now recommend upgrading when a failed request may indicate an API compatibility issue.
+- Fixed the CLI command teable artifact get --version <n> to download the specified Artifact version instead of displaying the CLI version.
+- Improved security and reliability when parsing user field values and sending collaborator notifications.
+- Improved performance for bulk record creation and bulk field creation, especially for wide tables and large batch operations.
+- After switching Spaces in the new interface, opening Teable in a new browser tab now takes users to their most recently visited Space.
+- Expanding a project's conversation list now preserves the existing status-priority sorting instead of reordering visible conversations.
+- Corrected the App Builder publishing prompt to “Accessible link.”
+- Artifact sharing now uses the Artifact's original URL while preserving existing short links and redirecting legacy sharing links when sharing is enabled.
+- Guests who enter an incorrect Artifact sharing password now see a clear error message and can retry without reopening the link.
+- Owners who open an unshared Artifact in a third-party embedded frame now see an unavailable state instead of a retry failure message.
+- Optimized initial loading for database, Space, shared view, login, and settings pages, reducing compressed download sizes by 16%–44%.
+- Improved the reliability of structured queries while preserving existing query results and access controls.
+- Confirmation of destructive operations now requires an up-to-date, complete impact preview; confirmation is blocked if the preview contains blockers, has expired, or is unavailable due to an error.
+- AI-powered select fields now generate concise labels and respect option count limits. Fields that do not allow new options now instruct AI to choose only from existing values.
+- App query repair suggestions are now more accurate when data structures or referenced fields change. Queries that cannot be fully evaluated are flagged for manual review; suggestions never automatically modify app source code.
+- Improved the security of application credentials during downloads, project duplication, and project sharing.
+- Markdown-enabled long text fields in grid views now preserve list numbering and line breaks.
+- Improved the reliability and throughput of computation updates under large-scale workloads and sustained high-frequency writes, reducing duplicate work and latency.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-04T04-12-18Z.3742)
+
 ## v2026.11.2 - 2026-11-03
 
 ### Teable release.2026-11-03T05-42-34Z.3718
