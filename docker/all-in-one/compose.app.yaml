@@ -36,7 +36,6 @@ services:
       # --- Database (standard single DB; PG publishes no host port and PUBLIC_DATABASE_PROXY is unset) ---
       PRISMA_DATABASE_URL: postgresql://${TEABLE_DB_USER:-teable}:${TEABLE_DB_PASSWORD:?run ./apply.sh first}@teable-db:5432/${TEABLE_DB_NAME:-teable}
       # --- Cache ---
-      BACKEND_CACHE_PROVIDER: redis
       BACKEND_CACHE_REDIS_URI: redis://default:${TEABLE_REDIS_PASSWORD:?run ./apply.sh first}@teable-redis:6379/0
       # --- Attachment storage (MinIO dual buckets; ENDPOINT = browser-reachable address for presigning, INTERNAL = in-container direct connection) ---
       BACKEND_STORAGE_PROVIDER: minio

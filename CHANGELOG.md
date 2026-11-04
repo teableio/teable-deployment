@@ -9,6 +9,12 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **`BACKEND_CACHE_PROVIDER` is no longer set.** Docker Compose and the Helm chart drop it;
+  Teable always uses the Redis at `BACKEND_CACHE_REDIS_URI` and ignores the variable.
+  No action needed; you may delete it from your own env files.
+
 ## v2026.11.4 - 2026-11-04
 
 ### Fresh installs get their own `SECRET_KEY`

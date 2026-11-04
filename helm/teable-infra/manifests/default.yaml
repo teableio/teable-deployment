@@ -1589,7 +1589,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: 006371534a90c64df702ebee19dd45e6fa4fd4aab03b20d4f34a20465dd46411
+        checksum/secure-access: fabe5c6af53274193b1e534a821eaac5b10597ffc5a41786745753fabcfc69cd
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1662,7 +1662,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: a2e3e696021cf88a4774be2cff5a53ebb3733e0aee82421eac9ee525384202e1
+        checksum/config-toml: 98e5b6bd9a4d1609ca2e41162cecbc244ba44afdec4255e8451e0f5016a14c8d
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -2366,8 +2366,6 @@ spec:
           value: https://teable.example.org
         - name: PRISMA_DATABASE_URL
           value: postgresql://teable:$(DB_PASSWORD)@teable-postgres:5432/teable
-        - name: BACKEND_CACHE_PROVIDER
-          value: redis
         - name: BACKEND_CACHE_REDIS_URI
           value: redis://default:$(REDIS_PASSWORD)@teable-redis:6379/0
         - name: BACKEND_STORAGE_PROVIDER

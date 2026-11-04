@@ -91,10 +91,7 @@ spec:
             {{- /* $(DB_PASSWORD) is substituted by the kubelet at container start, so the password never appears in the rendered manifest. */}}
             - name: PRISMA_DATABASE_URL
               value: "postgresql://{{ $teable.db.user }}:$(DB_PASSWORD)@{{ .Release.Name }}-postgres:5432/{{ $teable.db.name }}"
-            {{- /* Redis backs the cache and job queues; realtime collaboration and automation workers require it. */}}
-            - name: BACKEND_CACHE_PROVIDER
-              value: "redis"
-            {{- /* Same $(VAR) technique as the database URL: the password stays out of the manifest. */}}
+            {{- /* Redis backs the cache, job queues and realtime collaboration; Teable does not start without it. Same $(VAR) technique as the database URL: the password stays out of the manifest. */}}
             - name: BACKEND_CACHE_REDIS_URI
               value: "redis://default:$(REDIS_PASSWORD)@{{ .Release.Name }}-redis:6379/0"
             - name: BACKEND_STORAGE_PROVIDER
