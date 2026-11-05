@@ -9,6 +9,21 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-05T12-40-53Z.3790
+
+#### Feature Updates
+- Formulas created through the CLI and AI now use the time zones of the date fields they reference, ensuring accurate calculations for `TODAY()`, countdowns, and similar operations. Explicitly configured formula time zones still take precedence.
+- Lookup and rollup fields created through the CLI and AI can now resolve linked tables and fields by name, including fields not previously loaded, and infer the correct type when no lookup type is specified. If a target field is missing, a clear error is now provided before any changes are made.
+
+#### Bug Fixes & Improvements
+- Fixed an issue where template previews could remain stuck on “Thinking deeply…” and improved template deployment error messages with specific operation details for detection and retries.
+- Improved search count performance for wide tables while preserving accurate results, filters, permissions, hidden fields, and field-level search conditions.
+- Unified time zone handling when creating formulas, fields, and tables to avoid setting unnecessary time zones for non-date formulas.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-05T12-40-53Z.3790)
+
 ## v2026.11.7 - 2026-11-05
 
 ### Teable release.2026-11-05T10-37-52Z.3784
