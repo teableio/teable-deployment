@@ -9,6 +9,12 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-05T08-33-35Z.3779
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-11-05T08-33-35Z.3779`.
+
 ## v2026.11.5 - 2026-11-05
 
 - **`BACKEND_CACHE_PROVIDER` is no longer set.** Docker Compose and the Helm chart drop it;
