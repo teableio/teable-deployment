@@ -179,6 +179,10 @@ spec:
               value: {{ .Values.infraService.appRuntime.domain | default (include "teable-infra.appDomain" .) | quote }}
             - name: APP_RUNTIME_HOST_MATCH_MODE
               value: {{ .Values.infraService.appRuntime.hostMatchMode | default "suffix" | quote }}
+            {{- if and .Values.appRuntime.enabled .Values.appRuntime.customDomains }}
+            - name: APP_RUNTIME_CUSTOM_DOMAINS
+              value: {{ include "teable-infra.appCustomDomainsEnv" . | quote }}
+            {{- end }}
             {{- if .Values.infraService.appRuntime.hostPrefix }}
             - name: APP_RUNTIME_HOST_PREFIX
               value: {{ .Values.infraService.appRuntime.hostPrefix | quote }}

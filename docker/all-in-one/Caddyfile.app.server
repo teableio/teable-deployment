@@ -1,7 +1,8 @@
 # all-in-one server entrypoint: TLS termination + routing (imports shared caddy.snippets).
 # Difference from Caddyfile.server: the Teable main site is at TEABLE_HOST (default = root domain); the console is at INFRA_HOST (default infra.<domain>).
-# Template: apply.sh renders it to *.generated -- the TLS_GLOBAL placeholder line becomes the ACME global block (cloudflare mode) or nothing,
-# and the per-site TLS_SITE placeholder line becomes `tls /certs/...` (static mode, your own certificate) or nothing.
+# Template: apply.sh renders it to *.generated -- the TLS_GLOBAL placeholder line becomes the ACME global block or nothing,
+# the per-site TLS_SITE placeholder becomes the Cloudflare DNS-01 `tls { ... }` block (cloudflare mode) or `tls /certs/...`
+# (static mode, your own certificate), and the APP_CUSTOM_DOMAINS placeholder line becomes one site per app custom domain.
 # Wildcard certificates (*.app / *.sandbox) require DNS-01 or a certificate you bring; the caddy-data volume must persist (stores certs, avoids re-issue rate limits).
 __TLS_GLOBAL__
 
@@ -45,6 +46,9 @@ import caddy.snippets
 	__TLS_SITE__
 	reverse_proxy infra-service:8080
 }
+
+# App custom domains (APP_CUSTOM_DOMAINS in .env): infra-service maps each domain to its app by Host.
+__APP_CUSTOM_DOMAINS__
 
 # Sandbox previews (independent origin at root path)
 *.sandbox.{$BASE_DOMAIN} {

@@ -7,6 +7,8 @@
 # Behavior is split in order under apply.d/ (one concern per file, sourced sequentially, sharing this shell's variables):
 #   10-env      .env initialization and loading
 #   20-domains  domain/address derivation (split from single root domain; local probes LAN IP)
+#   22-app-domains  validate APP_CUSTOM_DOMAINS (published apps on separate domains, server only)
+#   25-tls      TLS mode + render the server Caddyfiles (incl. one site per app custom domain)
 #   30-secrets  fill in secret and image defaults
 #   40-runtime  render opensandbox toml + pre-create agent volume
 #   50-git-keys git Ed25519 keys -> override (never rotates already-generated keys; to rotate, delete the override first)

@@ -4,6 +4,8 @@
 #               corporate CAs, no DNS API). The certificate must cover the four names the entry serves.
 # The mode is derived from which inputs are filled (never invented) and persisted to .env as TLS_MODE / CADDY_IMAGE for
 # compose; the Caddyfile templates are rendered to *.generated so the TLS directives match the mode.
+# App custom domains (22-app-domains) get one site each: your certificate when it covers the domain, otherwise
+# Let's Encrypt over HTTP-01 -- which is why the Cloudflare DNS challenge is set per site, not globally.
 reload_env   # pick up INFRA_HOST / TEABLE_HOST derived by 20-domains
 
 if [ -n "${PRIVATE_CA_FILE:-}" ]; then
@@ -31,10 +33,14 @@ if [ "$MODE" = "server" ]; then
     # covers `infra.example.com`); a wildcard name itself needs that exact wildcard SAN.
     # -text works on OpenSSL and LibreSSL alike (the -ext flag does not); the SAN list follows its header line.
     san="$(openssl x509 -in "${TLS_CERT_FILE}" -noout -text 2>/dev/null | awk '/Subject Alternative Name/{getline; print; exit}' | tr -d ' ' | tr ',' '\n')"
+    cert_covers() {
+      printf '%s\n' "$san" | grep -qxF "DNS:$1" && return 0
+      case "$1" in \*.*) return 1 ;; esac
+      printf '%s\n' "$san" | grep -qxF "DNS:*.${1#*.}"
+    }
     if [ -n "$san" ]; then
       for n in ${TEABLE_HOST:-} "${INFRA_HOST}" "*.app.${BASE_DOMAIN}" "*.sandbox.${BASE_DOMAIN}"; do
-        if printf '%s\n' "$san" | grep -qxF "DNS:${n}"; then continue; fi
-        case "$n" in \*.*) ;; *) if printf '%s\n' "$san" | grep -qxF "DNS:*.${n#*.}"; then continue; fi ;; esac
+        cert_covers "$n" && continue
         echo "[!] TLS_CERT_FILE does not cover ${n} (subjectAltName lists: $(printf '%s' "$san" | tr '\n' ' ')) -- browsers and the app will reject that host"
       done
     else
@@ -58,14 +64,41 @@ if [ "$MODE" = "server" ]; then
     fi
     CADDY_IMAGE_EFF="teable-infra/caddy-cloudflare:server"
     TLS_CERT_SHA256_EFF=""
-    TLS_GLOBAL=$'{\n\temail {$ACME_EMAIL}\n\tacme_dns cloudflare {env.CLOUDFLARE_API_TOKEN} # token needs Zone:Read + DNS:Edit\n}\n'
-    TLS_SITE=""
+    # The DNS challenge sits on each of our own sites rather than in a global acme_dns, which would also apply to the
+    # app custom-domain sites (their zones are not on this Cloudflare account). Same issuers as caddy's defaults:
+    # Let's Encrypt, then ZeroSSL as fallback.
+    TLS_GLOBAL=$'{\n\temail {$ACME_EMAIL}\n}\n'
+    TLS_SITE=$'tls {\n\t\tissuer acme {\n\t\t\tdns cloudflare {env.CLOUDFLARE_API_TOKEN} # token needs Zone:Read + DNS:Edit\n\t\t}\n\t\tissuer acme {\n\t\t\tdir https://acme.zerossl.com/v2/DV90\n\t\t\tdns cloudflare {env.CLOUDFLARE_API_TOKEN}\n\t\t}\n\t}'
   fi
   set_kv TLS_MODE "${TLS_MODE_EFF}" "$ENV_FILE"
   set_kv CADDY_IMAGE "${CADDY_IMAGE_EFF}" "$ENV_FILE"
   set_kv TLS_CERT_SHA256 "${TLS_CERT_SHA256_EFF}" "$ENV_FILE"
   echo "     TLS mode = ${TLS_MODE_EFF} (caddy image ${CADDY_IMAGE_EFF})"
-  render_caddyfile Caddyfile.server Caddyfile.server.generated "$TLS_GLOBAL" "$TLS_SITE"
-  render_caddyfile Caddyfile.app.server Caddyfile.app.server.generated "$TLS_GLOBAL" "$TLS_SITE"
+  # One site per app custom domain. infra-service maps the domain to its app (Caddy forwards the original Host).
+  APP_SITES=""
+  acme_domains=""
+  while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    site_tls=""
+    if [ "$TLS_MODE_EFF" = static ] && cert_covers "$d"; then
+      site_tls=$'\n\ttls /certs/fullchain.pem /certs/privkey.pem'
+    else
+      acme_domains="${acme_domains} ${d}"
+    fi
+    APP_SITES="${APP_SITES}${d} {${site_tls}"$'\n\treverse_proxy infra-service:8080\n}\n'
+  done <<EOF
+${APP_DOMAIN_LIST:-}
+EOF
+  if [ -n "$acme_domains" ]; then
+    echo "     app domains on Let's Encrypt (HTTP-01: DNS must point here, ports 80/443 reachable from the internet):${acme_domains}"
+    [ "$TLS_MODE_EFF" = static ] && echo "     (to use your own certificate instead, add them to TLS_CERT_FILE and re-run)"
+  fi
+  render_caddyfile Caddyfile.server Caddyfile.server.generated "$TLS_GLOBAL" "$TLS_SITE" "$APP_SITES"
+  render_caddyfile Caddyfile.app.server Caddyfile.app.server.generated "$TLS_GLOBAL" "$TLS_SITE" "$APP_SITES"
+  # Caddy reads its config once at start: carry the fingerprint of what it loads (the rendered Caddyfile plus the
+  # shared caddy.snippets) into compose (CADDYFILE_SHA256), so a changed config -- new app domains, an upgrade --
+  # recreates caddy on `docker compose up -d`.
+  if [ "$WITH_APP" = 1 ]; then caddyfile_eff=Caddyfile.app.server.generated; else caddyfile_eff=Caddyfile.server.generated; fi
+  set_kv CADDYFILE_SHA256 "$(cat "$caddyfile_eff" caddy.snippets | openssl dgst -sha256 | awk '{print $NF}')" "$ENV_FILE"
   reload_env
 fi

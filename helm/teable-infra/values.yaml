@@ -363,6 +363,23 @@ appRuntime:
         issuerName: letsencrypt-dns
         # Empty: derived from wildcardDomain / global.baseDomain.
         dnsNames: []
+  # Serve published apps on domains outside the app wildcard (optional). Each entry maps a domain to an app's
+  # access link; infra-service routes the domain to that app in either ingress mode, and the chart renders an
+  # Ingress plus a certificate per domain in the infra-service namespace. Point each domain's DNS at your ingress
+  # controller first. Guide: helm/README.md, "App custom domains".
+  customDomains: []
+  # - host: portal.example.org
+  #   target: portal.app.example.com   # the app's access link, just its name (portal), or its app ID
+  #   tlsSecretName: ""                # optional: an existing TLS secret in the infra-service namespace, instead of issuing one
+  # Issuer for custom-domain certificates (only with appRuntime.ingress.tls.enabled). They need HTTP-01 (the app
+  # wildcard's DNS-01 issuer only validates its own zone), so by default the chart renders a namespaced Let's Encrypt
+  # HTTP-01 Issuer (cert-manager >= 1.12); set create: false and point kind/name at an existing issuer to use your own.
+  customDomainIssuer:
+    create: true
+    kind: Issuer
+    name: teable-app-domains
+    email: ""   # optional ACME account email (certificate expiry notices)
+    server: https://acme-v02.api.letsencrypt.org/directory
   resources:
     quota:
       enabled: true

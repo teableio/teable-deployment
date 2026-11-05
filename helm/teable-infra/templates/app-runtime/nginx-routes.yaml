@@ -17,5 +17,23 @@
         proxySendTimeout: 3600s
         proxyConnectTimeout: 60s
         clientMaxBodySize: "0"
+{{- /* App custom domains: same backend, infra-service maps the Host to the app. TLS is the entry's job. */}}
+{{- if .Values.appRuntime.customDomains }}{{ include "teable-infra.validateAppCustomDomains" . }}{{ end }}
+{{- range .Values.appRuntime.customDomains }}
+      - host: {{ .host | lower | trimSuffix "." | quote }}
+        serviceName: {{ $.Release.Name }}-infra-service
+        serviceNamespace: {{ $.Values.infraService.namespaceOverride | default $.Release.Namespace }}
+        servicePort: 80
+        paths:
+          - /
+        pathType: Prefix
+        preserveHost: true
+        rewritePath: false
+        websocket: true
+        proxyReadTimeout: 3600s
+        proxySendTimeout: 3600s
+        proxyConnectTimeout: 60s
+        clientMaxBodySize: "0"
+{{- end }}
 {{- end }}
 {{- end }}

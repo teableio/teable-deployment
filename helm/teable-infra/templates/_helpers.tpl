@@ -37,6 +37,65 @@ https://{{ include "teable-infra.infraHost" . }}
 {{- if $base -}}app.{{ $base }}{{- else -}}app.example.com{{- end -}}
 {{- end -}}
 
+{{- /* appRuntime.customDomains, checked as a whole at render time with the same rules infra-service applies
+       at start (it skips entries that fail them): host is a plain DNS name outside the app domain and not one
+       of the hosts this release already serves, target is the app's access link, its name or its app ID, and
+       no host appears twice. Called with the root context. */ -}}
+{{- define "teable-infra.validateAppCustomDomains" -}}
+{{- $appDomain := .Values.infraService.appRuntime.domain | default (include "teable-infra.appDomain" .) | lower | trimSuffix "." -}}
+{{- $prefix := "" -}}
+{{- if eq (.Values.infraService.appRuntime.hostMatchMode | default "suffix") "prefix" -}}
+{{- $prefix = .Values.infraService.appRuntime.hostPrefix | default "" | lower -}}
+{{- end -}}
+{{- $sandboxDomain := include "teable-infra.sandboxWildcard" . | trimPrefix "*." -}}
+{{- $reserved := list (.Values.infraService.ingress.host | default (include "teable-infra.infraHost" .)) (include "teable-infra.s3Host" .) -}}
+{{- with .Values.gitRegistry.ingress.host }}{{ $reserved = append $reserved . }}{{ end -}}
+{{- if .Values.teable.enabled }}{{ $reserved = append $reserved (include "teable-infra.teableHost" .) }}{{ end -}}
+{{- $label := "[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?" -}}
+{{- $seen := dict -}}
+{{- range .Values.appRuntime.customDomains -}}
+{{- $host := .host | default "" | toString | lower | trimSuffix "." -}}
+{{- $target := .target | default "" | toString | lower | trimSuffix "." -}}
+{{- if or (gt (len $host) 253) (not (regexMatch (printf "^(%s\\.)+%s$" $label $label) $host)) -}}
+{{- fail (printf "appRuntime.customDomains: host must be a domain name such as portal.example.org (got %q)" (.host | default "")) -}}
+{{- end -}}
+{{- if or (eq $host $appDomain) (hasSuffix (printf ".%s" $appDomain) $host) (hasSuffix (printf ".%s" $sandboxDomain) $host) (has $host $reserved) -}}
+{{- fail (printf "appRuntime.customDomains: %s is already served by this release (app, sandbox, infra, storage or Teable host); pick another domain" $host) -}}
+{{- end -}}
+{{- if hasKey $seen $host -}}
+{{- fail (printf "appRuntime.customDomains lists %s more than once" $host) -}}
+{{- end -}}
+{{- $_ := set $seen $host true -}}
+{{- $name := $target -}}
+{{- if contains "." $target -}}
+{{- $name = trimSuffix (printf ".%s" $appDomain) $target -}}
+{{- if or (eq $name $target) (not (hasPrefix $prefix $name)) -}}
+{{- fail (printf "appRuntime.customDomains: %s needs a target such as portal.%s (the app's access link), got %q" $host $appDomain (.target | default "")) -}}
+{{- end -}}
+{{- end -}}
+{{- if not (regexMatch (printf "^%s$" $label) $name) -}}
+{{- fail (printf "appRuntime.customDomains: %s needs a target such as portal.%s (the app's access link), got %q" $host $appDomain (.target | default "")) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Per-domain object name: readable, unique (hash suffix: a-b.example.org and a.b-example.org must not
+       collide) and well under the 253-character limit. */ -}}
+{{- define "teable-infra.appCustomDomainName" -}}
+{{- $host := . | lower | trimSuffix "." -}}
+{{- printf "app-domain-%s-%s" ($host | replace "." "-" | trunc 40 | trimSuffix "-") (sha256sum $host | trunc 8) -}}
+{{- end -}}
+
+{{- /* APP_RUNTIME_CUSTOM_DOMAINS for infra-service: host=target pairs, comma-separated. */ -}}
+{{- define "teable-infra.appCustomDomainsEnv" -}}
+{{- $pairs := list -}}
+{{- include "teable-infra.validateAppCustomDomains" . -}}
+{{- range .Values.appRuntime.customDomains -}}
+{{- $pairs = append $pairs (printf "%s=%s" (.host | lower | trimSuffix ".") (.target | lower | trimSuffix ".")) -}}
+{{- end -}}
+{{- join "," $pairs -}}
+{{- end -}}
+
 {{- /* App Runtime wildcard: *.app.<baseDomain>, else the example.com placeholder. */ -}}
 {{- define "teable-infra.appWildcard" -}}
 {{- $base := include "teable-infra.baseDomain" . -}}

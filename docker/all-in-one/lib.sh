@@ -148,14 +148,16 @@ render_toml() {
   fi
 }
 
-# Render a server Caddyfile template: __TLS_GLOBAL__ (whole line -> the global options block, or nothing)
-# and __TLS_SITE__ (inline -> the per-site tls directive, or nothing). Args: TEMPLATE OUTPUT TLS_GLOBAL TLS_SITE.
+# Render a server Caddyfile template: __TLS_GLOBAL__ (whole line -> the global options block, or nothing),
+# __TLS_SITE__ (inline -> the per-site tls directive, or nothing) and __APP_CUSTOM_DOMAINS__ (whole line -> one site
+# per app custom domain, or nothing). Args: TEMPLATE OUTPUT TLS_GLOBAL TLS_SITE [APP_SITES].
 # The {$VAR} placeholders stay literal: caddy expands them from the container environment at parse time.
 render_caddyfile() {
   local tpl="$1" out="$2"
   [ -f "$tpl" ] || { echo "[x] $tpl missing"; exit 1; }
-  TLS_GLOBAL="$3" TLS_SITE="$4" awk '
+  TLS_GLOBAL="$3" TLS_SITE="$4" APP_SITES="${5:-}" awk '
     /^__TLS_GLOBAL__$/ { printf "%s", ENVIRON["TLS_GLOBAL"]; next }
+    /^__APP_CUSTOM_DOMAINS__$/ { printf "%s", ENVIRON["APP_SITES"]; next }
     { while ((i = index($0, "__TLS_SITE__")) > 0) $0 = substr($0, 1, i - 1) ENVIRON["TLS_SITE"] substr($0, i + 12) }  # literal splice (gsub would expand &)
     { print }
   ' "$tpl" > "$out"

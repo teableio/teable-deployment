@@ -106,6 +106,29 @@ workload, and re-derive it if yours differs — see
 [`sandbox-capacity.md`](sandbox-capacity.md) for the sizing method, a worked
 per-node example, and the related limit/backpressure knobs.
 
+## App custom domains
+
+To serve a published app on a separate domain, point the domain at your
+ingress controller and map it to the app's access link:
+
+```yaml
+appRuntime:
+  customDomains:
+    - host: portal.example.org
+      target: portal.app.example.com
+      # tlsSecretName: portal-example-org-tls   # optional: an existing TLS secret instead of issuing one
+```
+
+For each domain the chart renders an Ingress to infra-service and a
+cert-manager Certificate from a namespaced Let's Encrypt HTTP-01 `Issuer`
+(cert-manager 1.12 or later; point `appRuntime.customDomainIssuer` at your own
+issuer to use that instead). Works in both app ingress modes. With
+`appRuntime.ingress.tls.enabled: false` only the Ingress is rendered and TLS
+is up to whatever sits in front of the cluster; with
+`global.entry.mode: external-nginx` the domains are added to the
+nginx-routes ConfigMap instead. If you rename or unpublish the app, update or
+remove its mapping: the freed access link can be taken by another app.
+
 ## External gateway entry (no ingress controller)
 
 If an external SLB/nginx terminates TLS in front of the cluster, set:

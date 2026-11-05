@@ -14,6 +14,12 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 - **`BACKEND_CACHE_PROVIDER` is no longer set.** Docker Compose and the Helm chart drop it;
   Teable always uses the Redis at `BACKEND_CACHE_REDIS_URI` and ignores the variable.
   No action needed; you may delete it from your own env files.
+- **Published apps can be served on your own domains.** Map a domain to an app's access link
+  with `APP_CUSTOM_DOMAINS` in `.env` (Docker) or `appRuntime.customDomains` (Helm); certificates
+  are issued automatically. No action needed unless you want one.
+- **Caddy picks up configuration changes.** `docker compose up -d` now recreates Caddy whenever
+  `apply.sh` re-renders its config, instead of keeping the old one until a manual restart.
+  No action needed.
 
 ## v2026.11.4 - 2026-11-04
 

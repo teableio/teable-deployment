@@ -1,0 +1,107 @@
+{{- /* App custom domains (appRuntime.customDomains): per domain an Ingress to infra-service, which maps the
+       Host to the app in either ingress mode, plus an HTTP-01 certificate unless an existing TLS secret is
+       named. TLS follows appRuntime.ingress.tls.enabled (off = TLS ends in front of the cluster, no
+       cert-manager objects). Lives in the infra-service namespace (Ingress backends are same-namespace only).
+       External entry mode routes these domains through nginx-routes.yaml instead. */}}
+{{- if and .Values.appRuntime.enabled .Values.appRuntime.customDomains (not (include "teable-infra.externalEntry" .)) }}
+{{- include "teable-infra.validateAppCustomDomains" . }}
+{{- $runtime := .Values.appRuntime }}
+{{- $infraNamespace := .Values.infraService.namespaceOverride | default .Release.Namespace }}
+{{- $tls := $runtime.ingress.tls.enabled }}
+{{- $issuer := $runtime.customDomainIssuer | default dict }}
+{{- $issuerName := $issuer.name | default "teable-app-domains" }}
+{{- $issue := false }}
+{{- range $runtime.customDomains }}{{ if not .tlsSecretName }}{{ $issue = true }}{{ end }}{{ end }}
+{{- /* The app wildcard's cert-manager annotations would make cert-manager issue a second, conflicting
+       certificate into the same secret, so they are not copied. */}}
+{{- $annotations := dict }}
+{{- range $key, $value := $runtime.ingress.annotations }}
+{{- if not (or (hasPrefix "cert-manager.io/" $key) (hasPrefix "acme.cert-manager.io/" $key)) }}
+{{- $_ := set $annotations $key $value }}
+{{- end }}
+{{- end }}
+{{- if and $tls $issue $issuer.create }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $issuerName | quote }}
+  namespace: {{ $infraNamespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-domains
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  acme:
+    server: {{ $issuer.server | default "https://acme-v02.api.letsencrypt.org/directory" | quote }}
+    {{- with $issuer.email }}
+    email: {{ . | quote }}
+    {{- end }}
+    privateKeySecretRef:
+      name: {{ printf "%s-account-key" $issuerName | quote }}
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: {{ $runtime.ingress.className | default "nginx" | quote }}
+---
+{{- end }}
+{{- range $runtime.customDomains }}
+{{- $host := .host | lower | trimSuffix "." }}
+{{- $name := include "teable-infra.appCustomDomainName" $host }}
+{{- $secretName := .tlsSecretName | default (printf "%s-tls" $name) }}
+{{- if and $tls (not .tlsSecretName) }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $name | quote }}
+  namespace: {{ $infraNamespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-domains
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  secretName: {{ $secretName | quote }}
+  issuerRef:
+    kind: {{ $issuer.kind | default "Issuer" | quote }}
+    name: {{ $issuerName | quote }}
+  dnsNames:
+    - {{ $host | quote }}
+---
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name | quote }}
+  namespace: {{ $infraNamespace | quote }}
+  labels:
+    app.kubernetes.io/name: teable-app-domains
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $runtime.ingress.className | default "nginx" | quote }}
+  {{- if $tls }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ $secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $.Release.Name }}-infra-service
+                port:
+                  name: http
+---
+{{- end }}
+{{- end }}

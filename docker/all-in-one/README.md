@@ -147,6 +147,21 @@ Installs created before `SECRET_KEY` was generated have none in
 `teable-app.env`. Leave it that way: adding one by hand signs everyone out
 and makes stored data unreadable.
 
+## App custom domains
+
+Published apps live at `<name>.app.<BASE_DOMAIN>`. To also serve an app on a
+separate domain, point the domain at this server (a `CNAME` to the app's
+access link, or an `A` record), list it in `.env`, and apply:
+
+```bash
+APP_CUSTOM_DOMAINS=portal.example.org=portal.app.teable.example.com   # comma-separated, no spaces
+./apply.sh server --with-app && docker compose up -d
+```
+
+The domain uses your `TLS_CERT_FILE` when that certificate covers it, and a
+Let's Encrypt certificate otherwise (HTTP-01: ports 80 and 443 must be
+reachable from the internet). Server mode only.
+
 ## Day-2 operations
 
 ```bash
