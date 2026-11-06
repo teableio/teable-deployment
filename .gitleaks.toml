@@ -1,0 +1,11 @@
+# gitleaks config for this repository (picked up automatically from the repo root).
+# Keeps the default ruleset and only allowlists Helm `checksum/*` pod annotations:
+# they are sha256 digests of rendered config, used to roll pods when it changes,
+# and cannot be reversed into the hashed value.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Helm checksum/* pod annotations (sha256 digests, not secrets)"
+regexTarget = "line"
+regexes = ['''^\s*checksum/[\w.-]+:\s*"?[0-9a-f]{64}"?\s*$''']
