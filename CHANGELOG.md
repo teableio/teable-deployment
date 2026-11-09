@@ -9,6 +9,13 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **App publish status reflects the new version (Kubernetes).** Republishing an app now reports
+  success only once the new version is serving. If it cannot start (for example, pod creation is
+  rejected by the namespace quota), the publish is reported as failed with the reason, and the
+  previous version keeps serving. No action needed.
+
 ## v2026.11.11 - 2026-11-06
 
 ### Teable release.2026-11-06T11-23-32Z.3804
