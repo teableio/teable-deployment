@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.11.12 - 2026-11-09
 
 - **App publish status reflects the new version (Kubernetes).** Republishing an app now reports
   success only once the new version is serving. If it cannot start (for example, pod creation is

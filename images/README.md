@@ -1,6 +1,6 @@
 # Images
 
-> Generated for platform release **v2026.11.11** -- do not edit by hand.
+> Generated for platform release **v2026.11.12** -- do not edit by hand.
 > The authoritative pin list (with digests) is [`../versions.yaml`](../versions.yaml).
 
 All first-party images are published multi-arch (amd64 + arm64) and
@@ -16,7 +16,7 @@ images; the digests match the upstream builds):
 |---|---|
 | `ghcr.io/teableio/teable:release.2026-11-06T11-23-32Z.3804` | `registry.cn-shenzhen.aliyuncs.com/teable/teable:release.2026-11-06T11-23-32Z.3804` |
 | `ghcr.io/teableio/teable-app-runtime:20261102T033513Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-app-runtime:20261102T033513Z` |
-| `ghcr.io/teableio/teable-infra-service:20261106T021648Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20261106T021648Z` |
+| `ghcr.io/teableio/teable-infra-service:20261109T020734Z` | `registry.cn-shenzhen.aliyuncs.com/teable/teable-infra-service:20261109T020734Z` |
 | `ghcr.io/teableio/opensandbox-server:v0.2.0-fix11` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-server:v0.2.0-fix11` |
 | `ghcr.io/teableio/opensandbox-ingress:v1.0.7` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-ingress:v1.0.7` |
 | `ghcr.io/teableio/opensandbox-controller:v0.2.0` | `registry.cn-shenzhen.aliyuncs.com/teable/opensandbox-controller:v0.2.0` |
@@ -46,7 +46,7 @@ REGISTRY=registry.example.com/teable   # your prefix
 for img in \
     ghcr.io/teableio/teable:release.2026-11-06T11-23-32Z.3804 \
     ghcr.io/teableio/teable-app-runtime:20261102T033513Z \
-    ghcr.io/teableio/teable-infra-service:20261106T021648Z \
+    ghcr.io/teableio/teable-infra-service:20261109T020734Z \
     ghcr.io/teableio/opensandbox-server:v0.2.0-fix11 \
     ghcr.io/teableio/opensandbox-ingress:v1.0.7 \
     ghcr.io/teableio/opensandbox-controller:v0.2.0 \
