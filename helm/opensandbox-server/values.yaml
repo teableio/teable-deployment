@@ -259,7 +259,11 @@ configToml: |
   informer_enabled = true
   informer_resync_seconds = 300
   informer_watch_timeout_seconds = 60
-  sandbox_create_timeout_seconds = 86400
+  # How long a create request waits for the sandbox pod to be running. Keep it
+  # at or below the client's own request timeout (Teable gives up after ~300s):
+  # on timeout the server returns POD_READY_TIMEOUT and deletes the sandbox,
+  # whereas a longer wait leaves an unwanted sandbox queued after the client left.
+  sandbox_create_timeout_seconds = 300
   sandbox_create_poll_interval_seconds = 0.5
   snapshot_create_timeout_seconds = 900
   workload_provider = "batchsandbox"

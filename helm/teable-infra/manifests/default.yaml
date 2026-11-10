@@ -225,7 +225,11 @@ stringData:
     informer_enabled = true
     informer_resync_seconds = 300
     informer_watch_timeout_seconds = 60
-    sandbox_create_timeout_seconds = 86400
+    # How long a create request waits for the sandbox pod to be running. Keep it
+    # at or below the client's own request timeout (Teable gives up after ~300s):
+    # on timeout the server returns POD_READY_TIMEOUT and deletes the sandbox,
+    # whereas a longer wait leaves an unwanted sandbox queued after the client left.
+    sandbox_create_timeout_seconds = 300
     sandbox_create_poll_interval_seconds = 0.5
     snapshot_create_timeout_seconds = 900
     workload_provider = "batchsandbox"
@@ -1589,7 +1593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: 1e4958043513e159c8c58d62047ecf74ab57057f16d5e22beb6e2e42972ba7f5
+        checksum/secure-access: '083c3d6ee6bb985919ba723cf5ee76061caabd6ffb1b3eca9f6e077acb0d939c'
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1662,7 +1666,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 8b29612010cdf93ac08d1c9d36adbba977dca160346d64b42942219fa3bacd1a
+        checksum/config-toml: c276c84c20713b2f551130ae5120a134e91fd1de82007eb861091f1b199a0f93
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
