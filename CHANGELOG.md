@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.11.13 - 2026-11-10
 
 - **Sandbox creation gives up after 5 minutes (Kubernetes).** When the cluster has no room for a new
   sandbox, the request now fails with a clear timeout after 5 minutes and the pending sandbox is
