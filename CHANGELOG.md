@@ -9,6 +9,31 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-10T05-38-53Z.3830
+
+#### Feature Updates
+- Filter-based updates apply the same values to all matching records and evaluate filter conditions when the update runs. Updates that also require changes to relationships must still use record-based updates.
+- JWT credentials can now be searched by app or project name or ID. Bulk operations are limited to apps that match the current search and filters.
+- Published apps can now be refreshed with new credentials while retaining their last published code and login configuration. Apps with expired production credentials are now distinguished from apps whose refresh failed.
+- Default Pi sessions now support structured queries for record lists, aggregations, and time-based grouping. Follow-up requests can adjust query parameters, and unsupported requests return clearer error messages.
+
+#### Bug Fixes & Improvements
+- Password changes now reject a new password that matches the current password, preventing misleading success messages and unnecessary sign-outs.
+- Refreshing the chat page no longer restores tabs for tables hidden by role permission updates, preventing incorrect resource access restriction and “Table deleted” messages.
+- Locked Grid views now prevent column dragging, column resizing, and column freezing. Personal views remain editable.
+- Automations enabled by newly installed templates now correctly activate scheduled triggers and email receipt triggers.
+- Fixed an issue where pasted text beginning with lowercase “rec” (such as “recipe” or “record”) was saved incorrectly in Single line text fields. Large-batch and streaming paste operations now also preserve text consistently; previously corrupted values will not be restored automatically.
+- Improved the security and reliability of credential settings, management, sharing, and permanent deletion.
+- Improved resource title bars, toolbar labels, and view lists to make actions and current, starred, locked, and draggable states easier to distinguish.
+- Sharing and CSV export operations now apply to the selected view rather than the currently open view, including operations initiated from classic view tabs.
+- Consolidated app settings actions and improved menu behavior for login configuration, GitHub integration, and version history.
+- Fixed missing view information when creating, converting, changing the linked target of, or removing two-way linked record fields. Reciprocal linked fields now maintain consistent visibility and ordering, with improved reliability for self-links, linked tables, and undo/redo.
+- The hidden and visible field panels now support reliable drag-and-drop reordering, with the order preserved after refreshing. Fixed a crash caused by reordering fields in Grid and Kanban views before view information had finished loading.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-10T05-38-53Z.3830)
+
 ## v2026.11.13 - 2026-11-10
 
 - **Sandbox creation gives up after 5 minutes (Kubernetes).** When the cluster has no room for a new
