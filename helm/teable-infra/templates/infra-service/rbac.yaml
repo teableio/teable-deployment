@@ -49,6 +49,15 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["patch"]
+  {{- $warmup := (get (.Values.global | default dict) "sandboxScheduling" | default dict).warmup | default dict }}
+  {{- if eq (toString ($warmup.enabled | default false)) "true" }}
+  # New-node warm-up gate (global.sandboxScheduling.warmup): reads which CSI
+  # drivers a node has registered before lifting its warm-up taint. Granted
+  # only while the gate is enabled.
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list"]
+  {{- end }}
   # ACK cloud-disk autoscaler policy (GKE lacks this API group; the rule exists but is inert)
   - apiGroups: ["storage.alibabacloud.com"]
     resources: ["storageautoscalerpolicies"]

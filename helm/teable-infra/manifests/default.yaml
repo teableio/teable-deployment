@@ -1593,7 +1593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: a0b5aa14c601a15a7a3d01a985dbd0df0bd530d620c269c7981d93b124044e5b
+        checksum/secure-access: 3e0cf374afa9e02e4da0a6955ffe53d0fc421ce91ebd964629ae6ccd1e1f1c92
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1666,7 +1666,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 07af59ea3b8e519e9c5464e094ea040c43676d9e98a898efaa770b31506b9c73
+        checksum/config-toml: 8e177a745c63622fc66be9b8e5380d72fc0fcc5a7a51b93eda274ae94ffd5a95
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -1904,6 +1904,12 @@ spec:
           value: '30'
         - name: SANDBOX_BACKPRESSURE_TAINT_KEY
           value: sandbox.teable.io/memory-pressure
+        - name: SANDBOX_NODE_WARMUP_ENABLED
+          value: 'false'
+        - name: SANDBOX_NODE_WARMUP_NODE_SELECTOR
+          value: teable.io/node-pool=sandbox
+        - name: SANDBOX_NODE_WARMUP_TAINT_KEY
+          value: startup-taint.cluster-autoscaler.kubernetes.io/sandbox-warming
         - name: FILE_BROWSER_ENABLED
           value: 'true'
         - name: FILE_BROWSER_ROOT

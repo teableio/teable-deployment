@@ -46,9 +46,21 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $hr.tolerations }}
+      {{- /* Balloons also tolerate the new-node warm-up taint
+             (global.sandboxScheduling.warmup): they hold a warming node's
+             slots, which sandboxes take over once the taint is lifted. */}}
+      {{- $wu := $gs.warmup | default dict }}
+      {{- $wuEnabled := eq (toString ($wu.enabled | default false)) "true" }}
+      {{- if or $hr.tolerations $wuEnabled }}
       tolerations:
+        {{- with $hr.tolerations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if $wuEnabled }}
+        - key: {{ $wu.taintKey | default "startup-taint.cluster-autoscaler.kubernetes.io/sandbox-warming" | quote }}
+          operator: "Exists"
+          effect: "NoSchedule"
+        {{- end }}
       {{- end }}
       containers:
         - name: pause

@@ -118,6 +118,29 @@ spec:
             - name: SANDBOX_BACKPRESSURE_TAINT_KEY
               value: {{ $bp.taintKey | default "sandbox.teable.io/memory-pressure" | quote }}
             {{- end }}
+            {{- /* New-node warm-up gate (global.sandboxScheduling.warmup): opt-in.
+                   The selector and taint key are always passed so that turning
+                   the feature off still sweeps leftover taints on startup. */}}
+            {{- $wu := (get $global "sandboxScheduling" | default dict).warmup | default dict }}
+            {{- $wuEnabled := eq (toString ($wu.enabled | default false)) "true" }}
+            - name: SANDBOX_NODE_WARMUP_ENABLED
+              value: {{ ternary "true" "false" $wuEnabled | quote }}
+            - name: SANDBOX_NODE_WARMUP_NODE_SELECTOR
+              value: {{ $wu.nodeSelector | default "teable.io/node-pool=sandbox" | quote }}
+            - name: SANDBOX_NODE_WARMUP_TAINT_KEY
+              value: {{ $wu.taintKey | default "startup-taint.cluster-autoscaler.kubernetes.io/sandbox-warming" | quote }}
+            {{- if $wuEnabled }}
+            - name: SANDBOX_NODE_WARMUP_CSI_DRIVERS
+              value: {{ join "," ($wu.csiDrivers | default list) | quote }}
+            - name: SANDBOX_NODE_WARMUP_REQUIRE_PREHEATED_IMAGE
+              value: {{ ternary "false" "true" (eq (toString $wu.requirePreheatedImage) "false") | quote }}
+            - name: SANDBOX_NODE_WARMUP_MAX_TAINT_AGE_SECONDS
+              value: {{ $wu.maxTaintAgeSeconds | default 180 | quote }}
+            - name: SANDBOX_NODE_WARMUP_TIMEOUT_SECONDS
+              value: {{ $wu.timeoutSeconds | default 480 | quote }}
+            - name: SANDBOX_NODE_WARMUP_INTERVAL_SECONDS
+              value: {{ $wu.intervalSeconds | default 5 | quote }}
+            {{- end }}
             - name: FILE_BROWSER_ENABLED
               value: {{ ternary "true" "false" .Values.infraService.fileBrowser.enabled | quote }}
             - name: FILE_BROWSER_ROOT

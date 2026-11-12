@@ -271,6 +271,35 @@ global:
       lowPercent: 80
       intervalSeconds: 30
       taintKey: "sandbox.teable.io/memory-pressure"
+    # Warm-up gate for new sandbox nodes (runs inside infra-service). A node
+    # that has just joined gets a NoSchedule taint until it can actually run a
+    # sandbox: the listed CSI drivers are registered on it and the preheated
+    # sandbox image is pulled. Sandboxes do not tolerate the taint, so they
+    # keep landing on warm nodes (preempting balloons) instead of waiting on a
+    # cold one; balloon pods tolerate it and hold the new node's slots
+    # meanwhile. Only useful WITH headroom balloons and a cluster autoscaler.
+    # Fails open: a node the controller did not see in time is left alone, and
+    # the taint is always removed once the node is timeoutSeconds old. Acts
+    # ONLY on nodes matching nodeSelector; needs the same node patch RBAC as
+    # backpressure. Off by default.
+    warmup:
+      enabled: false
+      nodeSelector: "teable.io/node-pool=sandbox"
+      # Keep the cluster-autoscaler startup-taint prefix: autoscalers that
+      # honor it (cluster-autoscaler, ACK node instant scaling) treat the node
+      # as still starting and do not add another node for sandboxes that are
+      # waiting on it.
+      taintKey: "startup-taint.cluster-autoscaler.kubernetes.io/sandbox-warming"
+      # CSI drivers that must be registered on the node, e.g.
+      # ["csi.juicefs.com"]. Empty: not checked.
+      csiDrivers: []
+      # Also wait for the image last announced through /api/image-preheats.
+      # Skipped automatically when no preheat has been requested.
+      requirePreheatedImage: true
+      # Only nodes younger than this are tainted; older ones are left alone.
+      maxTaintAgeSeconds: 180
+      timeoutSeconds: 480
+      intervalSeconds: 5
   # GKE-specific keys consumed by infra-service (all optional; leave unset on other platforms):
   # projectId: my-gcp-project    # GCP project ID
   # gkeLocation: us-central1     # GKE cluster location

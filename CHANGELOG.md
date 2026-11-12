@@ -11,6 +11,11 @@ release's `versions.yaml`. Hot-swappable; no action needed.
 
 ## Unreleased
 
+- **Optional warm-up gate for new sandbox nodes.** With
+  `global.sandboxScheduling.warmup.enabled`, a node that has just joined is
+  kept out of sandbox scheduling until its CSI drivers are registered and the
+  preheated sandbox image is pulled, so sandboxes no longer land on a node that
+  is not ready to run them. Off by default. No action needed.
 - **`global.sandboxNpmRegistry` now covers pnpm 11+.** The mirror is also
   passed as `PNPM_CONFIG_REGISTRY`, so pnpm installs in sandboxes and app
   runtimes use it instead of registry.npmjs.org. No action needed.
