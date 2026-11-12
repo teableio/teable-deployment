@@ -86,7 +86,8 @@ server:
   # under global.sandboxPrivateCa (see helm/private-ca.md), the non-root /
   # seccomp hardening switches under global.sandboxSecurity, and the npm
   # registry mirror under global.sandboxNpmRegistry (injects
-  # NPM_CONFIG_REGISTRY / COREPACK_NPM_REGISTRY into every sandbox). The
+  # NPM_CONFIG_REGISTRY / PNPM_CONFIG_REGISTRY / COREPACK_NPM_REGISTRY into
+  # every sandbox). The
   # template below is merged with those switches at render time; operator
   # values win, except for the securityContext fields global.sandboxSecurity
   # owns.

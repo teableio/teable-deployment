@@ -252,7 +252,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- /* ---- Sandbox npm registry mirror (global.sandboxNpmRegistry) ----
        One knob shared with the umbrella chart. When set, every sandbox gets
-       NPM_CONFIG_REGISTRY (npm / pnpm / bun / yarn 1) and COREPACK_NPM_REGISTRY
+       NPM_CONFIG_REGISTRY (npm / bun / yarn 1 / pnpm <= 10), PNPM_CONFIG_REGISTRY
+       (pnpm 11+ no longer reads npm_config_* env vars) and COREPACK_NPM_REGISTRY
        (corepack downloading the package manager itself) pointed at the mirror,
        so dependency installs work in networks where registry.npmjs.org is slow
        or unreachable. Env entries already present in the operator template win.
@@ -459,6 +460,7 @@ spec:
 {{- if $npmRegistry -}}
 {{- $npmEnv := list
       (dict "name" "NPM_CONFIG_REGISTRY" "value" $npmRegistry)
+      (dict "name" "PNPM_CONFIG_REGISTRY" "value" $npmRegistry)
       (dict "name" "COREPACK_NPM_REGISTRY" "value" $npmRegistry) -}}
 {{- $podSpec := dig "spec" "template" "spec" dict $merged -}}
 {{- $containers := $podSpec.containers | default list -}}

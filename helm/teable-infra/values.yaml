@@ -176,7 +176,8 @@ global:
     caCertificatesPath: /etc/ssl/certs/ca-certificates.crt
 
   # npm registry mirror for every workload that installs npm packages: sandboxes
-  # (NPM_CONFIG_REGISTRY / COREPACK_NPM_REGISTRY in batchSandboxTemplate) and
+  # (NPM_CONFIG_REGISTRY / PNPM_CONFIG_REGISTRY / COREPACK_NPM_REGISTRY in
+  # batchSandboxTemplate; pnpm 11+ only reads the PNPM_ one) and
   # App Runtime pods (infraService.appRuntime.npmRegistry overrides that plane).
   # Empty = official registry, nothing injected. Workload-supplied env of the
   # same name wins; only NEW sandboxes / (re)created app Deployments pick up a
