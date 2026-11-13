@@ -20,6 +20,10 @@ release's `versions.yaml`. Hot-swappable; no action needed.
   passed as `PNPM_CONFIG_REGISTRY`, so pnpm installs in sandboxes and app
   runtimes use it instead of registry.npmjs.org. No action needed.
 
+### Teable release.2026-11-13T02-21-01Z.3890
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-11-13T02-21-01Z.3890`.
+
 ## v2026.11.14 - 2026-11-10
 
 ### Teable release.2026-11-10T05-38-53Z.3830
