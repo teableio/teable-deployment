@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.11.15 - 2026-11-13
 
 - **Optional warm-up gate for new sandbox nodes.** With
   `global.sandboxScheduling.warmup.enabled`, a node that has just joined is
