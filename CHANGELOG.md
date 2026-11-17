@@ -9,6 +9,18 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-17T04-55-24Z.3939
+
+#### Feature Updates
+- The new “Share Your Work” flow helps creators promote templates with AI-drafted posts for X and LinkedIn; creators can claim credit rewards for eligible posts that include links to their templates.
+
+#### Bug Fixes & Improvements
+- Improved handling of unavailable templates, project tags, and reliability during concurrent publishing.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-17T04-55-24Z.3939)
+
 ## v2026.11.18 - 2026-11-17
 
 ### Teable release.2026-11-17T04-07-36Z.3938
