@@ -374,6 +374,28 @@ appRuntime:
     defaultReplicas: 1
     nodeSelector: {}
     tolerations: []
+  # Spare capacity for published apps (off by default). Each replica is a
+  # negative-priority placeholder pod holding one app slot on the app nodes:
+  # waking an app preempts a placeholder instantly, and the displaced
+  # placeholder brings up a new node in the background, so a wake never waits
+  # for node provisioning. Same mechanism as global.sandboxScheduling.headroom.
+  # The PriorityClass is cluster-scoped, so restricted deploy accounts (no
+  # cluster permissions) must keep replicas at 0.
+  headroom:
+    replicas: 0
+    # Empty: the infra-service namespace (keeps placeholders out of the app quota).
+    namespace: ""
+    # Empty: infraService.appRuntime.defaultImage running `sleep`, so a new node
+    # pulls the app image while it waits and woken apps start without a pull.
+    image: ""
+    priorityClassValue: -10
+    # Empty: infraService.appRuntime.defaultCpuRequest/defaultMemoryRequest (one app).
+    requests:
+      cpu: ""
+      memory: ""
+    # Empty: infraService.appRuntime.nodeSelector/tolerations (where apps are scheduled).
+    nodeSelector: {}
+    tolerations: []
   ingress:
     mode: dynamic
     className: nginx

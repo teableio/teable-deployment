@@ -1,0 +1,84 @@
+{{- /* Spare published-app capacity (appRuntime.headroom): negative-priority
+       placeholder pods, each holding one app slot. A waking app preempts one
+       instantly while the displaced placeholder brings up a new node in the
+       background. Rendered only when replicas>0; the PriorityClass is
+       cluster-scoped. */}}
+{{- $runtime := .Values.appRuntime | default dict }}
+{{- $hr := $runtime.headroom | default dict }}
+{{- $replicas := int ($hr.replicas | default 0) }}
+{{- if and $runtime.enabled (gt $replicas 0) }}
+{{- $infraRuntime := (.Values.infraService).appRuntime | default dict }}
+{{- $name := printf "%s-app-headroom" .Release.Name }}
+{{- $namespace := $hr.namespace | default ((.Values.infraService).namespaceOverride | default .Release.Namespace) }}
+{{- $requests := $hr.requests | default dict }}
+{{- $cpu := $requests.cpu | default ($infraRuntime.defaultCpuRequest | default "25m") }}
+{{- $memory := $requests.memory | default ($infraRuntime.defaultMemoryRequest | default "96Mi") }}
+{{- /* Default to the app image (running sleep) so new nodes pre-pull it. */}}
+{{- $useAppImage := and (not $hr.image) $infraRuntime.defaultImage }}
+{{- $image := $hr.image | default ($infraRuntime.defaultImage | default "registry.k8s.io/pause:3.10") }}
+{{- $nodeSelector := $hr.nodeSelector | default $infraRuntime.nodeSelector }}
+{{- $tolerations := $hr.tolerations | default $infraRuntime.tolerations }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ $name }}
+value: {{ int ($hr.priorityClassValue | default -10) }}
+globalDefault: false
+preemptionPolicy: Never
+description: "Placeholder pods holding spare published-app slots; preempted by any real workload."
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $namespace }}
+  labels:
+    app: {{ $name }}
+    app.kubernetes.io/name: app-headroom
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: opensandbox
+spec:
+  replicas: {{ $replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      priorityClassName: {{ $name }}
+      terminationGracePeriodSeconds: 0
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      {{- if and $useAppImage $infraRuntime.registrySecretName }}
+      imagePullSecrets:
+        - name: {{ $infraRuntime.registrySecretName | quote }}
+      {{- end }}
+      {{- with $nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: placeholder
+          image: {{ $image | quote }}
+          {{- if $useAppImage }}
+          command: ["sleep", "infinity"]
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: {{ $cpu | quote }}
+              memory: {{ $memory | quote }}
+            limits:
+              cpu: {{ $cpu | quote }}
+              memory: {{ $memory | quote }}
+{{- end }}
