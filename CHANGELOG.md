@@ -9,6 +9,15 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-17T15-28-36Z.3953
+
+#### Bug Fixes & Improvements
+- Permanent deletion remains blocked while an export is incomplete to protect retained data and tables that are not yet ready.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-17T15-28-36Z.3953)
+
 ## v2026.11.20 - 2026-11-17
 
 ### Teable release.2026-11-17T13-48-40Z.3951
