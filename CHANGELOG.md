@@ -9,6 +9,36 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-18T03-31-20Z.3959
+
+#### Feature Updates
+- Templates can now be shared immediately after submission through a stable short link that shows the submitted version during review and the live version after approval. Links become unavailable if the submission is withdrawn or rejected.
+- Template links now display rich previews on platforms such as X and LinkedIn. A cover image is now required when submitting a template.
+- AI-generated X and LinkedIn share drafts no longer append a credits disclosure across all 12 supported languages. X drafts can use the full 280-character limit and now reference the official @teableai account; previously published reward posts mentioning @teableio remain valid.
+
+#### Bug Fixes & Improvements
+- Retired or removed template snapshots now move to the trash for permanent deletion after the retention period, taking their published apps offline. Repeated or concurrent retirement requests no longer extend retention.
+- Preserved compatibility across existing REST APIs, shared views, permissions, and Community and Enterprise workflows.
+- Failed batch view deletions no longer leave inconsistent state or update undo/redo history.
+- Imports from Excel, Google Sheets, and appended files now leave invalid or out-of-range date cells blank instead of failing the entire import. Rows with invalid required values are skipped without discarding later valid rows, and Excel date serials are interpreted correctly.
+- Import results now report skipped cells and rows with original source row numbers, localized reasons, accurate counts, and up to 100 examples.
+- Incomplete trash exports now identify skipped projects and tables and provide localized recovery steps. Permanent deletion remains blocked until the export is complete.
+- Field creation and updates now apply reference permissions consistently, provide clearer access errors, and avoid partial changes when access is denied.
+- Template Center and creator-facing statuses now accurately reflect listing availability. Unlisting a template no longer invalidates existing template links.
+- Moving a project or space to the trash now takes all its published apps offline immediately, including when a space is deleted through the admin panel. Restoring the project or space leaves its apps unpublished until owners republish them, and deletion dialogs show how many published apps will be affected.
+- Large base exports are less likely to slow other requests. Overlapping exports receive a clear busy response or share an active export, and cancelled exports stop without misleading success notifications.
+- Fixed an erroneous “Script error.” banner when viewing static Markdown documents on iPhone and Safari, while preserving relevant embedded-document errors.
+- Mobile startup now reaches a usable new-chat screen faster, with smoother navigation, more reliable notification launches, consistent branding and titles, and better handling of deleted projects or chats.
+- Improved mobile language selection, starter content, offline recovery, and subscription checks.
+- Improved security for stored BYODB database connection details.
+- App Builder now preserves custom Next.js configuration during imports, saves, publishing, and preview restarts, including headers, redirects, image settings, plugins, and allowed origins.
+- Lookup calculations now remain reliable when related records or fields are deleted, and unavailable lookups no longer block other calculations.
+- Table deletion now returns a retryable conflict response after five seconds of contention instead of waiting indefinitely. Successfully committed changes are no longer incorrectly reported as failed.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-18T03-31-20Z.3959)
+
 ## v2026.11.21 - 2026-11-17
 
 ### Teable release.2026-11-17T15-28-36Z.3953
