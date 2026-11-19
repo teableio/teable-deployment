@@ -9,6 +9,19 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Separate upload address for the S3 artifact store.** Optional
+  `infraService.appRuntime.artifactS3.publicEndpoint` sets the address sandboxes
+  upload to when publishing an app, for setups where `artifactS3.endpoint` is
+  only reachable from inside the cluster. No action needed if publishing works today.
+- **`false` is no longer ignored for two chart switches.**
+  `infraService.appRuntime.artifactS3.forcePathStyle: false` and
+  `global.sandboxScheduling.backpressure.enabled: false` used to render as `true`.
+  If you set either one to `false`, it takes effect after this upgrade; with
+  `forcePathStyle: false`, uploads go to `<bucket>.<endpoint host>`, so make sure
+  sandboxes can reach that address.
+
 ## v2026.11.23 - 2026-11-19
 
 ### Teable release.2026-11-19T00-19-21Z.3974

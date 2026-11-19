@@ -103,7 +103,8 @@ spec:
                    admin pre-provisions the ClusterRole, not that the feature is
                    off (docs/sandbox-scheduling-v2.md §4). */}}
             {{- $bp := (get $global "sandboxScheduling" | default dict).backpressure | default dict }}
-            {{- $bpEnabled := ne (toString ($bp.enabled | default true)) "false" }}
+            {{- /* Unset means on; compare as a string so both false and "false" turn it off (`| default true` would swallow false). */}}
+            {{- $bpEnabled := ne (toString $bp.enabled) "false" }}
             - name: SANDBOX_BACKPRESSURE_ENABLED
               value: {{ ternary "true" "false" $bpEnabled | quote }}
             {{- if $bpEnabled }}
@@ -325,6 +326,10 @@ spec:
             {{- end }}
             - name: APP_RUNTIME_ARTIFACT_S3_ENDPOINT
               value: {{ $artifactS3.endpoint | default (include "teable-infra.s3Url" .) | quote }}
+            {{- if $artifactS3.publicEndpoint }}
+            - name: APP_RUNTIME_ARTIFACT_S3_PUBLIC_ENDPOINT
+              value: {{ $artifactS3.publicEndpoint | quote }}
+            {{- end }}
             - name: APP_RUNTIME_ARTIFACT_S3_REGION
               value: {{ $artifactS3.region | default "us-east-1" | quote }}
             - name: APP_RUNTIME_ARTIFACT_S3_ACCESS_KEY_ID
@@ -338,7 +343,8 @@ spec:
                   name: {{ $s3SecretName | quote }}
                   key: {{ $s3SecretKey | quote }}
             - name: APP_RUNTIME_ARTIFACT_S3_FORCE_PATH_STYLE
-              value: {{ ternary "true" "false" ($artifactS3.forcePathStyle | default true) | quote }}
+              {{- /* Compare as a string: `| default true` would turn an explicit false back into true. */}}
+              value: {{ ternary "false" "true" (eq (toString $artifactS3.forcePathStyle) "false") | quote }}
             {{- end }}
             {{- if and .Values.infraService.alibabaCloud .Values.infraService.alibabaCloud.accessKeySecretName }}
             - name: ALIBABA_CLOUD_ACCESS_KEY_ID

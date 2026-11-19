@@ -818,6 +818,11 @@ infraService:
     artifactS3:
       # Blank: derived from global.baseDomain (https://s3.<base>), i.e. the bundled MinIO ingress.
       endpoint: ""
+      # Optional. Host used only for the upload URLs handed to sandboxes when they publish an app.
+      # Set it when `endpoint` is reachable from infra-service but not from sandboxes (for example
+      # an in-cluster or private-network address). It must reach the same bucket and keep the
+      # request Host unchanged, because the Host is part of the signature. Blank: uploads use `endpoint`.
+      publicEndpoint: ""
       # MinIO ignores the region but AWS SDK clients require one; us-east-1 is the conventional stand-in.
       region: us-east-1
       # Blank: falls back to teable.secret.name using its minio-access-key/minio-secret-key keys
