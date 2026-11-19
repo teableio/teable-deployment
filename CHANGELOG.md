@@ -9,6 +9,29 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-19T00-19-21Z.3974
+
+#### Feature Updates
+- Structured Query now supports cursor pagination for records and deduplicated results, including queries with filters on related records or filters applied before aggregation. Results maintain a stable order across pages, and later pages load faster for large datasets.
+- The notification center now uses a unified timeline, with notifications grouped by day and the newest first. You can filter by source and unread status. Icons and unread indicators are clearer, downloads are easier, and links to space settings are more reliable.
+- The personal access token page now indicates when a token has stopped working or should be regenerated. In a dedicated view, admins can see which affected tokens have not yet expired and how many users are affected.
+- Artifact browsing now supports cursor pagination. Artifacts from deleted projects are grouped under “Unavailable Projects.”
+
+#### Bug Fixes & Improvements
+- Real-time updates, record history, automation triggers, and public file syncing are less likely to be interrupted during a graceful service shutdown.
+- Structured Query now returns a clear error when an intermediate text result exceeds 1 MiB. Conditional branches that are not executed do not trigger this limit, and saved formulas remain unchanged.
+- Large-scale recalculations after record deletion finish faster and cause fewer delays for other bases. Filtered lookups, cross-table rollups, and dependent formulas now recalculate only affected records where possible and resume more reliably after interruptions.
+- Image preview controls hide when the pointer is idle and reappear when you interact again, without changing the zoom level or position.
+- Strengthened protection for stored third-party credentials and updated application dependencies.
+- Streaming AI responses use less memory and CPU, and pricing information remains available if a refresh temporarily fails.
+- Failure notification emails for routine tasks and automations are grouped by hour, with a maximum of two emails per recipient per hour. Repeated push alerts and important pop-ups are consolidated, while individual alerts remain available in the notification center.
+- Artifacts are hidden when their space is moved to the trash and reappear when the space is restored. Permanently deleting an artifact owner, an account, or a space in the trash also deletes associated artifacts and stored files.
+- Strengthened artifact access security and hid AI actions when the associated project is unavailable.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-19T00-19-21Z.3974)
+
 ## v2026.11.22 - 2026-11-18
 
 ### Teable release.2026-11-18T03-31-20Z.3959
