@@ -22,6 +22,10 @@ release's `versions.yaml`. Hot-swappable; no action needed.
   `forcePathStyle: false`, uploads go to `<bucket>.<endpoint host>`, so make sure
   sandboxes can reach that address.
 
+### Teable release.2026-11-19T10-43-10Z.3988
+
+`ghcr.io/teableio/teable:latest` now resolves to `release.2026-11-19T10-43-10Z.3988`.
+
 ## v2026.11.23 - 2026-11-19
 
 ### Teable release.2026-11-19T00-19-21Z.3974
