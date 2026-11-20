@@ -5,12 +5,12 @@
 # China deployments: every ghcr.io/teableio/ image is mirrored with identical
 # tags at registry.cn-shenzhen.aliyuncs.com/teable/ (digests differ per registry; the
 # digests below are for the canonical registry shown in each reference).
-platformRelease: v2026.11.24
-releasedAt: '2026-11-19T07:25:07Z'
+platformRelease: v2026.11.25
+releasedAt: '2026-11-20T02:00:02Z'
 components:
   teable:
-    image: ghcr.io/teableio/teable:release.2026-11-19T00-19-21Z.3974
-    digest: sha256:17086aeb9fe8ed664308d2de5849d6d03f9cc4fbd66f7cb94f4cdb5aaf8ca0d7
+    image: ghcr.io/teableio/teable:release.2026-11-19T10-43-10Z.3988
+    digest: sha256:6d33b7bdb5d949f31c2e65af8b471435f8180481c50307994e9bcede7daf1416
     architectures:
     - amd64
     - arm64
@@ -48,11 +48,14 @@ components:
       on the sandbox path-proxy routes including WebSocket (>= fix11); upstream does
       not include them yet.'
   opensandbox-ingress:
-    image: ghcr.io/teableio/opensandbox-ingress:v1.0.7
-    digest: sha256:f67bef778e4c80c7de182f76a213363ba2c5214c323823b364cda859dbd36198
+    image: ghcr.io/teableio/opensandbox-ingress:v1.0.7-fix1
+    digest: sha256:6874e34b6968137bc6234e3c4975d88dcfc7dc133a98b67396c7088165a48f6f
     architectures:
     - amd64
     - arm64
+    note: 'Patched build: upstream v1.0.7 plus a WebSocket close fix (when a client
+      disconnects without a close frame, the gateway no longer relays the reserved
+      close codes 1005/1006/1015 to the sandbox).'
   opensandbox-controller:
     image: ghcr.io/teableio/opensandbox-controller:v0.2.0
     digest: sha256:a9a5f73c1785ebd955336ffa313973a35c1a1b662cb7afc4ea82d92021b3532a
@@ -124,7 +127,7 @@ components:
       of it locally. Not used on Kubernetes.'
 teableCompatibility:
   minRelease: release.2026-07-14T12-24-39Z.2228
-  verifiedRelease: release.2026-11-19T00-19-21Z.3974
+  verifiedRelease: release.2026-11-19T10-43-10Z.3988
 requiredMigrations: []
 migrationCatalog: []
 hotSwap: true

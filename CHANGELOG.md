@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.11.25 - 2026-11-20
 
 - **Sandbox previews no longer break when a browser connection drops abruptly.**
   The preview gateway (`opensandbox-ingress` `v1.0.7-fix1`) used to pass an invalid
