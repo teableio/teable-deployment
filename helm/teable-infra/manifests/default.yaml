@@ -1593,7 +1593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: 2218a85f29c47d488ed0a71451f90812094d20c8c68625db292731148a958c85
+        checksum/secure-access: 7b4d8e60e10f834e5b50616702c8a5fbba64af662311acde9b75afdf3ad6c9fe
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1603,7 +1603,7 @@ spec:
       serviceAccountName: opensandbox-ingress-gateway
       containers:
       - name: main
-        image: ghcr.io/teableio/opensandbox-ingress:v1.0.7
+        image: ghcr.io/teableio/opensandbox-ingress:v1.0.7-fix1
         imagePullPolicy: IfNotPresent
         args:
         - "--namespace=teable-sandbox"
@@ -1666,7 +1666,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 61f66e12c81be0a4dcd371878f4825beb2ea0cea3c6e74ea8698a17a5e745cb2
+        checksum/config-toml: 0f2fa2a5765a438cb703afa6a18d0d300001114b6731a3e1cb53ba8e5e8d9f85
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server

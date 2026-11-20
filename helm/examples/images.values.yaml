@@ -49,4 +49,4 @@ opensandbox-server:
     gateway:
       image:
         repository: ghcr.io/teableio/opensandbox-ingress
-        tag: v1.0.7
+        tag: v1.0.7-fix1

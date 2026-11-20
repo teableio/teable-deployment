@@ -182,7 +182,7 @@ server:
     gatewayRouteMode: "header"
     image:
       repository: ghcr.io/teableio/opensandbox-ingress
-      tag: "v1.0.7"
+      tag: "v1.0.7-fix1"
     replicaCount: 2
     port: 28888
     dataplaneNamespace: "teable-sandbox"

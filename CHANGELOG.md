@@ -9,6 +9,13 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **Sandbox previews no longer break when a browser connection drops abruptly.**
+  The preview gateway (`opensandbox-ingress` `v1.0.7-fix1`) used to pass an invalid
+  WebSocket close code to the app's dev server, which could show a runtime error in
+  the preview. Kubernetes: upgrade the chart. Docker installs are not affected.
+
 ## v2026.11.24 - 2026-11-19
 
 - **Separate upload address for the S3 artifact store.** Optional
