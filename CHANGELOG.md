@@ -9,6 +9,30 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-21T01-51-32Z.4009
+
+#### Feature Updates
+- Added strict and read-only MCP endpoints. The strict endpoint separates read and write actions so compatible AI clients can ask for confirmation before making changes. The read-only endpoint supports clients that cannot confirm writes. Existing MCP integrations are unchanged.
+- Added a Query Library for each Base. Members can save, find, compare, and share private-by-default query revisions. Queries run with the caller’s current data permissions, and published apps can pin a specific revision. Revoking access prevents apps from running the pinned query until access is restored or the app is updated. This feature requires both Query Library and native query execution to be enabled.
+- Plain-text paste across tables now supports two-way many-to-many links. Pasted titles match existing records in the linked table, and reciprocal links are updated without creating duplicates.
+- Table members can now see whether search acceleration is active, which fields it covers, and when its status changes. Shared views show availability only for fields visible in the view.
+
+#### Bug Fixes & Improvements
+- Updated the OpenAI plugin package to version 1.0.1 and shortened AI instructions so they are no longer cut off in Claude Code.
+- Improved v2 computed-field reliability while reducing unnecessary database load.
+- Improved resource restore and deletion reliability, including a fix for restored v2 tables that could remain listed in the trash.
+- Row prefilling now keeps permitted values and skips only new select options the editor cannot create. If the paste contains only a restricted option, it still returns a permission error.
+- Fixed failures when fields were created concurrently on the same table or while a long-running operation was in progress. New fields now reliably appear in the field list and default view.
+- Cuppy now explains when a task stops because it runs out of memory. Completed steps remain visible, and web users can resume from the latest reply without starting over.
+- Fixed filtered lookups and rollups so deleting linked records recalculates only the affected parent records. Deletion is also faster for large linked datasets.
+- Improved Base share security so visitors can access only content within the configured share scope.
+- Fixed errors in Dashboard charts that use table data. Chart totals now reflect the data each viewer has permission to read, including row-level restrictions.
+- Improved V2 API performance for batch updates across multiple linked-record fields while preserving link order and keeping reciprocal links in sync.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-21T01-51-32Z.4009)
+
 ## v2026.11.26 - 2026-11-20
 
 ### Teable release.2026-11-20T02-10-33Z.3993
