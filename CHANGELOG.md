@@ -9,7 +9,7 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
-## Unreleased
+## v2026.11.30 - 2026-11-25
 
 - **App secrets: installs without `SECRET_KEY` can move to their own.** A later
   app version refuses to start without it. If the admin panel or `./doctor.sh`
