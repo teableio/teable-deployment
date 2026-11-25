@@ -137,15 +137,53 @@ Caddyfile.*.generated
 
 ## App secrets
 
-On a fresh install, `./apply.sh ... --with-app` writes a random `SECRET_KEY`
-into `teable-app.env`, next to `SANDBOX_JWT_SECRET` and the storage key pair
-in `.env`. The app derives its sign-in secrets and the keys for most stored
-data from `SECRET_KEY`, so never change or remove any of them by hand, and
-back up `teable-app.env` together with `.env`.
+The app needs two secrets of its own: `SECRET_KEY` in `teable-app.env` and
+`SANDBOX_JWT_SECRET` in `.env`. On a fresh install, `./apply.sh ... --with-app`
+generates both, together with the storage key pair in `.env`. The app derives
+its sign-in secrets and the keys for most stored data from `SECRET_KEY`, so
+never change or remove any of them by hand, and back up `teable-app.env`
+together with `.env`.
+
+Leave the app's other secret variables (`BACKEND_JWT_SECRET`,
+`BACKEND_SESSION_SECRET` and the like) unset: they follow `SECRET_KEY`, and a
+later version may stop reading them.
 
 Installs created before `SECRET_KEY` was generated have none in
-`teable-app.env`. Leave it that way: adding one by hand signs everyone out
-and makes stored data unreadable.
+`teable-app.env`. They run on the app's built-in values, which are public.
+`./apply.sh` and `./doctor.sh` warn about it, and the app's admin panel may
+report `SECRET_KEY` as not set. A later app version refuses to start that way,
+so move such an install to its own key before upgrading to it:
+
+1. Update the app to the latest version, and back up the database, `.env` and
+   `teable-app.env`. On a Business plan or above, check that **System Admin**
+   shows **Key rotation** before going on: that page does the bulk work of
+   step 4. If it is not there, the app version predates it; wait for one that
+   has it.
+2. Run `./adopt-secret-key.sh`. It appends a generated `SECRET_KEY` to
+   `teable-app.env`, together with `_OLD` variables that hold the values the
+   app has been running on and keep stored data readable. Do not add
+   `SECRET_KEY` by hand: on its own it makes that data unreadable.
+3. Run `docker compose up -d`. Everyone signs in again.
+4. Published apps cannot reach Teable until their credentials are renewed, so
+   do that next:
+   - With **System Admin → Key rotation**: refresh app credentials under
+     **JWT credentials**, then re-encrypt stored data under **Stored
+     ciphertexts** (dry run first).
+   - Without that page (plans below Business): rotate each app's credentials
+     in App Builder (**Credentials & config → Platform credentials →
+     Rotate**). Nothing is re-encrypted, so the `_OLD` lines for stored data
+     stay.
+5. Remove the `_OLD` lines when they are no longer needed, and run
+   `docker compose up -d` again:
+   - `BACKEND_ENV_VARIABLE_SECRET_OLD`,
+     `BACKEND_AI_CONFIG_ENCRYPTION_SECRET_OLD`,
+     `BACKEND_THIRD_PARTY_CREDENTIAL_ENCRYPTION_SECRET_OLD` and the two
+     `BACKEND_DATA_DB_URL_ENCRYPTION_*_OLD` lines (always both together): after
+     the re-encryption of step 4, once a dry run shows nothing left to
+     re-encrypt and nothing undecryptable.
+   - `BACKEND_INVITATION_SECRET_OLD`: a month after the switch, when the email
+     invitations sent before it have expired. Invitation links created before
+     the switch stop working once it is removed; create new ones.
 
 ## App custom domains
 

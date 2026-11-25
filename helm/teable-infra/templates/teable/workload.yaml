@@ -184,6 +184,17 @@ spec:
                   name: {{ $secretName | quote }}
                   key: secret-key
                   optional: true
+            {{- /* Decrypt-only previous values of an install that moved to its own secret-key (README
+                   "App secrets"). The keys exist only between that move and their removal; optional
+                   keeps each variable unset the rest of the time. */}}
+            {{- range $envName, $secretKey := dict "BACKEND_ENV_VARIABLE_SECRET_OLD" "env-variable-secret-old" "BACKEND_AI_CONFIG_ENCRYPTION_SECRET_OLD" "ai-config-encryption-secret-old" "BACKEND_THIRD_PARTY_CREDENTIAL_ENCRYPTION_SECRET_OLD" "third-party-credential-encryption-secret-old" "BACKEND_INVITATION_SECRET_OLD" "invitation-secret-old" "BACKEND_DATA_DB_URL_ENCRYPTION_KEY_OLD" "data-db-url-encryption-key-old" "BACKEND_DATA_DB_URL_ENCRYPTION_IV_OLD" "data-db-url-encryption-iv-old" }}
+            - name: {{ $envName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName | quote }}
+                  key: {{ $secretKey }}
+                  optional: true
+            {{- end }}
             {{- /* SANDBOX_OPENSANDBOX_RUNTIME is intentionally unset: kubernetes is the app's default and correct here; only the docker path must override it. */}}
             {{- /* SANDBOX_URL is intentionally unset: the integrated automation sandbox starts inside the app container when it is absent. */}}
           {{- /* First boot runs DB migrations, which can take minutes; a tight liveness delay would kill the Pod mid-migration and corrupt the bootstrap. */}}

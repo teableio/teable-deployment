@@ -1593,7 +1593,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secure-access: ece4c7e906d0799181333fa64f18359aabebe407e070c0c87b4378d09f44ecaf
+        checksum/secure-access: 2d2b05be0b2e1dfdd96797761f9adbe8964865dfaa9155d421779fd272e94372
       labels:
         app.kubernetes.io/name: opensandbox-ingress-gateway
         app.kubernetes.io/instance: teable
@@ -1666,7 +1666,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-toml: 24f7df6788a090336b3fcd96247da5135951f4ea5fbca1bc8098252afbc375aa
+        checksum/config-toml: 50eb0cfb7695102bf56f302961e0aba3b0d03f1da00f292ad6bac3dbdf47e09d
         checksum/batchsandbox-template: c1e2c364bbfee5f6fd2a80f821ca6412e7c3675ec3d0aa18b83f64a42b144e3a
       labels:
         app.kubernetes.io/name: opensandbox-server
@@ -2441,6 +2441,42 @@ spec:
             secretKeyRef:
               name: teable-app-secrets
               key: secret-key
+              optional: true
+        - name: BACKEND_AI_CONFIG_ENCRYPTION_SECRET_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: ai-config-encryption-secret-old
+              optional: true
+        - name: BACKEND_DATA_DB_URL_ENCRYPTION_IV_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: data-db-url-encryption-iv-old
+              optional: true
+        - name: BACKEND_DATA_DB_URL_ENCRYPTION_KEY_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: data-db-url-encryption-key-old
+              optional: true
+        - name: BACKEND_ENV_VARIABLE_SECRET_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: env-variable-secret-old
+              optional: true
+        - name: BACKEND_INVITATION_SECRET_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: invitation-secret-old
+              optional: true
+        - name: BACKEND_THIRD_PARTY_CREDENTIAL_ENCRYPTION_SECRET_OLD
+          valueFrom:
+            secretKeyRef:
+              name: teable-app-secrets
+              key: third-party-credential-encryption-secret-old
               optional: true
         readinessProbe:
           httpGet:

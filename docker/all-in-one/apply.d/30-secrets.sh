@@ -25,7 +25,8 @@ if [ "$WITH_APP" = 1 ]; then
   # most stored-data keys from, so a fresh install needs only this one. It lives here rather than in
   # compose.app.yaml because compose would pass it blank when unset, and the app takes a blank as a
   # real key. An app that already ran without it has data encrypted under the keys it ran on; a
-  # SECRET_KEY now would strand that data, so it gets none.
+  # SECRET_KEY now would strand that data, so it gets none here. adopt-secret-key.sh moves such an
+  # install over, with the *_OLD variables that keep that data readable.
   if [ ! -f teable-app.env ]; then
     (
       umask 077
@@ -40,7 +41,9 @@ if [ "$WITH_APP" = 1 ]; then
     echo "[init] teable-app.env"
   fi
   if ! grep -qE '^SECRET_KEY=.' teable-app.env; then
-    echo "[!] No SECRET_KEY in teable-app.env: this app predates generated app secrets. Leave it that way:"
-    echo "    adding one by hand signs everyone out and makes stored data unreadable."
+    echo "[!] No SECRET_KEY in teable-app.env: this app predates generated app secrets and runs on the"
+    echo "    app's built-in public values. A later app version refuses to start that way. Do not add one"
+    echo "    by hand, which makes stored data unreadable: update the app to the latest version, then run"
+    echo "    ./adopt-secret-key.sh. See \"App secrets\" in README.md."
   fi
 fi

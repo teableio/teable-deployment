@@ -9,6 +9,14 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+- **App secrets: installs without `SECRET_KEY` can move to their own.** A later
+  app version refuses to start without it. If the admin panel or `./doctor.sh`
+  reports `SECRET_KEY` as not set, follow "App secrets" in the Docker README
+  (`./adopt-secret-key.sh`) or the Helm README; do not add the key by hand.
+  Fresh installs already have one: no action needed.
+
 ## v2026.11.29 - 2026-11-24
 
 ### Teable release.2026-11-24T05-06-24Z.4043

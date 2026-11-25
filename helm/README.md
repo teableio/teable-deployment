@@ -56,12 +56,69 @@ management (upgrades become re-applies).
 
 ## App secrets
 
-On a fresh install the chart's `teable-app-secrets` Secret gets a random
-`secret-key`, the root the app derives its sign-in secrets and most
-stored-data keys from. The chart keeps it on upgrade; never change or remove
-it by hand, and back it up with the rest of that Secret. Installs from an
-older chart have no `secret-key`, and the chart leaves them that way: adding
-one by hand signs everyone out and makes stored data unreadable.
+The app needs two secrets of its own, both in the chart's `teable-app-secrets`
+Secret: `secret-key` (the app's `SECRET_KEY`) and `sandbox-jwt-secret`. On a
+fresh install the chart generates both. `secret-key` is the root the app
+derives its sign-in secrets and most stored-data keys from. The chart keeps it
+on upgrade; never change or remove it by hand, and back it up with the rest of
+that Secret.
+
+Installs from an older chart have no `secret-key`. The app runs on its built-in
+values, which are public, and its admin panel may report `SECRET_KEY` as not
+set. A later app version refuses to start that way, so move such an install to
+its own key before upgrading to it. The chart never adds the key by itself:
+
+1. Upgrade to this chart version or later and to the latest app version, and
+   back up the database and the `teable-app-secrets` Secret. On a Business plan
+   or above, check that **System Admin** shows **Key rotation** before going
+   on: that page does the bulk work of step 3. If it is not there, the app
+   version predates it; wait for one that has it.
+2. Add `secret-key` together with the values the app has been running on,
+   which keep stored data readable, then restart the app. Never add
+   `secret-key` alone: on its own it makes that data unreadable.
+
+   ```bash
+   NS=opensandbox-system
+   # Prints nothing on an install that still needs this. Stop if it prints a value.
+   kubectl -n "$NS" get secret teable-app-secrets -o jsonpath='{.data.secret-key}'
+
+   kubectl -n "$NS" patch secret teable-app-secrets --type merge -p '{"stringData": {
+     "secret-key": "'"$(openssl rand -hex 32)"'",
+     "env-variable-secret-old": "defaultSecretKey",
+     "ai-config-encryption-secret-old": "defaultSecretKey",
+     "third-party-credential-encryption-secret-old": "defaultSecretKey",
+     "invitation-secret-old": "defaultSecretKey",
+     "data-db-url-encryption-key-old": "ed333d03ac334ea2",
+     "data-db-url-encryption-iv-old": "3c50b81e61cb7f52"
+   }}'
+   kubectl -n "$NS" rollout restart deployment/teable-teable   # <release>-teable
+   ```
+
+3. Everyone signs in again. Published apps cannot reach Teable until their
+   credentials are renewed, so do that next:
+   - With **System Admin → Key rotation**: refresh app credentials under
+     **JWT credentials**, then re-encrypt stored data under **Stored
+     ciphertexts** (dry run first).
+   - Without that page (plans below Business): rotate each app's credentials
+     in App Builder (**Credentials & config → Platform credentials →
+     Rotate**). Nothing is re-encrypted, so the `-old` keys for stored data
+     stay.
+4. Remove the `-old` keys when they are no longer needed, and restart the app
+   again. The chart keeps whatever is left on upgrade.
+   - `env-variable-secret-old`, `ai-config-encryption-secret-old`,
+     `third-party-credential-encryption-secret-old` and the two
+     `data-db-url-encryption-*-old` keys (always both together): after the
+     re-encryption of step 3, once a dry run shows nothing left to re-encrypt
+     and nothing undecryptable.
+   - `invitation-secret-old`: a month after the switch, when the email
+     invitations sent before it have expired. Invitation links created before
+     the switch stop working once it is removed; create new ones.
+
+   ```bash
+   kubectl -n "$NS" patch secret teable-app-secrets --type json \
+     -p '[{"op": "remove", "path": "/data/invitation-secret-old"}]'
+   kubectl -n "$NS" rollout restart deployment/teable-teable
+   ```
 
 ## Pinning and upgrading images
 

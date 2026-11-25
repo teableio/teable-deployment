@@ -75,7 +75,10 @@ docker inspect teable --format '{{range .Config.Env}}{{println .}}{{end}}' > tea
 
 **Keep your existing app secrets as they are.** If your app has no
 `SECRET_KEY` set, do not add one here: data already encrypted would stop
-decrypting.
+decrypting. Newer app versions may report it as not set in the admin panel,
+and a later version refuses to start without it. Giving the app its own key is
+a separate change, not part of this migration: see "Secrets and rotation" in
+the environment variable reference of the Teable documentation.
 
 Restart the app for the changes to take effect.
 

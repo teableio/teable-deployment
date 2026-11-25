@@ -111,9 +111,11 @@ if [ -n "$FROM" ]; then
   printf '\n'
 fi
 
-PASS=0; FAIL=0; SKIP=0
+PASS=0; FAIL=0; SKIP=0; WARN=0
 ok()   { PASS=$((PASS+1)); printf '  [ok]   %s\n' "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '  [FAIL] %s\n         ↳ First place to look: %s\n' "$1" "$2"; }
+# Works today, will not after a later upgrade: reported, but the run still passes.
+warn() { WARN=$((WARN+1)); printf '  [warn] %s\n         ↳ What to do: %s\n' "$1" "$2"; }
 skip() { SKIP=$((SKIP+1)); printf '  [skip] %s (%s)\n' "$1" "$2"; }
 sec()  { printf '\n== %s ==\n' "$1"; }
 
@@ -195,6 +197,17 @@ if [ "$APP_MODE" = 1 ]; then
     *:latest) ok "TEABLE_IMAGE=latest (fine for Docker deploys; for production pin it with ./pin-image.sh)" ;;
     ?*)       ok "TEABLE_IMAGE is pinned to a version" ;;
   esac
+  # The app's root secret lives in teable-app.env, not .env. An install that predates generated
+  # app secrets has none and runs on the app's built-in public values: it works, and a later app
+  # version refuses to start that way.
+  if [ -f teable-app.env ]; then
+    if grep -qE '^SECRET_KEY=.' teable-app.env; then
+      ok "SECRET_KEY is set (teable-app.env)"
+    else
+      warn "No SECRET_KEY in teable-app.env: the app runs on its built-in public values" \
+           "a later app version refuses to start that way; run ./adopt-secret-key.sh (see \"App secrets\" in README.md), never add the key by hand"
+    fi
+  fi
 fi
 
 # ---------- Container health ----------
@@ -538,6 +551,9 @@ fi
 # ---------- Summary ----------
 sec "Summary"
 printf '  passed %d / failed %d / skipped %d\n' "$PASS" "$FAIL" "$SKIP"
+if [ "$WARN" -gt 0 ]; then
+  printf '  ! %d warning(s) above: nothing is broken now, but act on them before a later upgrade.\n' "$WARN"
+fi
 if [ "$FAIL" -gt 0 ]; then
   echo "  ✗ Some checks failed; triage using the 'First place to look' hints and re-run."
   exit 1
