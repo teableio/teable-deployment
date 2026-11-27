@@ -9,6 +9,47 @@ channel, with their release notes synced in. Docker installs follow `latest`
 directly; Kubernetes installs receive the refreshed pin via that platform
 release's `versions.yaml`. Hot-swappable; no action needed.
 
+## Unreleased
+
+### Teable release.2026-11-26T23-38-15Z.4093
+
+#### Feature Updates
+- Cuppy returns chat and data query results directly in the same conversation, without temporary cards, unsolicited save prompts, or duplicate charges. It saves queries only when explicitly requested and keeps the specified name. When a query is reused, Cuppy shows its name, version, and source Base.
+- Image generation automatically selects the closest supported aspect ratio and supports 21:9 with GPT Image 2.x. Images now default to WebP for smaller files that retain transparency. Workflows that require PNG or JPEG must specify the format explicitly. The CLI supports a general format option and can also infer the format from the extension of an individual output file.
+- App Builder supports up to three private branch conversations that can run alongside the main conversation. Each new version includes only completed changes from the conversation that generated it, rather than saving a snapshot of the entire workspace after each turn. Unsaved changes are saved automatically at the end of each turn, with support for retries.
+- App Builder Data Proposals let users review selected fields, formulas, options, views, and configuration records and apply them to a target Base without bringing over unrelated data. Approved proposals are applied as a single change, preserving records created in the target Base and linking the resulting revision to the app version. If a conflict occurs, no changes are applied partially.
+- Base VCS supports read-only checkout of historical revisions and comparison of table structure and cell changes. Rollbacks require preview and confirmation and create new revisions without rewriting history. Historical data may be unavailable for some older revisions.
+- Template creation and publishing now use a guided workflow with clearer resource selection, automatic inclusion of dependencies, draft saving, version history, and a pre-publish checklist. Published templates can be previewed, shared, updated, or withdrawn directly from the project.
+- Share for Credits offers a unified weekly claim process for X and LinkedIn, explains eligibility more clearly, and saves claim status.
+- Pro and higher plans can enable public access (Beta) for V2 attachment fields. This provides permanent file and thumbnail URLs, supports custom domains, and lets users copy links and retry publishing. Fields resulting from copy, restore, or undo operations are private by default. Moving a table, Base, or space to the trash permanently disables its public attachment links.
+- Self-hosted Enterprise admins can manage JWT credentials and encryption keys on a single key rotation page and see the status of stored credentials more clearly, including those in published automations.
+- The CLI adds the teable upgrade command for upgrades through compatible package managers. If the CLI's installation method cannot be identified, the command provides manual upgrade instructions.
+
+#### Bug Fixes & Improvements
+- Improved .tea import compatibility with conditional, Lookup, Link, and other dependent fields. When dependencies are unavailable, imports retain previously calculated values and preserve single-value Lookup fields and numeric column types. Existing empty values in required multi-user fields no longer cause imports to fail on their own.
+- Project duplication, template extraction, and .tea imports now support up to 100 views per table. Failed template extractions no longer leave empty projects behind, and errors clearly identify when duplication fails because a resource limit has been reached.
+- Improved Records API performance for wide tables and large batch reads, especially when dates are returned as display text. Batch reads are less likely to slow down other requests.
+- Optimized media generation, improved fallback descriptions, and added clearer error messages for invalid reference images.
+- Public attachment cells refresh immediately when public links are enabled, so links can be copied without reloading.
+- Record history supports horizontal scrolling in narrower dialogs and side panels, making it easier to view change details and use the “View record” action. Only one filter menu opens at a time, and applied options are retained when the menu closes.
+- Stopping generation while an AI reply is being prepared no longer causes a server error. Chat no longer sends the current message twice on the first turn or after a session is recreated.
+- Pasting large amounts of plain text or HTML now reliably triggers confirmation prompts, progress indicators, and cell limit checks. Canceled pastes show no result, rejected pastes show an error, and success is reported only after all rows have been written. V2 synchronous pasting also respects the server-configured cell limit.
+- Quickly editing filter conditions or changing Single Select or Multi Select options now preserves the latest input without flickering or reverting when an earlier save completes.
+- Field conversions preserve compatible role-based row filter conditions and remove only those that are no longer valid. Field editing and conversion also enforce permission checks more consistently.
+- App Builder previews load during the first generation turn and retain local test data and configuration after a restart. Deleted files no longer appear in previews or published versions.
+- App Builder sessions report failures more accurately after reconnecting, and previews no longer show an error page after a brief disconnection.
+- Titles such as “recipe” and “record” are resolved correctly when writing linked records. Writing links by ID preserves currency formatting immediately, and record titles are more consistent across views, workflows, duplication, and exports.
+- Improved billing history filtering, including filtering for older transactions.
+- Undoing a large batch deletion now restores all deleted records. Trash entries remain consistent when delete and restore operations overlap or are repeated.
+- The CLI's API search supports the singular tag option, and the CLI documentation more clearly explains that the skill update command enables or disables skills.
+- CLI users signed in through OAuth with the appropriate permissions can now use Base VCS checkout, comparison, and rollback. Insufficient permissions return a clear error instead of an empty result.
+- Strengthened security for project sharing, template previews, cross-Base references, real-time synchronization, public attachment uploads, and Sign in with Apple.
+- Fixed attachment uploads in forms that require sign-in and improved date range validation in shared views.
+- Revoking access for a third-party app no longer returns an error if access has already been removed, and the confirmation button prevents duplicate submissions.
+- If a BYODB storage switch fails validation, the space retains its existing records and remains writable.
+
+[Full release notes](https://github.com/teableio/teable/releases/tag/release.2026-11-26T23-38-15Z.4093)
+
 ## v2026.11.30 - 2026-11-25
 
 - **App secrets: installs without `SECRET_KEY` can move to their own.** A later
